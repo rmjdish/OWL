@@ -311,7 +311,7 @@ classes: page-search-data-dictionary
 /* 1 — Checkbox */
 #myTable th:nth-child(1),
 #myTable td:nth-child(1) {
-  width: 10%;
+  width: 10% !important;
   background: white !important;
   text-align: center;
 }
@@ -319,7 +319,7 @@ classes: page-search-data-dictionary
 /* 2 — Topic */
 #myTable th:nth-child(2),
 #myTable td:nth-child(2) {
-  width: 11%;
+  width: 11% !important;
   background: #F3E5F5 !important;
   text-align: left;
 }
@@ -327,7 +327,7 @@ classes: page-search-data-dictionary
 /* 3 — Subtopic 1 */
 #myTable th:nth-child(3),
 #myTable td:nth-child(3) {
-  width: 9%;
+  width: 9% !important;
   background: #E8F5E9 !important;
   text-align: left;
 }
@@ -335,7 +335,7 @@ classes: page-search-data-dictionary
 /* 4 — Subtopic 2 */
 #myTable th:nth-child(4),
 #myTable td:nth-child(4) {
-  width: 10%;
+  width: 10% !important;
   background: #E3F2FD !important;
   text-align: left;
 }
@@ -343,7 +343,7 @@ classes: page-search-data-dictionary
 /* 5 — Subtopic 3 */
 #myTable th:nth-child(5),
 #myTable td:nth-child(5) {
-  width: 40%;
+  width: 40% !important;
   background: #FFF3E0 !important;
   text-align: left;
 }
@@ -351,7 +351,7 @@ classes: page-search-data-dictionary
 /* 6 — Subtopic 4 */
 #myTable th:nth-child(6),
 #myTable td:nth-child(6) {
-  width: 10%;
+  width: 10% !important;
   background: #FCE4EC !important;
   text-align: left;
 }
@@ -359,7 +359,7 @@ classes: page-search-data-dictionary
 /* 7 — NSHD Variable Name */
 #myTable th:nth-child(7),
 #myTable td:nth-child(7) {
-  width: 10% !important;
+  width: 10% !important !important;
   background: #EDE7F6 !important;
   text-align: left;
 }
