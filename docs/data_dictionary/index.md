@@ -294,11 +294,11 @@ classes: page-search-data-dictionary
 }
 
 /* ⭐ RESPONSIVE COLUMN WIDTHS (OLD — now overridden by correct block below) */
-#myTable col.col-1 { width: 11%; }
-#myTable col.col-2 { width: 9%; }
-#myTable col.col-3 { width: 10%; }
-#myTable col.col-4 { width: 50%; }
-#myTable col.col-5 { width: 10%; }
+#myTable col.col-1 { width: 10%; }
+#myTable col.col-2 { width: 11%; }
+#myTable col.col-3 { width: 9%; }
+#myTable col.col-4 { width: 10%; }
+#myTable col.col-5 { width: 50%; }
 #myTable col.col-6 { width: 10%; }
 
 /* ============================================================
