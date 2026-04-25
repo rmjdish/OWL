@@ -305,7 +305,7 @@ classes: page-search-data-dictionary
 }
 
 /* ⭐ RESPONSIVE COLUMN WIDTHS */
-#myTable col.col-1 { width: 5%; }
+#myTable col.col-1 { width: 40px !important; }   /* checkbox */
 #myTable col.col-2 { width: 11%; }
 #myTable col.col-3 { width: 9%; }
 #myTable col.col-4 { width: 10%; }
