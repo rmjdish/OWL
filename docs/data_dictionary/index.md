@@ -315,53 +315,56 @@ classes: page-search-data-dictionary
   text-align: center;
 }
 
-/* 2 — Topic */
-#myTable th:nth-child(2),
-#myTable td:nth-child(2) {
-  width: 11%;
+/* 7 — NSHD Variable Name */
+#myTable th:nth-child(7),
+#myTable td:nth-child(7) {
+  width: 11% !important;
+  background: #EDE7F6 !important;
+  text-align: left;
+}
+
+
+/* 8 — field ID */
+#myTable th:nth-child(8),
+#myTable td:nth-child(8) {
+  width: 9%;
   background: #F3E5F5 !important;
   text-align: left;
 }
 
 /* 3 — Subtopic 1 */
-#myTable th:nth-child(3),
-#myTable td:nth-child(3) {
-  width: 9%;
+#myTable th:nth-child(9),
+#myTable td:nth-child(9) {
+  width: 10%;
   background: #E8F5E9 !important;
   text-align: left;
 }
 
 /* 4 — Subtopic 2 */
-#myTable th:nth-child(4),
-#myTable td:nth-child(4) {
-  width: 10%;
+#myTable th:nth-child(10),
+#myTable td:nth-child(10) {
+  width: 50%;
   background: #E3F2FD !important;
   text-align: left;
 }
 
 /* 5 — Subtopic 3 */
-#myTable th:nth-child(5),
-#myTable td:nth-child(5) {
+#myTable th:nth-child(11),
+#myTable td:nth-child(11) {
   width: 10%;
   background: #FFF3E0 !important;
   text-align: left;
 }
 
 /* 6 — Subtopic 4 */
-#myTable th:nth-child(6),
-#myTable td:nth-child(6) {
+#myTable th:nth-child(12),
+#myTable td:nth-child(12) {
   width: 10%;
   background: #FCE4EC !important;
   text-align: left;
 }
 
-/* 7 — NSHD Variable Name */
-#myTable th:nth-child(7),
-#myTable td:nth-child(7) {
-  width: 10%;
-  background: #EDE7F6 !important;
-  text-align: left;
-}
+
 
 /* Remaining columns auto-size */
 #myTable th:nth-child(n+8),
