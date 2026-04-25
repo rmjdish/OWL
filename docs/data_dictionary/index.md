@@ -308,9 +308,7 @@ classes: page-search-data-dictionary
 /* 1 — Checkbox */
 #myTable th:nth-child(1),
 #myTable td:nth-child(1) {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
+  width: 10%;
   background: white !important;
   text-align: center;
 }
@@ -342,7 +340,7 @@ classes: page-search-data-dictionary
 /* 5 — Subtopic 3 */
 #myTable th:nth-child(5),
 #myTable td:nth-child(5) {
-  width: 50%;
+  width: 40%;
   background: #FFF3E0 !important;
   text-align: left;
 }
