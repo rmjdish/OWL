@@ -6,7 +6,7 @@ let filteredData = [];
 let currentPage = 1;
 let pageSize = 15;
 let sortColumn = null;
-let sortDirection = 1; // 1 = asc, -1 = desc
+let sortDirection = 1;
 
 // ⭐ Basket uses NSHD Variable Name as unique key
 let basket = new Set();
@@ -33,23 +33,22 @@ fetch("NSHD_Data_Dictionary_Public.json")
 
     tableColumns = Object.keys(rawData[0]).slice(5);
 
-    // ⭐ REMOVE ORDER COLUMN
+    // Remove Order column
     tableColumns = tableColumns.filter(col => col !== "Order");
 
-    // ⭐ ADD CHECKBOX COLUMN AT START
+    // ⭐ Add checkbox column
     tableColumns = ["__select__", ...tableColumns];
 
     buildFilters();
     buildTableHeader();
     applyFilters();
 
-    // Hide loading screen, show UI
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.display = "block";
   });
 
 /* ===================================================
-   BUILD FILTERS
+   FILTERS
 =================================================== */
 function buildFilters() {
   const bar = document.getElementById("filter-bar");
@@ -74,9 +73,6 @@ function buildFilters() {
   });
 }
 
-/* ===================================================
-   APPLY FILTERS
-=================================================== */
 function applyFilters() {
   const activeFilters = {};
   document.querySelectorAll("#filter-bar select").forEach(sel => {
@@ -93,9 +89,6 @@ function applyFilters() {
   updateResultsCount();
 }
 
-/* ===================================================
-   UPDATE FILTER OPTIONS (CASCADING)
-=================================================== */
 function updateAllFilters() {
   const rows = filteredData;
 
@@ -169,7 +162,7 @@ document.getElementById("globalSearch").addEventListener("input", e => {
 });
 
 /* ===================================================
-   PAGE SIZE CHANGE
+   PAGE SIZE
 =================================================== */
 document.getElementById("pageSize").addEventListener("change", e => {
   pageSize = Number(e.target.value);
@@ -198,31 +191,23 @@ function resetAllFilters() {
 }
 
 /* ===================================================
-   BUILD TABLE HEADER
+   TABLE HEADER
 =================================================== */
 function buildTableHeader() {
   const headerRow = document.getElementById("table-header");
   headerRow.innerHTML = "";
 
-  const table = document.getElementById("myTable");
-  const colgroup = document.createElement("colgroup");
-
-  colgroup.innerHTML = tableColumns
-    .map((_, i) => `<col class="col-${i+1}">`)
-    .join("");
-
-  table.prepend(colgroup);
-
   tableColumns.forEach(col => {
     const th = document.createElement("th");
-    th.classList.add("sortable-header");
 
     if (col === "__select__") {
+      th.classList.add("select-cell");
       th.innerHTML = `<div class="th-inner"><span class="header-label">Select</span></div>`;
       headerRow.appendChild(th);
       return;
     }
 
+    th.classList.add("sortable-header");
     th.innerHTML = `
       <div class="th-inner">
         <span class="header-label">${col}</span>
@@ -262,47 +247,34 @@ function renderTable() {
 
   filteredData.slice(start, end).forEach(row => {
     const tr = document.createElement("tr");
-
     const id = row[uniqueKey];
 
-    /* ⭐ CHECKBOX COLUMN */
+    // ⭐ Checkbox column
     const tdCheck = document.createElement("td");
     tdCheck.classList.add("select-cell");
-    tdCheck.innerHTML = `
-      <input type="checkbox" class="row-select" data-id="${id}">
-    `;
+    tdCheck.innerHTML = `<input type="checkbox" class="row-select" data-id="${id}">`;
     tr.appendChild(tdCheck);
 
-    // Restore checked state
     if (basket.has(id)) {
       tdCheck.querySelector("input").checked = true;
     }
 
     tdCheck.querySelector("input").addEventListener("change", e => {
-      if (e.target.checked) {
-        basket.add(id);
-      } else {
-        basket.delete(id);
-      }
+      if (e.target.checked) basket.add(id);
+      else basket.delete(id);
       renderBasket();
     });
 
-    /* ⭐ OTHER COLUMNS */
+    // ⭐ Data columns
     tableColumns.slice(1).forEach(col => {
       const td = document.createElement("td");
       const value = row[col] ?? "";
 
       if (col === "Showcase Field ID" && value !== "") {
-        td.innerHTML = `
-          <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}"
-             target="_blank" class="field-link">${value}</a>
-        `;
+        td.innerHTML = `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}" target="_blank">${value}</a>`;
       }
       else if (col === "NSHD Variable Name" && value !== "") {
-        td.innerHTML = `
-          <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${value}"
-             target="_blank" class="field-link">${value}</a>
-        `;
+        td.innerHTML = `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${value}" target="_blank">${value}</a>`;
       }
       else {
         td.textContent = value;
@@ -313,8 +285,6 @@ function renderTable() {
 
     body.appendChild(tr);
   });
-
-  document.getElementById("myTable").style.tableLayout = "fixed";
 }
 
 /* ===================================================
@@ -323,17 +293,14 @@ function renderTable() {
 function renderPagination() {
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
 
-  const top = document.getElementById("paginationTop");
-  const bottom = document.getElementById("paginationBottom");
-
   const html = `
     <button ${currentPage === 1 ? "disabled" : ""} onclick="changePage(-1)">Prev</button>
     <span>Page ${currentPage} of ${totalPages}</span>
     <button ${currentPage === totalPages ? "disabled" : ""} onclick="changePage(1)">Next</button>
   `;
 
-  top.innerHTML = html;
-  bottom.innerHTML = html;
+  document.getElementById("paginationTop").innerHTML = html;
+  document.getElementById("paginationBottom").innerHTML = html;
 }
 
 function changePage(delta) {
@@ -349,7 +316,6 @@ function changePage(delta) {
 function updateResultsCount() {
   const total = rawData.length;
   const filtered = filteredData.length;
-
   document.getElementById("resultsCount").textContent =
     `Showing ${filtered} of ${total} results`;
 }
@@ -362,7 +328,6 @@ function renderBasket() {
   const count = document.getElementById("basketCount");
 
   list.innerHTML = "";
-
   basket.forEach(id => {
     const li = document.createElement("li");
     li.textContent = id;

@@ -74,6 +74,20 @@ classes: page-search-data-dictionary
 </div> <!-- end dataUI -->
 
 <style>
+
+<!-- ⭐ CUSTOM CSS (unchanged except checkbox fix added) -->
+<style>
+/* Checkbox column fix */
+#myTable td.select-cell,
+#myTable th.select-cell {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  background: white !important;
+  text-align: center !important;
+}
+
+
 /* ⭐ LOADING SCREEN */
 .loading-screen {
   display: flex;
