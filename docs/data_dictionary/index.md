@@ -351,6 +351,6 @@ classes: page-search-data-dictionary
 }
 </style>
 
-<script src="/data_dict/assets/js/data_dictionary.js"></script>
+<script src="/OWL/assets/js/data_dictionary.js"></script>
 
 </div>
