@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+
+<!-- This is SKYLARK.html a Pebble Template which is extensively used by other subtemplates -->
+<html lang="en" template="true">
+<head>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+<title>Condor</title>
+<meta charset="utf-8" content="text/html;" http-equiv="Content-Type"/>
+<meta content="no-cache" http-equiv="Cache-Control"/>
+<meta content="no-cache" name="Pragma"/>
+<meta content="0" http-equiv="Expires"/>
+<!-- This is the top level Pebble template that will be 'inherited' by other templates -->
+<style type="text/css">/* SWIFT/Skylark CSS file
+Change this to alter the overall appearance of SWIFT/Skylark
+
+This is the top level CSS file.
+
+
+General styles
+
+HTML operators
+space : lhs <space> rhs : all rhs which have lhs as a parent
+> : lhs > rhs : all rhs that are immediate descendants of lhs
++ : lhs + rhs : all rhs that are siblings immediatley following lhs
+~ : lhs ~ rhs : all rhs that are siblings (have same parent as) lhs 
+
+*/
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
+
+/*
+  All the CSS rules with [role] as a predicate are used to style the tree
+  display for categories
+*/
+
+*:not([role]) {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: White; /* body background colour */
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* body font size */
+    margin-bottom: 10px;
+    width: 100%;
+}
+table {
+    
+    width: 90%;
+    display: inline-table;
+    border: 0px;
+    border-style: none;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
+
+h1 {
+    color: black; /* h1 font colour */
+    font-size: 2vw;
+}
+
+p {
+    margin: 1vw;
+}
+
+/* These set of rules govern how category search trees are displayed */
+
+.section {
+    max-width: 90%;
+}
+
+
+body ul[role="tree"] {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* body ul[role="tree"] font size */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul:not([role]) {
+    margin: 1vw;
+}
+/* Rule 1 */
+ul[role="tree"] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9vx; /* ul[role="tree"] font size */
+}
+/* Rule 2 */
+ul[role="tree"] li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Rule 3 */
+[role="treeitem"][aria-expanded="false"] + [role="group"] {
+    display: none;
+}
+/* Rule 4 */
+[role="treeitem"][aria-expanded="true"] + [role="group"] {
+    display: block;
+}
+/* Rule 5 */
+/* File within folder */
+[role="treeitem"].doc::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"].doc::before font size */
+    content: '\1f5c8';
+    display: inline-block;
+    padding-right: 2px;
+    padding-left: 5px;
+    vertical-align: middle;
+}
+/* Rule 6 */
+[role="treeitem"][aria-expanded="false"] > ul {
+    display: none;
+}
+/* Rule 7 */
+[role="treeitem"][aria-expanded="true"] > ul {
+    display: block;
+}
+/* Rule 8 */
+/* Closed Folder */
+[role="treeitem"][aria-expanded="false"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"][aria-expanded="false"] font size */
+    content: '\1f5bf';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 9 */
+/* Folder Open */
+[role="treeitem"][aria-expanded="true"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw;
+    content: '\1f5c1';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 10 -- this one sest the width for tree elements across the page */
+[role="treeitem"],
+[role="treeitem"] span {
+    width: 40em;
+    margin: 0;
+    padding: 0.125em;
+    display: block;
+}
+/* Rule 11 */
+/* disable default keyboard focus styling for treeitems
+   Keyboard focus is styled with the following CSS */
+[role="treeitem"]:focus {
+    outline: 0;
+}
+/* Rule 12 */
+[role="treeitem"][aria-selected="true"] {
+    padding-left: 4px;
+    border-left: 5px solid #005a9c; 
+}
+/* Rule 13 */
+[role="treeitem"].focus,
+[role="treeitem"] span.focus {
+    border-color: black; 
+    background-color: #eee; /* [role="treeitem"] span.focus background colour */
+}
+/* Rule 14 */
+[role="treeitem"].hover,
+[role="treeitem"] span:hover {
+    padding-left: 4px;
+    background-color: #ddd; /* [role="treeitem"] span.hover background colour */
+    border-left: 5px solid #333;
+}
+/* End of tree display rules */
+
+select {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: lightgray; /* select background colour */
+    color: black; /* select font colour */
+    margin-bottom: 1px;
+    word-wrap: break-word;
+    padding: 1px;
+    text-align: left;
+}
+
+option {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: #98A69A; /* option background colour */
+    color: Black; /* option font colour */
+    word-wrap: break-word;
+    text-align: left;	
+}
+
+input {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* input font size */
+    background-color: Linen; /* input background colour */
+    color: MidnightBlue; /* input font colour */
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    border: 0px solid Bisque;	
+}
+
+
+header {
+    position: sticky;
+    padding-top:0px;
+    padding-bottom:0px;
+    left: 0px;
+    top: 0px;
+    height: 10%;
+    background-color: rgb(0,138,173); /* header default background colour */
+    width: 95%;
+    box-sizing: border-box;    
+}
+
+footer {
+    background-color: rgb(0,138,173);
+}
+
+/*
+   The banner class is used to style the top of the SWIFT page
+   with the logos and web site title
+*/
+
+.banner {
+    display: inline;
+    background-color: rgb(46,45,98); /* banner background colour */
+    padding-top:4px;
+    padding-bottom:4px;
+    max-width: 90%;
+    border-width: 0px;
+    margin: 0;
+}
+
+/* The next selector applies to h1 within a div with class=banner */
+.banner > h1 {
+    display: inline;
+    font-size: 2vw; /* banner font size */
+    color: black; /* banner font colour */
+    float: left;
+}
+.banner img {
+    display: inline;
+    max-width: 15%;
+    height: auto;
+    padding-top: 20px;
+    margin: 0 auto;
+    float: left;
+}
+
+
+
+/* The results class is used to display output from the various SWIFT functions */
+/* best to wrap elements up in a <div class="results">  ... </div>  */
+
+.results {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* results font size */
+    color: black;  /* results font colour */
+    margin-top: 2%; 
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: white; /* results background colour */
+    display: block;
+}
+/* A division directly inheriting from results */
+.results div {
+    border-collapse: separate;
+    padding-top: 0.6em;
+    padding-right: 0.5em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    margin: 2em;
+}
+
+.results  table {
+    width: 80%;
+    table-layout: fixed;
+    /* border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px; */
+    border-collapse: collapse; 
+    border: none;  
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    margin: 2px;
+}
+
+.results table tr:nth-child(odd) {
+    background-color: rgb(230,230,230); /* results table odd rows background colour */
+}
+.results table tr:nth-child(even) {
+    background-color: white; /* results table even rows background colour */
+
+}
+/*
+.results table th {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #E7BB96; 
+    color: #DCD9CB;
+    border: none;
+}
+*/
+.results table tr:first-child {
+    border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+
+}
+
+.results table tr:last-child  {
+    border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+
+}
+
+/* A table heading element directly following a new row */
+.results tr th {
+    word-wrap: break-word;
+    padding: 7px; 
+    text-align: left;
+    margin: 2px;
+    background-color:  PowderBlue; /* results tr th background colour */
+    color: black; /* results tr th font colour */
+    border: 0px;
+}
+/* A table cell element directly following a new row */
+.results tr td {
+    word-wrap: break-word;
+    padding: 5px;
+    text-align: left;
+    border: 0px solid #98A69A; 
+}
+
+
+.results  h1,h2,p,ul:not([role]),li:not(.doc),form {
+    padding-top: 1px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    padding-left: 5px;
+}
+
+/*  End of Results Class */
+
+/* Sticky form header */
+
+.form-header {
+    position: sticky;
+    width: fit-content;
+    margin-left: auto; /* Move to the right */
+    margin-right: 0; /* Optional: reset right margin */
+    background-color: rgba(255, 255, 255, 1); /* Solid white background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional shadow for effect */
+    z-index: 1000; /* Ensure it is above other content */      
+    top: 25%; /* How far from top of page? */
+    left: 50%;
+    padding: 10px 16px;
+}
+
+/* Table Filter */
+.ddtf-filtered {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.5vw;
+    color: black;
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /*  ddtf-filtered background colour */
+    display: block;
+}
+.ddtf-filtered select {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #4F3A35; /* ddtf-filtered select background colour */
+    color: #98A69A; /* ddtf-filtered select font colour */
+    border: 0px solid #98A69A;
+}
+
+.ddtf-processed {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* ddtf-processed font size */
+    color: black; /* ddtf-processed font colour */
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /* ddtf-processed background colour */
+    display: block;
+}
+/* End of Table Filter Class */
+
+.tab5 {
+    /* background-color: lightblue; */
+    text-align: left;
+    margin: 0px;
+    padding-top: 10px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.tab5 #narrow th, td {
+    border: 0px;
+    width: 80px;
+}
+
+.tab5 #medium th, td {
+    border: 0px;
+    width: 140px;
+}
+
+.tab5 #wide {
+    border: 1px;
+    width: 500px;
+}
+
+#menu-bar {
+    width: 95%;
+    margin: 0; /* Use padding instead */
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    height: 3em;
+    line-height: 100%;
+    /* Take out all the curvy borders */
+    border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px;
+
+    box-shadow: 2px 2px 3px #666666;
+    -webkit-box-shadow: 2px 2px 3px #666666;
+    -moz-box-shadow: 2px 2px 3px #666666;
+    background: MidnightBlue; /* menu-bar background colour */
+    /* background: #0B736F;  dark green menu bar */
+    /* background: #424242; very dark brown menu bar*/
+    border: double 1px #32323f;
+    position:relative;
+    z-index:999; /* Bring to the front; -1 is to the back */
+}
+#menu-bar li {   /* Level 1 menu item; careful this is the word not the box */
+    padding-top: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    padding-right: 0em;
+    float: left;
+    position: relative;
+    top: 0em;
+    left: 0em;
+    list-style: none;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar a { /* The actual links within menu items */
+    font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw; /* menu-bar a font size */
+    color: #E7E5E5; /* menu-bar a font colour */
+    text-decoration: none;
+    display: block;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    margin: 0.2em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    text-shadow: 2px 2px 3px #000000;
+}
+#menu-bar ul li ul li a {  /* A Level 2 submenu item */
+    position: relative;
+    font-size: 0.8vw;  
+    top: 0.5em;
+    left: 0.5em;
+    padding-left: 0.1em;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar .active a, #menu-bar li:hover > a { /* A link item that is in focus */
+    /* background: ochre; */
+    color: #424242; /* very dark grey */
+    background: linear-gradient(top,  #EBEBEB,  #A1A1A1); /* grey gradient */
+    background: -ms-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    background: -webkit-gradient(linear, left top, left bottom, from(#EBEBEB), to(#A1A1A1));
+    background: -moz-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    color: orange;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    text-shadow: 2px 2px 3px #FFFFFF;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+
+#menu-bar ul a:hover {
+    background: orange; /* set to orange but can't see it */
+    /* The next set of backgrounds set the sub-menu focus background  */
+    background: linear-gradient(top,  orange,  darkorange);
+    background: -ms-linear-gradient(top,  orange,  darkorange);
+    background: -webkit-gradient(linear, left top, left bottom, from(orange), to(darkorange));
+    background: -moz-linear-gradient(top,  orange,  darkorange);
+    color: black;
+    /* Curvy Borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+#menu-bar li:not([role="treeitem"]):hover > ul {
+    display: block;
+}
+
+#menu-bar ul { /* Key to moving menu items on page */
+    background: #DDDDDD;
+    background: linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -ms-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#CFCFCF));
+    background: -moz-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    display: none;  /* This negates the transition property below what if we use block instead? */
+    margin: 0.6em;
+    padding-top: 0.6em;
+    padding-right: 0.8em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    width: 12em;
+    position: relative; /* was absolute changing to relative */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: solid 1px #B4B4B4;
+    /* Curvy Border */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    -webkit-box-shadow: 2px 2px 3px #222222;
+    -moz-box-shadow: 2px 2px 3px #222222;
+    box-shadow: 2px 2px 3px #222222;
+
+}
+#menu-bar ul li {
+    float: none;
+    margin: 0;
+    padding: 0;
+
+}
+#menu-bar ul a { /* the text indicating a level 1 link */
+    padding-top: 0.6em;
+    padding-right: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    /* Original Setting color:#424242; */
+    color:#424242; /* very dark grey */
+    font-size:0.8vw;
+    font-style: normal;
+    font-family: Montserrat, sans-serif;
+    font-weight: normal;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+
+#menu-bar ul li:hover a, #menu-bar li:hover li a {
+    background: none; /* was none - background to drop down menu items */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: none;
+    color: #ff9933; /* orange */
+    -box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+}
+
+#menu-bar ul li:first-child > a {
+    /*
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+   */
+}
+
+#menu-bar ul li:last-child > a {
+    /*
+	border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+   */
+}
+
+#menu-bar:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+#menu-bar form {
+    display: inline-block;
+    /* height: 1em; */
+    line-height: 100%;
+    /* width: 10em; */
+    padding: 0;
+    margin: 0;
+}
+/* This is the Search Button */
+#menu-bar div > input {
+    box-sizing: border-box;
+    border: 0 none;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-image: url("search.ico");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-color: Bisque;
+    max-width: 100%;
+    min-width: 5px; 
+    height: auto; 
+    margin: 0;
+    text-align: center;
+    cursor: pointer;
+} 
+
+#menu-bar div > input:hover { 
+    background-image: url("active-search.png");
+    background-color: grey;
+}
+
+/* This is the Search Text Box - > is immediate descendant operator */
+#menu-bar li > input {
+    padding: 0 0 0 0;
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    vertical-align: text-bottom;
+    border: 0 none;
+    max-width: 100%;
+    min-width: 15em;
+    height: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0.6em;
+    color: darkblue;
+    outline: none;
+    background: Bisque;
+    box-sizing: border-box;
+    transition: all 0.1s;
+}
+
+#menu-bar {
+    display: inline-block;
+}
+
+html[xmlns] #menu-bar {
+    display: block;
+}
+
+* html #menu-bar  {
+    height: 1%;
+}
+
+
+
+/* Form Elements for SWIFT */
+
+/* Rounded Corner for Buttons */
+.tb5 {
+    border:2px solid #456879;
+    border-radius:10px;
+}
+
+/* Rounded Corners for Text Area */
+.ta5 {
+    border: 2px solid #765942;
+    border-radius: 10px;
+    height: 60px;
+    width: 230px;
+}
+
+/* More rounded buttons for a form */
+
+.testbutton {
+    font-family: arial;
+    color: black;
+    font-size: 0.8vw;
+    text-shadow: 1px 1px 0px #7CACDE;
+    box-shadow: 1px 1px 1px #BEE2F9;
+    padding: 4px 2px 4px 2px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    border: 1px solid #3866A3;
+    background: #F0F0F0; /* F0F0F0 is light grey */
+}
+
+.testbutton:hover {
+    color: #FFFFFF; /* FFFFFF is #98A69A */
+    background: orange;
+}
+
+/* Stuff for Cookie Banner at bottom of welcome page */
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+        background: #DDDDDD;
+        color: black;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 5px;
+}
+    
+.btn:hover {
+    background: orange;
+    transform: translateY(-2px);
+}
+    
+.btn-secondary {
+    background: #e2e8f0;
+    color: black;
+}
+    
+.btn-secondary:hover {
+    background: orange;
+}
+    
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(0,138,173);
+    color: black;
+    padding: 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.5s ease-out;
+}
+    
+.cookie-banner.active {
+    transform: translateY(0);
+}
+
+.cookie-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cookie-text {
+    flex: 1;
+    min-width: 300px;
+    padding-right: 20px;
+}
+
+.cookie-text h3 {
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.cookie-text p {
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.cookie-text a {
+    color: sandybrown;
+}
+.cookie-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cookie-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 5px;
+}
+
+.cookie-btn.accept {
+    background: lawngreen;
+    color: black;
+}
+
+.cookie-btn.accept:hover {
+    background: orange;
+}
+
+.cookie-btn.reject {
+    background: crimson;
+    color: white;
+    border: 1px solid #4a5568;
+}
+
+.cookie-btn.reject:hover {
+    background: orange;
+    color: black;
+}
+
+.link {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cookie-text {
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* End of Cookie Stuff */
+
+/* Attempt at simpler Drop Down Menu Items */
+
+/* 
+    An other menu style based on CSS3 - not sure how this will work but here goes
+*/
+
+/* Comment all navs out for now
+
+nav ul ul {
+	display: none;
+}
+
+nav ul li:hover > ul {
+	display: block;
+}
+
+nav ul:not([role]) {
+	width: 40%;
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 2px 0px 2px;
+	margin: 0px 4px 0px 4px; 
+
+
+  	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+  	
+  	box-shadow: 2px 2px 3px #666666;
+  	-webkit-box-shadow: 2px 2px 3px #666666;
+  	-moz-box-shadow: 2px 2px 3px #666666;
+
+	background: MidnightBlue;
+	list-style: none;
+	position: relative;
+	display: inline-table;
+}
+
+nav ul:after {
+	content: ""; clear: both; display: block;
+}
+
+nav:not([aria-label]) ul li {
+	float: left;
+}
+
+nav ul li:hover {
+	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+	
+	border-style: none; 
+	border-width: 0px;
+	margin: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	background: blue;
+}
+
+nav ul li:hover a {
+	color: #98A69A;
+	margin: 0;
+}
+	
+nav ul li a {
+	font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw;
+	border-style: none; 
+	border-width: 0px;
+	display: block; 
+	padding: 0px 4px 0px 4px;
+	margin: 0px 0px 0px 0px;
+	color: #98A69A; 
+	text-decoration: none;
+}
+
+nav ul li:first-child > a {
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+
+}
+nav ul li:last-child > a {
+  border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+
+}
+
+nav ul ul:not([role]) {
+	background: #98A69A; 
+	border-radius: 0px; 
+	padding: 0px 4px 0px 4px;
+	position: absolute; 
+	margin: 0px 4px 0px 4px;
+	top: 100%;
+	border-style: none; 
+	border-width: 0px;
+}
+
+nav ul ul li:not([role]) {
+	float: none; 
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	margin: 0px 4px 0px 4px;
+	
+	position: relative;
+}
+
+nav ul ul li a {
+	padding: 0px 6px 0px 6px;
+	font-style:normal;
+  	font-family:arial;
+  	font-weight: normal;
+  	text-shadow: 2px 2px 3px #FFFFFF;
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px;
+	margin: 0px 4px 0px 4px;
+	background: DimGrey;
+}	
+
+nav ul ul li a:hover {
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px; 
+	background: Gainsboro;
+}
+
+nav ul ul ul {
+	position: absolute; left: 100%; top:0;
+}
+
+*/
+</style>
+<script src="js/treeview-navigation.js" type="text/javascript"></script>
+<script src="js/treeitem.js" type="text/javascript"></script>
+<script src="js/treeitemClick.js" type="text/javascript"></script>
+<script src="js/FormValidation.js"></script>
+<script src="js/Help.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="js/ddtf.js"></script>
+<!-- 
+	 This is Google's version 3 tags.  Never made it work properly
+	 <script src='https://www.google.com/recaptcha/api.js?render=6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV'></script>
+	 -->
+<!--  Make sure to use the right Site key here
+
+	       kiwidev = 6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV
+	       skylark = 6LdF3XgUAAAAAACAPmW7swE2bLNfxQlPvcu4JM2H
+
+	       reCAPTCHA version 2 keys
+
+	       kiwidev = 6LeBf3kUAAAAADU7T5AROQx9hj8LLJYke6i58Fqd
+	       kiwi	= 6LcohasUAAAAAPVpqmaGF6Mkag3vmJKhHutoPKEa
+	       version 2 script reference is below this
+	   -->
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<!--  this is version 3 which doesn't work
+	       <script src='https://www.google.com/recaptcha/api.js?render=6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV'></script>
+	       -->
+<style type="text/css">/* SWIFT/Skylark CSS file
+Change this to alter the overall appearance of SWIFT/Skylark
+
+This is the top level CSS file.
+
+
+General styles
+
+HTML operators
+space : lhs <space> rhs : all rhs which have lhs as a parent
+> : lhs > rhs : all rhs that are immediate descendants of lhs
++ : lhs + rhs : all rhs that are siblings immediatley following lhs
+~ : lhs ~ rhs : all rhs that are siblings (have same parent as) lhs 
+
+*/
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
+
+/*
+  All the CSS rules with [role] as a predicate are used to style the tree
+  display for categories
+*/
+
+*:not([role]) {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: White; /* body background colour */
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* body font size */
+    margin-bottom: 10px;
+    width: 100%;
+}
+table {
+    
+    width: 90%;
+    display: inline-table;
+    border: 0px;
+    border-style: none;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
+
+h1 {
+    color: black; /* h1 font colour */
+    font-size: 2vw;
+}
+
+p {
+    margin: 1vw;
+}
+
+/* These set of rules govern how category search trees are displayed */
+
+.section {
+    max-width: 90%;
+}
+
+
+body ul[role="tree"] {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* body ul[role="tree"] font size */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul:not([role]) {
+    margin: 1vw;
+}
+/* Rule 1 */
+ul[role="tree"] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9vx; /* ul[role="tree"] font size */
+}
+/* Rule 2 */
+ul[role="tree"] li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Rule 3 */
+[role="treeitem"][aria-expanded="false"] + [role="group"] {
+    display: none;
+}
+/* Rule 4 */
+[role="treeitem"][aria-expanded="true"] + [role="group"] {
+    display: block;
+}
+/* Rule 5 */
+/* File within folder */
+[role="treeitem"].doc::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"].doc::before font size */
+    content: '\1f5c8';
+    display: inline-block;
+    padding-right: 2px;
+    padding-left: 5px;
+    vertical-align: middle;
+}
+/* Rule 6 */
+[role="treeitem"][aria-expanded="false"] > ul {
+    display: none;
+}
+/* Rule 7 */
+[role="treeitem"][aria-expanded="true"] > ul {
+    display: block;
+}
+/* Rule 8 */
+/* Closed Folder */
+[role="treeitem"][aria-expanded="false"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"][aria-expanded="false"] font size */
+    content: '\1f5bf';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 9 */
+/* Folder Open */
+[role="treeitem"][aria-expanded="true"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw;
+    content: '\1f5c1';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 10 -- this one sest the width for tree elements across the page */
+[role="treeitem"],
+[role="treeitem"] span {
+    width: 40em;
+    margin: 0;
+    padding: 0.125em;
+    display: block;
+}
+/* Rule 11 */
+/* disable default keyboard focus styling for treeitems
+   Keyboard focus is styled with the following CSS */
+[role="treeitem"]:focus {
+    outline: 0;
+}
+/* Rule 12 */
+[role="treeitem"][aria-selected="true"] {
+    padding-left: 4px;
+    border-left: 5px solid #005a9c; 
+}
+/* Rule 13 */
+[role="treeitem"].focus,
+[role="treeitem"] span.focus {
+    border-color: black; 
+    background-color: #eee; /* [role="treeitem"] span.focus background colour */
+}
+/* Rule 14 */
+[role="treeitem"].hover,
+[role="treeitem"] span:hover {
+    padding-left: 4px;
+    background-color: #ddd; /* [role="treeitem"] span.hover background colour */
+    border-left: 5px solid #333;
+}
+/* End of tree display rules */
+
+select {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: lightgray; /* select background colour */
+    color: black; /* select font colour */
+    margin-bottom: 1px;
+    word-wrap: break-word;
+    padding: 1px;
+    text-align: left;
+}
+
+option {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: #98A69A; /* option background colour */
+    color: Black; /* option font colour */
+    word-wrap: break-word;
+    text-align: left;	
+}
+
+input {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* input font size */
+    background-color: Linen; /* input background colour */
+    color: MidnightBlue; /* input font colour */
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    border: 0px solid Bisque;	
+}
+
+
+header {
+    position: sticky;
+    padding-top:0px;
+    padding-bottom:0px;
+    left: 0px;
+    top: 0px;
+    height: 10%;
+    background-color: rgb(0,138,173); /* header default background colour */
+    width: 95%;
+    box-sizing: border-box;    
+}
+
+footer {
+    background-color: rgb(0,138,173);
+}
+
+/*
+   The banner class is used to style the top of the SWIFT page
+   with the logos and web site title
+*/
+
+.banner {
+    display: inline;
+    background-color: rgb(46,45,98); /* banner background colour */
+    padding-top:4px;
+    padding-bottom:4px;
+    max-width: 90%;
+    border-width: 0px;
+    margin: 0;
+}
+
+/* The next selector applies to h1 within a div with class=banner */
+.banner > h1 {
+    display: inline;
+    font-size: 2vw; /* banner font size */
+    color: black; /* banner font colour */
+    float: left;
+}
+.banner img {
+    display: inline;
+    max-width: 15%;
+    height: auto;
+    padding-top: 20px;
+    margin: 0 auto;
+    float: left;
+}
+
+
+
+/* The results class is used to display output from the various SWIFT functions */
+/* best to wrap elements up in a <div class="results">  ... </div>  */
+
+.results {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* results font size */
+    color: black;  /* results font colour */
+    margin-top: 2%; 
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: white; /* results background colour */
+    display: block;
+}
+/* A division directly inheriting from results */
+.results div {
+    border-collapse: separate;
+    padding-top: 0.6em;
+    padding-right: 0.5em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    margin: 2em;
+}
+
+.results  table {
+    width: 80%;
+    table-layout: fixed;
+    /* border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px; */
+    border-collapse: collapse; 
+    border: none;  
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    margin: 2px;
+}
+
+.results table tr:nth-child(odd) {
+    background-color: rgb(230,230,230); /* results table odd rows background colour */
+}
+.results table tr:nth-child(even) {
+    background-color: white; /* results table even rows background colour */
+
+}
+/*
+.results table th {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #E7BB96; 
+    color: #DCD9CB;
+    border: none;
+}
+*/
+.results table tr:first-child {
+    border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+
+}
+
+.results table tr:last-child  {
+    border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+
+}
+
+/* A table heading element directly following a new row */
+.results tr th {
+    word-wrap: break-word;
+    padding: 7px; 
+    text-align: left;
+    margin: 2px;
+    background-color:  PowderBlue; /* results tr th background colour */
+    color: black; /* results tr th font colour */
+    border: 0px;
+}
+/* A table cell element directly following a new row */
+.results tr td {
+    word-wrap: break-word;
+    padding: 5px;
+    text-align: left;
+    border: 0px solid #98A69A; 
+}
+
+
+.results  h1,h2,p,ul:not([role]),li:not(.doc),form {
+    padding-top: 1px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    padding-left: 5px;
+}
+
+/*  End of Results Class */
+
+/* Sticky form header */
+
+.form-header {
+    position: sticky;
+    width: fit-content;
+    margin-left: auto; /* Move to the right */
+    margin-right: 0; /* Optional: reset right margin */
+    background-color: rgba(255, 255, 255, 1); /* Solid white background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional shadow for effect */
+    z-index: 1000; /* Ensure it is above other content */      
+    top: 25%; /* How far from top of page? */
+    left: 50%;
+    padding: 10px 16px;
+}
+
+/* Table Filter */
+.ddtf-filtered {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.5vw;
+    color: black;
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /*  ddtf-filtered background colour */
+    display: block;
+}
+.ddtf-filtered select {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #4F3A35; /* ddtf-filtered select background colour */
+    color: #98A69A; /* ddtf-filtered select font colour */
+    border: 0px solid #98A69A;
+}
+
+.ddtf-processed {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* ddtf-processed font size */
+    color: black; /* ddtf-processed font colour */
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /* ddtf-processed background colour */
+    display: block;
+}
+/* End of Table Filter Class */
+
+.tab5 {
+    /* background-color: lightblue; */
+    text-align: left;
+    margin: 0px;
+    padding-top: 10px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.tab5 #narrow th, td {
+    border: 0px;
+    width: 80px;
+}
+
+.tab5 #medium th, td {
+    border: 0px;
+    width: 140px;
+}
+
+.tab5 #wide {
+    border: 1px;
+    width: 500px;
+}
+
+#menu-bar {
+    width: 95%;
+    margin: 0; /* Use padding instead */
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    height: 3em;
+    line-height: 100%;
+    /* Take out all the curvy borders */
+    border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px;
+
+    box-shadow: 2px 2px 3px #666666;
+    -webkit-box-shadow: 2px 2px 3px #666666;
+    -moz-box-shadow: 2px 2px 3px #666666;
+    background: MidnightBlue; /* menu-bar background colour */
+    /* background: #0B736F;  dark green menu bar */
+    /* background: #424242; very dark brown menu bar*/
+    border: double 1px #32323f;
+    position:relative;
+    z-index:999; /* Bring to the front; -1 is to the back */
+}
+#menu-bar li {   /* Level 1 menu item; careful this is the word not the box */
+    padding-top: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    padding-right: 0em;
+    float: left;
+    position: relative;
+    top: 0em;
+    left: 0em;
+    list-style: none;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar a { /* The actual links within menu items */
+    font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw; /* menu-bar a font size */
+    color: #E7E5E5; /* menu-bar a font colour */
+    text-decoration: none;
+    display: block;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    margin: 0.2em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    text-shadow: 2px 2px 3px #000000;
+}
+#menu-bar ul li ul li a {  /* A Level 2 submenu item */
+    position: relative;
+    font-size: 0.8vw;  
+    top: 0.5em;
+    left: 0.5em;
+    padding-left: 0.1em;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar .active a, #menu-bar li:hover > a { /* A link item that is in focus */
+    /* background: ochre; */
+    color: #424242 !important; /* very dark grey */
+    background: linear-gradient(top,  #EBEBEB,  #A1A1A1); /* grey gradient */
+    background: -ms-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    background: -webkit-gradient(linear, left top, left bottom, from(#EBEBEB), to(#A1A1A1));
+    background: -moz-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    color: orange;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    text-shadow: 2px 2px 3px #FFFFFF;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+
+#menu-bar ul a:hover {
+    background: orange; /* set to orange but can't see it */
+    /* The next set of backgrounds set the sub-menu focus background  */
+    background: linear-gradient(top,  orange,  darkorange) !important;
+    background: -ms-linear-gradient(top,  orange,  darkorange) !important;
+    background: -webkit-gradient(linear, left top, left bottom, from(orange), to(darkorange)) !important;
+    background: -moz-linear-gradient(top,  orange,  darkorange) !important;
+    color: black !important;
+    /* Curvy Borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+#menu-bar li:not([role="treeitem"]):hover > ul {
+    display: block;
+}
+
+#menu-bar ul { /* Key to moving menu items on page */
+    background: #DDDDDD;
+    background: linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -ms-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#CFCFCF));
+    background: -moz-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    display: none;  /* This negates the transition property below what if we use block instead? */
+    margin: 0.6em;
+    padding-top: 0.6em;
+    padding-right: 0.8em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    width: 12em;
+    position: relative; /* was absolute changing to relative */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: solid 1px #B4B4B4;
+    /* Curvy Border */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    -webkit-box-shadow: 2px 2px 3px #222222;
+    -moz-box-shadow: 2px 2px 3px #222222;
+    box-shadow: 2px 2px 3px #222222;
+
+}
+#menu-bar ul li {
+    float: none;
+    margin: 0;
+    padding: 0;
+
+}
+#menu-bar ul a { /* the text indicating a level 1 link */
+    padding-top: 0.6em;
+    padding-right: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    /* Original Setting color:#424242 !important; */
+    color:#424242 !important; /* very dark grey */
+    font-size:0.8vw;
+    font-style: normal;
+    font-family: Montserrat, sans-serif;
+    font-weight: normal;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+
+#menu-bar ul li:hover a, #menu-bar li:hover li a {
+    background: none; /* was none - background to drop down menu items */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: none;
+    color: #ff9933; /* orange */
+    -box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+}
+
+#menu-bar ul li:first-child > a {
+    /*
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+   */
+}
+
+#menu-bar ul li:last-child > a {
+    /*
+	border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+   */
+}
+
+#menu-bar:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+#menu-bar form {
+    display: inline-block;
+    /* height: 1em; */
+    line-height: 100%;
+    /* width: 10em; */
+    padding: 0;
+    margin: 0;
+}
+/* This is the Search Button */
+#menu-bar div > input {
+    box-sizing: border-box;
+    border: 0 none;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-image: url("search.ico");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-color: Bisque;
+    max-width: 100%;
+    min-width: 5px; 
+    height: auto; 
+    margin: 0;
+    text-align: center;
+    cursor: pointer;
+} 
+
+#menu-bar div > input:hover { 
+    background-image: url("active-search.png");
+    background-color: grey;
+}
+
+/* This is the Search Text Box - > is immediate descendant operator */
+#menu-bar li > input {
+    padding: 0 0 0 0;
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    vertical-align: text-bottom;
+    border: 0 none;
+    max-width: 100%;
+    min-width: 15em;
+    height: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0.6em;
+    color: darkblue;
+    outline: none;
+    background: Bisque;
+    box-sizing: border-box;
+    transition: all 0.1s;
+}
+
+#menu-bar {
+    display: inline-block;
+}
+
+html[xmlns] #menu-bar {
+    display: block;
+}
+
+* html #menu-bar  {
+    height: 1%;
+}
+
+
+
+/* Form Elements for SWIFT */
+
+/* Rounded Corner for Buttons */
+.tb5 {
+    border:2px solid #456879;
+    border-radius:10px;
+}
+
+/* Rounded Corners for Text Area */
+.ta5 {
+    border: 2px solid #765942;
+    border-radius: 10px;
+    height: 60px;
+    width: 230px;
+}
+
+/* More rounded buttons for a form */
+
+.testbutton {
+    font-family: arial;
+    color: black !important;
+    font-size: 0.8vw;
+    text-shadow: 1px 1px 0px #7CACDE;
+    box-shadow: 1px 1px 1px #BEE2F9;
+    padding: 4px 2px 4px 2px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    border: 1px solid #3866A3;
+    background: #F0F0F0; /* F0F0F0 is light grey */
+}
+
+.testbutton:hover {
+    color: #FFFFFF !important; /* FFFFFF is #98A69A */
+    background: orange;
+}
+
+/* Stuff for Cookie Banner at bottom of welcome page */
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+        background: #DDDDDD;
+        color: black;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 5px;
+}
+    
+.btn:hover {
+    background: orange;
+    transform: translateY(-2px);
+}
+    
+.btn-secondary {
+    background: #e2e8f0;
+    color: black;
+}
+    
+.btn-secondary:hover {
+    background: orange;
+}
+    
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(0,138,173);
+    color: black;
+    padding: 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.5s ease-out;
+}
+    
+.cookie-banner.active {
+    transform: translateY(0);
+}
+
+.cookie-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cookie-text {
+    flex: 1;
+    min-width: 300px;
+    padding-right: 20px;
+}
+
+.cookie-text h3 {
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.cookie-text p {
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.cookie-text a {
+    color: sandybrown;
+}
+.cookie-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cookie-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 5px;
+}
+
+.cookie-btn.accept {
+    background: lawngreen;
+    color: black;
+}
+
+.cookie-btn.accept:hover {
+    background: orange;
+}
+
+.cookie-btn.reject {
+    background: crimson;
+    color: white;
+    border: 1px solid #4a5568;
+}
+
+.cookie-btn.reject:hover {
+    background: orange;
+    color: black;
+}
+
+.link {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cookie-text {
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* End of Cookie Stuff */
+
+/* Attempt at simpler Drop Down Menu Items */
+
+/* 
+    An other menu style based on CSS3 - not sure how this will work but here goes
+*/
+
+/* Comment all navs out for now
+
+nav ul ul {
+	display: none;
+}
+
+nav ul li:hover > ul {
+	display: block;
+}
+
+nav ul:not([role]) {
+	width: 40%;
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 2px 0px 2px;
+	margin: 0px 4px 0px 4px; 
+
+
+  	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+  	
+  	box-shadow: 2px 2px 3px #666666;
+  	-webkit-box-shadow: 2px 2px 3px #666666;
+  	-moz-box-shadow: 2px 2px 3px #666666;
+
+	background: MidnightBlue;
+	list-style: none;
+	position: relative;
+	display: inline-table;
+}
+
+nav ul:after {
+	content: ""; clear: both; display: block;
+}
+
+nav:not([aria-label]) ul li {
+	float: left;
+}
+
+nav ul li:hover {
+	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+	
+	border-style: none; 
+	border-width: 0px;
+	margin: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	background: blue;
+}
+
+nav ul li:hover a {
+	color: #98A69A;
+	margin: 0;
+}
+	
+nav ul li a {
+	font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw;
+	border-style: none; 
+	border-width: 0px;
+	display: block; 
+	padding: 0px 4px 0px 4px;
+	margin: 0px 0px 0px 0px;
+	color: #98A69A; 
+	text-decoration: none;
+}
+
+nav ul li:first-child > a {
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+
+}
+nav ul li:last-child > a {
+  border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+
+}
+
+nav ul ul:not([role]) {
+	background: #98A69A; 
+	border-radius: 0px; 
+	padding: 0px 4px 0px 4px;
+	position: absolute; 
+	margin: 0px 4px 0px 4px;
+	top: 100%;
+	border-style: none; 
+	border-width: 0px;
+}
+
+nav ul ul li:not([role]) {
+	float: none; 
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	margin: 0px 4px 0px 4px;
+	
+	position: relative;
+}
+
+nav ul ul li a {
+	padding: 0px 6px 0px 6px;
+	font-style:normal;
+  	font-family:arial;
+  	font-weight: normal;
+  	text-shadow: 2px 2px 3px #FFFFFF;
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px;
+	margin: 0px 4px 0px 4px;
+	background: DimGrey;
+}	
+
+nav ul ul li a:hover {
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px; 
+	background: Gainsboro;
+}
+
+nav ul ul ul {
+	position: absolute; left: 100%; top:0;
+}
+
+*/
+</style>
+</head>
+<body bgcolor="White" style="background-color:White; font-family:Montserrat, sans-serif; font-size:0.8vw; margin-bottom:10px; width:100%" width="100%">
+<header bgcolor="rgb(0, 138, 173)" height="10%" style="position:sticky; padding-top:0; padding-bottom:0; left:0; top:0; height:10%; background-color:rgb(0, 138, 173); width:95%; box-sizing:border-box" width="95%">
+<table style="width:90%; display:inline-table; border:0; border-style:none; border-collapse:collapse" width="90%">
+<tbody>
+<tr>
+<td style="padding:10px; border:0; width:140px" width="140">
+<div bgcolor="rgb(46, 45, 98)" class="banner" style="display:inline; background-color:rgb(46, 45, 98); padding-top:4px; padding-bottom:4px; max-width:90%; border-width:0; margin:0">
+<img align="left" alt="National Survey of Health &amp; Development" height="auto" src="images/NSHDLogo.png" style="display:inline; max-width:15%; height:auto; padding-top:20px; margin:0 auto; float:left"/>
+<h1 style="color:black; font-size:2vw; display:inline; float:left">  MRC National Survey of Health and Development  </h1>
+<img align="left" alt="UKRI" height="auto" src="images/ukrimrc.png" style="display:inline; max-width:15%; height:auto; padding-top:20px; margin:0 auto; float:left"/>
+</div>
+</td>
+</tr>
+<tr>
+
+</tr>
+</tbody>
+</table>
+</header>
+<div bgcolor="white" class="results" style="font-family:Montserrat, sans-serif; font-size:0.8vw; color:black; margin-top:2%; padding-top:0.6em; padding-right:0.6em; padding-bottom:0.4em; padding-left:0.6em; background-color:white; display:block">
+<div bgcolor="white" class="results" style="font-family:Montserrat, sans-serif; font-size:0.8vw; color:black; margin-top:2%; padding-top:0.6em; padding-right:0.5em; padding-bottom:0.6em; padding-left:0.5em; background-color:white; display:block; border-collapse:separate; margin:2em">
+<!-- <p style="color:maroon;font-size:110%;text-align:center;line-height: 70%;">User Name: i.shah Type: Internal</p> -->
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Variable Metadata</h2>
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Variable</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">retr14_3x</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Field ID</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=9424">9424</a></td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Label</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">What was the reason you retired from your main occupation - left early with good bonus - at age 68 years</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Card	Number</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Form</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Postal questionnaire</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Question</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">9</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Year</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">2014</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Derived Status</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">0</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Later Version</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Units</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Not applicable</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Sensitive</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">0</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Reason Public</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Reason Sensitive</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Notes</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Family, home and retirement questions, Q1-Q15. Similar questions to retr22x, but that was coded as a single variable.</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Linked and Longitudinal Variables</h2>
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:5%" width="5%">Variable</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:30%" width="30%">Description</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Year</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:15%" width="15%">Form</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Question</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Library File</th>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr09">retr09</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - First reason - at age 60-64 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2006-10</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">35</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">OccStatRetCls09</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr14_1x">retr14_1x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - usual retirement age for your job - at age 68 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2014</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr14_2x">retr14_2x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - retired with husband/wife/partner - at age 68 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2014</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr14_4x">retr14_4x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - made redundant - at age 68 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2014</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr14_5x">retr14_5x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - unhappy with job - at age 68 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2014</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr14_6x">retr14_6x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - health reasons - at age 68 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2014</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr14_7x">retr14_7x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - other reason (see retr14_othx for exact reason) - at age 68 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2014</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr14_othx">retr14_othx</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - other reason specified - at age 68 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2014</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retirement14</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr209">retr209</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - Second reason - at age 60-64 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2006-10</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">35</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">OccStatRetCls09</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/retr309">retr309</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was the reason you retired from your main occupation - Third reason - at age 60-64 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2006-10</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">35</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">OccStatRetCls09</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Associated Documents</h2>
+<table class="skip-filter" style="width:55%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="55%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px; border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:17%; word-wrap:break-word; text-align:left" width="17%">Questionnaires</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://skylark.ucl.ac.uk/NSHD/exploring/nshd-questionnaires/" target="_blank">View</a></td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Category Memberships</h2>
+<table class="skip-filter" style="width:55%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="55%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Employment history [23]"/>
+Employment history [23]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			Legacy Category			</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Employment history [5154]"/>
+Employment history [5154]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			This category contains data on the employment history which includes voluntary work and retirement.			</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Other socioeconomic circumstances [24]"/>
+Other socioeconomic circumstances [24]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			Legacy Category			</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Social class [22]"/>
+Social class [22]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			Legacy Category			</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Value Labels</h2>
+<table class="skip-filter" style="width:35%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="35%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Value</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Label</th>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">-9.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Unknown</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">-8.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Not applicable</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">-7.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">No questionnaire</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">3.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Left early with good bonus</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Frequency Distribution For retr14_3x</h2>
+<div class="skip-filter" style="border-collapse:separate; padding-top:0.6em; padding-right:0.5em; padding-bottom:0.6em; padding-left:0.5em; margin:2em">
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:75%; word-wrap:break-word; text-align:left" width="75%"><img alt="Histogram/Bar Chart Plot" src="data:image/png;base64,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/7vBu+++W1u2bJEkbd68WY0bN1bjxo21ZcsWGWOUkZGhzMxM3Xrrrfrtb3/rjPHll1+6nc+ePXuUnZ2tvLw87dmzR/7+/goMDNTmzZuLzEPiqygBADfODf3/Af8UDzzwgN577z1FRUXpvvvuU7Vql/6Odvr06UpMTJQk1atXTxMnTlTVqlXVpk0bhYaGqqCgQLNmzZIkTZs2TYMGDZKvr6/q1q3rdj7+/v4aNGiQ0tLSlJiYqNq1a2vChAmKj4/XvHnzVK1aNS1evPjmLDQA4FerXH0RR15enipXrqytW7dqypQpWrVqle1IPxlfxAEAFYfNL+IoN1fAktS7d29lZmYqJydH8+bNsx0HAIAbplwV8PLly21HAADgpig3H8ICAODXhAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsoYAAALKCAAQCwgAIGAMACChgAAAsq2Q7wS1SYk207AgCgFGyeryngMubp6aljf0mwHQMAUEq31akrb2/vmz5fCriM1atXT3v2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"/></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="center" bgcolor="PowderBlue" colspan="2" style="padding:7px; word-wrap:break-word; text-align:center; margin:2px; background-color:PowderBlue; color:black; border:0">Frequency Table</th>
+</tr>
+<tr>
+</tr>
+<tr>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Value</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Count</th>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">3</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">157</td> <!-- Count -->
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Series Size</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">157</td>
+</tr>
+</table>
+<p style="margin:1vw; padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Statistics relate to plotted values only.</p>
+</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Missing values have been removed and low cell counts excluded</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"></td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+
+
+
+</body>
+</html>

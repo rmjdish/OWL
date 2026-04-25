@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+
+<!-- This is SKYLARK.html a Pebble Template which is extensively used by other subtemplates -->
+<html lang="en" template="true">
+<head>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+<title>Condor</title>
+<meta charset="utf-8" content="text/html;" http-equiv="Content-Type"/>
+<meta content="no-cache" http-equiv="Cache-Control"/>
+<meta content="no-cache" name="Pragma"/>
+<meta content="0" http-equiv="Expires"/>
+<!-- This is the top level Pebble template that will be 'inherited' by other templates -->
+<style type="text/css">/* SWIFT/Skylark CSS file
+Change this to alter the overall appearance of SWIFT/Skylark
+
+This is the top level CSS file.
+
+
+General styles
+
+HTML operators
+space : lhs <space> rhs : all rhs which have lhs as a parent
+> : lhs > rhs : all rhs that are immediate descendants of lhs
++ : lhs + rhs : all rhs that are siblings immediatley following lhs
+~ : lhs ~ rhs : all rhs that are siblings (have same parent as) lhs 
+
+*/
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
+
+/*
+  All the CSS rules with [role] as a predicate are used to style the tree
+  display for categories
+*/
+
+*:not([role]) {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: White; /* body background colour */
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* body font size */
+    margin-bottom: 10px;
+    width: 100%;
+}
+table {
+    
+    width: 90%;
+    display: inline-table;
+    border: 0px;
+    border-style: none;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
+
+h1 {
+    color: black; /* h1 font colour */
+    font-size: 2vw;
+}
+
+p {
+    margin: 1vw;
+}
+
+/* These set of rules govern how category search trees are displayed */
+
+.section {
+    max-width: 90%;
+}
+
+
+body ul[role="tree"] {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* body ul[role="tree"] font size */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul:not([role]) {
+    margin: 1vw;
+}
+/* Rule 1 */
+ul[role="tree"] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9vx; /* ul[role="tree"] font size */
+}
+/* Rule 2 */
+ul[role="tree"] li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Rule 3 */
+[role="treeitem"][aria-expanded="false"] + [role="group"] {
+    display: none;
+}
+/* Rule 4 */
+[role="treeitem"][aria-expanded="true"] + [role="group"] {
+    display: block;
+}
+/* Rule 5 */
+/* File within folder */
+[role="treeitem"].doc::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"].doc::before font size */
+    content: '\1f5c8';
+    display: inline-block;
+    padding-right: 2px;
+    padding-left: 5px;
+    vertical-align: middle;
+}
+/* Rule 6 */
+[role="treeitem"][aria-expanded="false"] > ul {
+    display: none;
+}
+/* Rule 7 */
+[role="treeitem"][aria-expanded="true"] > ul {
+    display: block;
+}
+/* Rule 8 */
+/* Closed Folder */
+[role="treeitem"][aria-expanded="false"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"][aria-expanded="false"] font size */
+    content: '\1f5bf';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 9 */
+/* Folder Open */
+[role="treeitem"][aria-expanded="true"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw;
+    content: '\1f5c1';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 10 -- this one sest the width for tree elements across the page */
+[role="treeitem"],
+[role="treeitem"] span {
+    width: 40em;
+    margin: 0;
+    padding: 0.125em;
+    display: block;
+}
+/* Rule 11 */
+/* disable default keyboard focus styling for treeitems
+   Keyboard focus is styled with the following CSS */
+[role="treeitem"]:focus {
+    outline: 0;
+}
+/* Rule 12 */
+[role="treeitem"][aria-selected="true"] {
+    padding-left: 4px;
+    border-left: 5px solid #005a9c; 
+}
+/* Rule 13 */
+[role="treeitem"].focus,
+[role="treeitem"] span.focus {
+    border-color: black; 
+    background-color: #eee; /* [role="treeitem"] span.focus background colour */
+}
+/* Rule 14 */
+[role="treeitem"].hover,
+[role="treeitem"] span:hover {
+    padding-left: 4px;
+    background-color: #ddd; /* [role="treeitem"] span.hover background colour */
+    border-left: 5px solid #333;
+}
+/* End of tree display rules */
+
+select {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: lightgray; /* select background colour */
+    color: black; /* select font colour */
+    margin-bottom: 1px;
+    word-wrap: break-word;
+    padding: 1px;
+    text-align: left;
+}
+
+option {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: #98A69A; /* option background colour */
+    color: Black; /* option font colour */
+    word-wrap: break-word;
+    text-align: left;	
+}
+
+input {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* input font size */
+    background-color: Linen; /* input background colour */
+    color: MidnightBlue; /* input font colour */
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    border: 0px solid Bisque;	
+}
+
+
+header {
+    position: sticky;
+    padding-top:0px;
+    padding-bottom:0px;
+    left: 0px;
+    top: 0px;
+    height: 10%;
+    background-color: rgb(0,138,173); /* header default background colour */
+    width: 95%;
+    box-sizing: border-box;    
+}
+
+footer {
+    background-color: rgb(0,138,173);
+}
+
+/*
+   The banner class is used to style the top of the SWIFT page
+   with the logos and web site title
+*/
+
+.banner {
+    display: inline;
+    background-color: rgb(46,45,98); /* banner background colour */
+    padding-top:4px;
+    padding-bottom:4px;
+    max-width: 90%;
+    border-width: 0px;
+    margin: 0;
+}
+
+/* The next selector applies to h1 within a div with class=banner */
+.banner > h1 {
+    display: inline;
+    font-size: 2vw; /* banner font size */
+    color: black; /* banner font colour */
+    float: left;
+}
+.banner img {
+    display: inline;
+    max-width: 15%;
+    height: auto;
+    padding-top: 20px;
+    margin: 0 auto;
+    float: left;
+}
+
+
+
+/* The results class is used to display output from the various SWIFT functions */
+/* best to wrap elements up in a <div class="results">  ... </div>  */
+
+.results {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* results font size */
+    color: black;  /* results font colour */
+    margin-top: 2%; 
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: white; /* results background colour */
+    display: block;
+}
+/* A division directly inheriting from results */
+.results div {
+    border-collapse: separate;
+    padding-top: 0.6em;
+    padding-right: 0.5em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    margin: 2em;
+}
+
+.results  table {
+    width: 80%;
+    table-layout: fixed;
+    /* border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px; */
+    border-collapse: collapse; 
+    border: none;  
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    margin: 2px;
+}
+
+.results table tr:nth-child(odd) {
+    background-color: rgb(230,230,230); /* results table odd rows background colour */
+}
+.results table tr:nth-child(even) {
+    background-color: white; /* results table even rows background colour */
+
+}
+/*
+.results table th {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #E7BB96; 
+    color: #DCD9CB;
+    border: none;
+}
+*/
+.results table tr:first-child {
+    border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+
+}
+
+.results table tr:last-child  {
+    border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+
+}
+
+/* A table heading element directly following a new row */
+.results tr th {
+    word-wrap: break-word;
+    padding: 7px; 
+    text-align: left;
+    margin: 2px;
+    background-color:  PowderBlue; /* results tr th background colour */
+    color: black; /* results tr th font colour */
+    border: 0px;
+}
+/* A table cell element directly following a new row */
+.results tr td {
+    word-wrap: break-word;
+    padding: 5px;
+    text-align: left;
+    border: 0px solid #98A69A; 
+}
+
+
+.results  h1,h2,p,ul:not([role]),li:not(.doc),form {
+    padding-top: 1px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    padding-left: 5px;
+}
+
+/*  End of Results Class */
+
+/* Sticky form header */
+
+.form-header {
+    position: sticky;
+    width: fit-content;
+    margin-left: auto; /* Move to the right */
+    margin-right: 0; /* Optional: reset right margin */
+    background-color: rgba(255, 255, 255, 1); /* Solid white background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional shadow for effect */
+    z-index: 1000; /* Ensure it is above other content */      
+    top: 25%; /* How far from top of page? */
+    left: 50%;
+    padding: 10px 16px;
+}
+
+/* Table Filter */
+.ddtf-filtered {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.5vw;
+    color: black;
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /*  ddtf-filtered background colour */
+    display: block;
+}
+.ddtf-filtered select {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #4F3A35; /* ddtf-filtered select background colour */
+    color: #98A69A; /* ddtf-filtered select font colour */
+    border: 0px solid #98A69A;
+}
+
+.ddtf-processed {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* ddtf-processed font size */
+    color: black; /* ddtf-processed font colour */
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /* ddtf-processed background colour */
+    display: block;
+}
+/* End of Table Filter Class */
+
+.tab5 {
+    /* background-color: lightblue; */
+    text-align: left;
+    margin: 0px;
+    padding-top: 10px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.tab5 #narrow th, td {
+    border: 0px;
+    width: 80px;
+}
+
+.tab5 #medium th, td {
+    border: 0px;
+    width: 140px;
+}
+
+.tab5 #wide {
+    border: 1px;
+    width: 500px;
+}
+
+#menu-bar {
+    width: 95%;
+    margin: 0; /* Use padding instead */
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    height: 3em;
+    line-height: 100%;
+    /* Take out all the curvy borders */
+    border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px;
+
+    box-shadow: 2px 2px 3px #666666;
+    -webkit-box-shadow: 2px 2px 3px #666666;
+    -moz-box-shadow: 2px 2px 3px #666666;
+    background: MidnightBlue; /* menu-bar background colour */
+    /* background: #0B736F;  dark green menu bar */
+    /* background: #424242; very dark brown menu bar*/
+    border: double 1px #32323f;
+    position:relative;
+    z-index:999; /* Bring to the front; -1 is to the back */
+}
+#menu-bar li {   /* Level 1 menu item; careful this is the word not the box */
+    padding-top: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    padding-right: 0em;
+    float: left;
+    position: relative;
+    top: 0em;
+    left: 0em;
+    list-style: none;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar a { /* The actual links within menu items */
+    font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw; /* menu-bar a font size */
+    color: #E7E5E5; /* menu-bar a font colour */
+    text-decoration: none;
+    display: block;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    margin: 0.2em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    text-shadow: 2px 2px 3px #000000;
+}
+#menu-bar ul li ul li a {  /* A Level 2 submenu item */
+    position: relative;
+    font-size: 0.8vw;  
+    top: 0.5em;
+    left: 0.5em;
+    padding-left: 0.1em;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar .active a, #menu-bar li:hover > a { /* A link item that is in focus */
+    /* background: ochre; */
+    color: #424242; /* very dark grey */
+    background: linear-gradient(top,  #EBEBEB,  #A1A1A1); /* grey gradient */
+    background: -ms-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    background: -webkit-gradient(linear, left top, left bottom, from(#EBEBEB), to(#A1A1A1));
+    background: -moz-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    color: orange;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    text-shadow: 2px 2px 3px #FFFFFF;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+
+#menu-bar ul a:hover {
+    background: orange; /* set to orange but can't see it */
+    /* The next set of backgrounds set the sub-menu focus background  */
+    background: linear-gradient(top,  orange,  darkorange);
+    background: -ms-linear-gradient(top,  orange,  darkorange);
+    background: -webkit-gradient(linear, left top, left bottom, from(orange), to(darkorange));
+    background: -moz-linear-gradient(top,  orange,  darkorange);
+    color: black;
+    /* Curvy Borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+#menu-bar li:not([role="treeitem"]):hover > ul {
+    display: block;
+}
+
+#menu-bar ul { /* Key to moving menu items on page */
+    background: #DDDDDD;
+    background: linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -ms-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#CFCFCF));
+    background: -moz-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    display: none;  /* This negates the transition property below what if we use block instead? */
+    margin: 0.6em;
+    padding-top: 0.6em;
+    padding-right: 0.8em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    width: 12em;
+    position: relative; /* was absolute changing to relative */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: solid 1px #B4B4B4;
+    /* Curvy Border */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    -webkit-box-shadow: 2px 2px 3px #222222;
+    -moz-box-shadow: 2px 2px 3px #222222;
+    box-shadow: 2px 2px 3px #222222;
+
+}
+#menu-bar ul li {
+    float: none;
+    margin: 0;
+    padding: 0;
+
+}
+#menu-bar ul a { /* the text indicating a level 1 link */
+    padding-top: 0.6em;
+    padding-right: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    /* Original Setting color:#424242; */
+    color:#424242; /* very dark grey */
+    font-size:0.8vw;
+    font-style: normal;
+    font-family: Montserrat, sans-serif;
+    font-weight: normal;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+
+#menu-bar ul li:hover a, #menu-bar li:hover li a {
+    background: none; /* was none - background to drop down menu items */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: none;
+    color: #ff9933; /* orange */
+    -box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+}
+
+#menu-bar ul li:first-child > a {
+    /*
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+   */
+}
+
+#menu-bar ul li:last-child > a {
+    /*
+	border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+   */
+}
+
+#menu-bar:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+#menu-bar form {
+    display: inline-block;
+    /* height: 1em; */
+    line-height: 100%;
+    /* width: 10em; */
+    padding: 0;
+    margin: 0;
+}
+/* This is the Search Button */
+#menu-bar div > input {
+    box-sizing: border-box;
+    border: 0 none;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-image: url("search.ico");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-color: Bisque;
+    max-width: 100%;
+    min-width: 5px; 
+    height: auto; 
+    margin: 0;
+    text-align: center;
+    cursor: pointer;
+} 
+
+#menu-bar div > input:hover { 
+    background-image: url("active-search.png");
+    background-color: grey;
+}
+
+/* This is the Search Text Box - > is immediate descendant operator */
+#menu-bar li > input {
+    padding: 0 0 0 0;
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    vertical-align: text-bottom;
+    border: 0 none;
+    max-width: 100%;
+    min-width: 15em;
+    height: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0.6em;
+    color: darkblue;
+    outline: none;
+    background: Bisque;
+    box-sizing: border-box;
+    transition: all 0.1s;
+}
+
+#menu-bar {
+    display: inline-block;
+}
+
+html[xmlns] #menu-bar {
+    display: block;
+}
+
+* html #menu-bar  {
+    height: 1%;
+}
+
+
+
+/* Form Elements for SWIFT */
+
+/* Rounded Corner for Buttons */
+.tb5 {
+    border:2px solid #456879;
+    border-radius:10px;
+}
+
+/* Rounded Corners for Text Area */
+.ta5 {
+    border: 2px solid #765942;
+    border-radius: 10px;
+    height: 60px;
+    width: 230px;
+}
+
+/* More rounded buttons for a form */
+
+.testbutton {
+    font-family: arial;
+    color: black;
+    font-size: 0.8vw;
+    text-shadow: 1px 1px 0px #7CACDE;
+    box-shadow: 1px 1px 1px #BEE2F9;
+    padding: 4px 2px 4px 2px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    border: 1px solid #3866A3;
+    background: #F0F0F0; /* F0F0F0 is light grey */
+}
+
+.testbutton:hover {
+    color: #FFFFFF; /* FFFFFF is #98A69A */
+    background: orange;
+}
+
+/* Stuff for Cookie Banner at bottom of welcome page */
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+        background: #DDDDDD;
+        color: black;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 5px;
+}
+    
+.btn:hover {
+    background: orange;
+    transform: translateY(-2px);
+}
+    
+.btn-secondary {
+    background: #e2e8f0;
+    color: black;
+}
+    
+.btn-secondary:hover {
+    background: orange;
+}
+    
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(0,138,173);
+    color: black;
+    padding: 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.5s ease-out;
+}
+    
+.cookie-banner.active {
+    transform: translateY(0);
+}
+
+.cookie-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cookie-text {
+    flex: 1;
+    min-width: 300px;
+    padding-right: 20px;
+}
+
+.cookie-text h3 {
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.cookie-text p {
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.cookie-text a {
+    color: sandybrown;
+}
+.cookie-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cookie-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 5px;
+}
+
+.cookie-btn.accept {
+    background: lawngreen;
+    color: black;
+}
+
+.cookie-btn.accept:hover {
+    background: orange;
+}
+
+.cookie-btn.reject {
+    background: crimson;
+    color: white;
+    border: 1px solid #4a5568;
+}
+
+.cookie-btn.reject:hover {
+    background: orange;
+    color: black;
+}
+
+.link {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cookie-text {
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* End of Cookie Stuff */
+
+/* Attempt at simpler Drop Down Menu Items */
+
+/* 
+    An other menu style based on CSS3 - not sure how this will work but here goes
+*/
+
+/* Comment all navs out for now
+
+nav ul ul {
+	display: none;
+}
+
+nav ul li:hover > ul {
+	display: block;
+}
+
+nav ul:not([role]) {
+	width: 40%;
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 2px 0px 2px;
+	margin: 0px 4px 0px 4px; 
+
+
+  	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+  	
+  	box-shadow: 2px 2px 3px #666666;
+  	-webkit-box-shadow: 2px 2px 3px #666666;
+  	-moz-box-shadow: 2px 2px 3px #666666;
+
+	background: MidnightBlue;
+	list-style: none;
+	position: relative;
+	display: inline-table;
+}
+
+nav ul:after {
+	content: ""; clear: both; display: block;
+}
+
+nav:not([aria-label]) ul li {
+	float: left;
+}
+
+nav ul li:hover {
+	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+	
+	border-style: none; 
+	border-width: 0px;
+	margin: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	background: blue;
+}
+
+nav ul li:hover a {
+	color: #98A69A;
+	margin: 0;
+}
+	
+nav ul li a {
+	font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw;
+	border-style: none; 
+	border-width: 0px;
+	display: block; 
+	padding: 0px 4px 0px 4px;
+	margin: 0px 0px 0px 0px;
+	color: #98A69A; 
+	text-decoration: none;
+}
+
+nav ul li:first-child > a {
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+
+}
+nav ul li:last-child > a {
+  border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+
+}
+
+nav ul ul:not([role]) {
+	background: #98A69A; 
+	border-radius: 0px; 
+	padding: 0px 4px 0px 4px;
+	position: absolute; 
+	margin: 0px 4px 0px 4px;
+	top: 100%;
+	border-style: none; 
+	border-width: 0px;
+}
+
+nav ul ul li:not([role]) {
+	float: none; 
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	margin: 0px 4px 0px 4px;
+	
+	position: relative;
+}
+
+nav ul ul li a {
+	padding: 0px 6px 0px 6px;
+	font-style:normal;
+  	font-family:arial;
+  	font-weight: normal;
+  	text-shadow: 2px 2px 3px #FFFFFF;
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px;
+	margin: 0px 4px 0px 4px;
+	background: DimGrey;
+}	
+
+nav ul ul li a:hover {
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px; 
+	background: Gainsboro;
+}
+
+nav ul ul ul {
+	position: absolute; left: 100%; top:0;
+}
+
+*/
+</style>
+<script src="js/treeview-navigation.js" type="text/javascript"></script>
+<script src="js/treeitem.js" type="text/javascript"></script>
+<script src="js/treeitemClick.js" type="text/javascript"></script>
+<script src="js/FormValidation.js"></script>
+<script src="js/Help.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="js/ddtf.js"></script>
+<!-- 
+	 This is Google's version 3 tags.  Never made it work properly
+	 <script src='https://www.google.com/recaptcha/api.js?render=6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV'></script>
+	 -->
+<!--  Make sure to use the right Site key here
+
+	       kiwidev = 6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV
+	       skylark = 6LdF3XgUAAAAAACAPmW7swE2bLNfxQlPvcu4JM2H
+
+	       reCAPTCHA version 2 keys
+
+	       kiwidev = 6LeBf3kUAAAAADU7T5AROQx9hj8LLJYke6i58Fqd
+	       kiwi	= 6LcohasUAAAAAPVpqmaGF6Mkag3vmJKhHutoPKEa
+	       version 2 script reference is below this
+	   -->
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<!--  this is version 3 which doesn't work
+	       <script src='https://www.google.com/recaptcha/api.js?render=6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV'></script>
+	       -->
+<style type="text/css">/* SWIFT/Skylark CSS file
+Change this to alter the overall appearance of SWIFT/Skylark
+
+This is the top level CSS file.
+
+
+General styles
+
+HTML operators
+space : lhs <space> rhs : all rhs which have lhs as a parent
+> : lhs > rhs : all rhs that are immediate descendants of lhs
++ : lhs + rhs : all rhs that are siblings immediatley following lhs
+~ : lhs ~ rhs : all rhs that are siblings (have same parent as) lhs 
+
+*/
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
+
+/*
+  All the CSS rules with [role] as a predicate are used to style the tree
+  display for categories
+*/
+
+*:not([role]) {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: White; /* body background colour */
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* body font size */
+    margin-bottom: 10px;
+    width: 100%;
+}
+table {
+    
+    width: 90%;
+    display: inline-table;
+    border: 0px;
+    border-style: none;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
+
+h1 {
+    color: black; /* h1 font colour */
+    font-size: 2vw;
+}
+
+p {
+    margin: 1vw;
+}
+
+/* These set of rules govern how category search trees are displayed */
+
+.section {
+    max-width: 90%;
+}
+
+
+body ul[role="tree"] {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* body ul[role="tree"] font size */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul:not([role]) {
+    margin: 1vw;
+}
+/* Rule 1 */
+ul[role="tree"] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9vx; /* ul[role="tree"] font size */
+}
+/* Rule 2 */
+ul[role="tree"] li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Rule 3 */
+[role="treeitem"][aria-expanded="false"] + [role="group"] {
+    display: none;
+}
+/* Rule 4 */
+[role="treeitem"][aria-expanded="true"] + [role="group"] {
+    display: block;
+}
+/* Rule 5 */
+/* File within folder */
+[role="treeitem"].doc::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"].doc::before font size */
+    content: '\1f5c8';
+    display: inline-block;
+    padding-right: 2px;
+    padding-left: 5px;
+    vertical-align: middle;
+}
+/* Rule 6 */
+[role="treeitem"][aria-expanded="false"] > ul {
+    display: none;
+}
+/* Rule 7 */
+[role="treeitem"][aria-expanded="true"] > ul {
+    display: block;
+}
+/* Rule 8 */
+/* Closed Folder */
+[role="treeitem"][aria-expanded="false"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"][aria-expanded="false"] font size */
+    content: '\1f5bf';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 9 */
+/* Folder Open */
+[role="treeitem"][aria-expanded="true"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw;
+    content: '\1f5c1';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 10 -- this one sest the width for tree elements across the page */
+[role="treeitem"],
+[role="treeitem"] span {
+    width: 40em;
+    margin: 0;
+    padding: 0.125em;
+    display: block;
+}
+/* Rule 11 */
+/* disable default keyboard focus styling for treeitems
+   Keyboard focus is styled with the following CSS */
+[role="treeitem"]:focus {
+    outline: 0;
+}
+/* Rule 12 */
+[role="treeitem"][aria-selected="true"] {
+    padding-left: 4px;
+    border-left: 5px solid #005a9c; 
+}
+/* Rule 13 */
+[role="treeitem"].focus,
+[role="treeitem"] span.focus {
+    border-color: black; 
+    background-color: #eee; /* [role="treeitem"] span.focus background colour */
+}
+/* Rule 14 */
+[role="treeitem"].hover,
+[role="treeitem"] span:hover {
+    padding-left: 4px;
+    background-color: #ddd; /* [role="treeitem"] span.hover background colour */
+    border-left: 5px solid #333;
+}
+/* End of tree display rules */
+
+select {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: lightgray; /* select background colour */
+    color: black; /* select font colour */
+    margin-bottom: 1px;
+    word-wrap: break-word;
+    padding: 1px;
+    text-align: left;
+}
+
+option {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: #98A69A; /* option background colour */
+    color: Black; /* option font colour */
+    word-wrap: break-word;
+    text-align: left;	
+}
+
+input {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* input font size */
+    background-color: Linen; /* input background colour */
+    color: MidnightBlue; /* input font colour */
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    border: 0px solid Bisque;	
+}
+
+
+header {
+    position: sticky;
+    padding-top:0px;
+    padding-bottom:0px;
+    left: 0px;
+    top: 0px;
+    height: 10%;
+    background-color: rgb(0,138,173); /* header default background colour */
+    width: 95%;
+    box-sizing: border-box;    
+}
+
+footer {
+    background-color: rgb(0,138,173);
+}
+
+/*
+   The banner class is used to style the top of the SWIFT page
+   with the logos and web site title
+*/
+
+.banner {
+    display: inline;
+    background-color: rgb(46,45,98); /* banner background colour */
+    padding-top:4px;
+    padding-bottom:4px;
+    max-width: 90%;
+    border-width: 0px;
+    margin: 0;
+}
+
+/* The next selector applies to h1 within a div with class=banner */
+.banner > h1 {
+    display: inline;
+    font-size: 2vw; /* banner font size */
+    color: black; /* banner font colour */
+    float: left;
+}
+.banner img {
+    display: inline;
+    max-width: 15%;
+    height: auto;
+    padding-top: 20px;
+    margin: 0 auto;
+    float: left;
+}
+
+
+
+/* The results class is used to display output from the various SWIFT functions */
+/* best to wrap elements up in a <div class="results">  ... </div>  */
+
+.results {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* results font size */
+    color: black;  /* results font colour */
+    margin-top: 2%; 
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: white; /* results background colour */
+    display: block;
+}
+/* A division directly inheriting from results */
+.results div {
+    border-collapse: separate;
+    padding-top: 0.6em;
+    padding-right: 0.5em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    margin: 2em;
+}
+
+.results  table {
+    width: 80%;
+    table-layout: fixed;
+    /* border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px; */
+    border-collapse: collapse; 
+    border: none;  
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    margin: 2px;
+}
+
+.results table tr:nth-child(odd) {
+    background-color: rgb(230,230,230); /* results table odd rows background colour */
+}
+.results table tr:nth-child(even) {
+    background-color: white; /* results table even rows background colour */
+
+}
+/*
+.results table th {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #E7BB96; 
+    color: #DCD9CB;
+    border: none;
+}
+*/
+.results table tr:first-child {
+    border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+
+}
+
+.results table tr:last-child  {
+    border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+
+}
+
+/* A table heading element directly following a new row */
+.results tr th {
+    word-wrap: break-word;
+    padding: 7px; 
+    text-align: left;
+    margin: 2px;
+    background-color:  PowderBlue; /* results tr th background colour */
+    color: black; /* results tr th font colour */
+    border: 0px;
+}
+/* A table cell element directly following a new row */
+.results tr td {
+    word-wrap: break-word;
+    padding: 5px;
+    text-align: left;
+    border: 0px solid #98A69A; 
+}
+
+
+.results  h1,h2,p,ul:not([role]),li:not(.doc),form {
+    padding-top: 1px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    padding-left: 5px;
+}
+
+/*  End of Results Class */
+
+/* Sticky form header */
+
+.form-header {
+    position: sticky;
+    width: fit-content;
+    margin-left: auto; /* Move to the right */
+    margin-right: 0; /* Optional: reset right margin */
+    background-color: rgba(255, 255, 255, 1); /* Solid white background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional shadow for effect */
+    z-index: 1000; /* Ensure it is above other content */      
+    top: 25%; /* How far from top of page? */
+    left: 50%;
+    padding: 10px 16px;
+}
+
+/* Table Filter */
+.ddtf-filtered {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.5vw;
+    color: black;
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /*  ddtf-filtered background colour */
+    display: block;
+}
+.ddtf-filtered select {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #4F3A35; /* ddtf-filtered select background colour */
+    color: #98A69A; /* ddtf-filtered select font colour */
+    border: 0px solid #98A69A;
+}
+
+.ddtf-processed {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* ddtf-processed font size */
+    color: black; /* ddtf-processed font colour */
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /* ddtf-processed background colour */
+    display: block;
+}
+/* End of Table Filter Class */
+
+.tab5 {
+    /* background-color: lightblue; */
+    text-align: left;
+    margin: 0px;
+    padding-top: 10px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.tab5 #narrow th, td {
+    border: 0px;
+    width: 80px;
+}
+
+.tab5 #medium th, td {
+    border: 0px;
+    width: 140px;
+}
+
+.tab5 #wide {
+    border: 1px;
+    width: 500px;
+}
+
+#menu-bar {
+    width: 95%;
+    margin: 0; /* Use padding instead */
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    height: 3em;
+    line-height: 100%;
+    /* Take out all the curvy borders */
+    border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px;
+
+    box-shadow: 2px 2px 3px #666666;
+    -webkit-box-shadow: 2px 2px 3px #666666;
+    -moz-box-shadow: 2px 2px 3px #666666;
+    background: MidnightBlue; /* menu-bar background colour */
+    /* background: #0B736F;  dark green menu bar */
+    /* background: #424242; very dark brown menu bar*/
+    border: double 1px #32323f;
+    position:relative;
+    z-index:999; /* Bring to the front; -1 is to the back */
+}
+#menu-bar li {   /* Level 1 menu item; careful this is the word not the box */
+    padding-top: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    padding-right: 0em;
+    float: left;
+    position: relative;
+    top: 0em;
+    left: 0em;
+    list-style: none;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar a { /* The actual links within menu items */
+    font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw; /* menu-bar a font size */
+    color: #E7E5E5; /* menu-bar a font colour */
+    text-decoration: none;
+    display: block;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    margin: 0.2em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    text-shadow: 2px 2px 3px #000000;
+}
+#menu-bar ul li ul li a {  /* A Level 2 submenu item */
+    position: relative;
+    font-size: 0.8vw;  
+    top: 0.5em;
+    left: 0.5em;
+    padding-left: 0.1em;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar .active a, #menu-bar li:hover > a { /* A link item that is in focus */
+    /* background: ochre; */
+    color: #424242 !important; /* very dark grey */
+    background: linear-gradient(top,  #EBEBEB,  #A1A1A1); /* grey gradient */
+    background: -ms-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    background: -webkit-gradient(linear, left top, left bottom, from(#EBEBEB), to(#A1A1A1));
+    background: -moz-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    color: orange;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    text-shadow: 2px 2px 3px #FFFFFF;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+
+#menu-bar ul a:hover {
+    background: orange; /* set to orange but can't see it */
+    /* The next set of backgrounds set the sub-menu focus background  */
+    background: linear-gradient(top,  orange,  darkorange) !important;
+    background: -ms-linear-gradient(top,  orange,  darkorange) !important;
+    background: -webkit-gradient(linear, left top, left bottom, from(orange), to(darkorange)) !important;
+    background: -moz-linear-gradient(top,  orange,  darkorange) !important;
+    color: black !important;
+    /* Curvy Borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+#menu-bar li:not([role="treeitem"]):hover > ul {
+    display: block;
+}
+
+#menu-bar ul { /* Key to moving menu items on page */
+    background: #DDDDDD;
+    background: linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -ms-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#CFCFCF));
+    background: -moz-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    display: none;  /* This negates the transition property below what if we use block instead? */
+    margin: 0.6em;
+    padding-top: 0.6em;
+    padding-right: 0.8em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    width: 12em;
+    position: relative; /* was absolute changing to relative */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: solid 1px #B4B4B4;
+    /* Curvy Border */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    -webkit-box-shadow: 2px 2px 3px #222222;
+    -moz-box-shadow: 2px 2px 3px #222222;
+    box-shadow: 2px 2px 3px #222222;
+
+}
+#menu-bar ul li {
+    float: none;
+    margin: 0;
+    padding: 0;
+
+}
+#menu-bar ul a { /* the text indicating a level 1 link */
+    padding-top: 0.6em;
+    padding-right: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    /* Original Setting color:#424242 !important; */
+    color:#424242 !important; /* very dark grey */
+    font-size:0.8vw;
+    font-style: normal;
+    font-family: Montserrat, sans-serif;
+    font-weight: normal;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+
+#menu-bar ul li:hover a, #menu-bar li:hover li a {
+    background: none; /* was none - background to drop down menu items */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: none;
+    color: #ff9933; /* orange */
+    -box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+}
+
+#menu-bar ul li:first-child > a {
+    /*
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+   */
+}
+
+#menu-bar ul li:last-child > a {
+    /*
+	border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+   */
+}
+
+#menu-bar:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+#menu-bar form {
+    display: inline-block;
+    /* height: 1em; */
+    line-height: 100%;
+    /* width: 10em; */
+    padding: 0;
+    margin: 0;
+}
+/* This is the Search Button */
+#menu-bar div > input {
+    box-sizing: border-box;
+    border: 0 none;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-image: url("search.ico");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-color: Bisque;
+    max-width: 100%;
+    min-width: 5px; 
+    height: auto; 
+    margin: 0;
+    text-align: center;
+    cursor: pointer;
+} 
+
+#menu-bar div > input:hover { 
+    background-image: url("active-search.png");
+    background-color: grey;
+}
+
+/* This is the Search Text Box - > is immediate descendant operator */
+#menu-bar li > input {
+    padding: 0 0 0 0;
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    vertical-align: text-bottom;
+    border: 0 none;
+    max-width: 100%;
+    min-width: 15em;
+    height: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0.6em;
+    color: darkblue;
+    outline: none;
+    background: Bisque;
+    box-sizing: border-box;
+    transition: all 0.1s;
+}
+
+#menu-bar {
+    display: inline-block;
+}
+
+html[xmlns] #menu-bar {
+    display: block;
+}
+
+* html #menu-bar  {
+    height: 1%;
+}
+
+
+
+/* Form Elements for SWIFT */
+
+/* Rounded Corner for Buttons */
+.tb5 {
+    border:2px solid #456879;
+    border-radius:10px;
+}
+
+/* Rounded Corners for Text Area */
+.ta5 {
+    border: 2px solid #765942;
+    border-radius: 10px;
+    height: 60px;
+    width: 230px;
+}
+
+/* More rounded buttons for a form */
+
+.testbutton {
+    font-family: arial;
+    color: black !important;
+    font-size: 0.8vw;
+    text-shadow: 1px 1px 0px #7CACDE;
+    box-shadow: 1px 1px 1px #BEE2F9;
+    padding: 4px 2px 4px 2px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    border: 1px solid #3866A3;
+    background: #F0F0F0; /* F0F0F0 is light grey */
+}
+
+.testbutton:hover {
+    color: #FFFFFF !important; /* FFFFFF is #98A69A */
+    background: orange;
+}
+
+/* Stuff for Cookie Banner at bottom of welcome page */
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+        background: #DDDDDD;
+        color: black;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 5px;
+}
+    
+.btn:hover {
+    background: orange;
+    transform: translateY(-2px);
+}
+    
+.btn-secondary {
+    background: #e2e8f0;
+    color: black;
+}
+    
+.btn-secondary:hover {
+    background: orange;
+}
+    
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(0,138,173);
+    color: black;
+    padding: 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.5s ease-out;
+}
+    
+.cookie-banner.active {
+    transform: translateY(0);
+}
+
+.cookie-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cookie-text {
+    flex: 1;
+    min-width: 300px;
+    padding-right: 20px;
+}
+
+.cookie-text h3 {
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.cookie-text p {
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.cookie-text a {
+    color: sandybrown;
+}
+.cookie-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cookie-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 5px;
+}
+
+.cookie-btn.accept {
+    background: lawngreen;
+    color: black;
+}
+
+.cookie-btn.accept:hover {
+    background: orange;
+}
+
+.cookie-btn.reject {
+    background: crimson;
+    color: white;
+    border: 1px solid #4a5568;
+}
+
+.cookie-btn.reject:hover {
+    background: orange;
+    color: black;
+}
+
+.link {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cookie-text {
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* End of Cookie Stuff */
+
+/* Attempt at simpler Drop Down Menu Items */
+
+/* 
+    An other menu style based on CSS3 - not sure how this will work but here goes
+*/
+
+/* Comment all navs out for now
+
+nav ul ul {
+	display: none;
+}
+
+nav ul li:hover > ul {
+	display: block;
+}
+
+nav ul:not([role]) {
+	width: 40%;
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 2px 0px 2px;
+	margin: 0px 4px 0px 4px; 
+
+
+  	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+  	
+  	box-shadow: 2px 2px 3px #666666;
+  	-webkit-box-shadow: 2px 2px 3px #666666;
+  	-moz-box-shadow: 2px 2px 3px #666666;
+
+	background: MidnightBlue;
+	list-style: none;
+	position: relative;
+	display: inline-table;
+}
+
+nav ul:after {
+	content: ""; clear: both; display: block;
+}
+
+nav:not([aria-label]) ul li {
+	float: left;
+}
+
+nav ul li:hover {
+	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+	
+	border-style: none; 
+	border-width: 0px;
+	margin: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	background: blue;
+}
+
+nav ul li:hover a {
+	color: #98A69A;
+	margin: 0;
+}
+	
+nav ul li a {
+	font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw;
+	border-style: none; 
+	border-width: 0px;
+	display: block; 
+	padding: 0px 4px 0px 4px;
+	margin: 0px 0px 0px 0px;
+	color: #98A69A; 
+	text-decoration: none;
+}
+
+nav ul li:first-child > a {
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+
+}
+nav ul li:last-child > a {
+  border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+
+}
+
+nav ul ul:not([role]) {
+	background: #98A69A; 
+	border-radius: 0px; 
+	padding: 0px 4px 0px 4px;
+	position: absolute; 
+	margin: 0px 4px 0px 4px;
+	top: 100%;
+	border-style: none; 
+	border-width: 0px;
+}
+
+nav ul ul li:not([role]) {
+	float: none; 
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	margin: 0px 4px 0px 4px;
+	
+	position: relative;
+}
+
+nav ul ul li a {
+	padding: 0px 6px 0px 6px;
+	font-style:normal;
+  	font-family:arial;
+  	font-weight: normal;
+  	text-shadow: 2px 2px 3px #FFFFFF;
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px;
+	margin: 0px 4px 0px 4px;
+	background: DimGrey;
+}	
+
+nav ul ul li a:hover {
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px; 
+	background: Gainsboro;
+}
+
+nav ul ul ul {
+	position: absolute; left: 100%; top:0;
+}
+
+*/
+</style>
+</head>
+<body bgcolor="White" style="background-color:White; font-family:Montserrat, sans-serif; font-size:0.8vw; margin-bottom:10px; width:100%" width="100%">
+<header bgcolor="rgb(0, 138, 173)" height="10%" style="position:sticky; padding-top:0; padding-bottom:0; left:0; top:0; height:10%; background-color:rgb(0, 138, 173); width:95%; box-sizing:border-box" width="95%">
+<table style="width:90%; display:inline-table; border:0; border-style:none; border-collapse:collapse" width="90%">
+<tbody>
+<tr>
+<td style="padding:10px; border:0; width:140px" width="140">
+<div bgcolor="rgb(46, 45, 98)" class="banner" style="display:inline; background-color:rgb(46, 45, 98); padding-top:4px; padding-bottom:4px; max-width:90%; border-width:0; margin:0">
+<img align="left" alt="National Survey of Health &amp; Development" height="auto" src="images/NSHDLogo.png" style="display:inline; max-width:15%; height:auto; padding-top:20px; margin:0 auto; float:left"/>
+<h1 style="color:black; font-size:2vw; display:inline; float:left">  MRC National Survey of Health and Development  </h1>
+<img align="left" alt="UKRI" height="auto" src="images/ukrimrc.png" style="display:inline; max-width:15%; height:auto; padding-top:20px; margin:0 auto; float:left"/>
+</div>
+</td>
+</tr>
+<tr>
+
+</tr>
+</tbody>
+</table>
+</header>
+<div bgcolor="white" class="results" style="font-family:Montserrat, sans-serif; font-size:0.8vw; color:black; margin-top:2%; padding-top:0.6em; padding-right:0.6em; padding-bottom:0.4em; padding-left:0.6em; background-color:white; display:block">
+<div bgcolor="white" class="results" style="font-family:Montserrat, sans-serif; font-size:0.8vw; color:black; margin-top:2%; padding-top:0.6em; padding-right:0.5em; padding-bottom:0.6em; padding-left:0.5em; background-color:white; display:block; border-collapse:separate; margin:2em">
+<!-- <p style="color:maroon;font-size:110%;text-align:center;line-height: 70%;">User Name: i.shah Type: Internal</p> -->
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Variable Metadata</h2>
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Variable</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">lhib89</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Field ID</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=7603">7603</a></td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Label</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">How old were you when you last had high blood pressure - at age 43 years</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Card	Number</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">de89d</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Form</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">A - Main questionnaire</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Question</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">21</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Year</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">1989</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Derived Status</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">0</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Later Version</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Units</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">years</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Sensitive</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">1</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Reason Public</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Reason Sensitive</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Contains age information.</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Notes</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Linked and Longitudinal Variables</h2>
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:5%" width="5%">Variable</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:30%" width="30%">Description</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Year</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:15%" width="15%">Form</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Question</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Library File</th>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/bage">bage</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">How old were you then (blood pressure problem) - at age 53 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">1999</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">A - Main CAPI questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">30(d)</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">capi99a</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/bhib89">bhib89</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">How old were you when you first had high blood pressure - at age 43 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">1989</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">A - Main questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">21</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">de89d</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dbpp125x">dbpp125x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Since the age of 60 years, have you ever been told by a doctor that you have the medical condition: High blood pressure (hypertension) - at age 79 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2025</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Postal2025</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dbpp1y25x">dbpp1y25x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Since the age of 60 years, when were you told that you had high blood pressure (hypertension) - Year - at age 76 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2025</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">9</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Postal2025</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dbppa22x">dbppa22x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">If you cannot remember the month and year of blood pressure problem, please give your age - at age 76 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2022</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">65</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Postal22</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dbppm22x">dbppm22x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">When were you first told that you had blood pressure problems (month) - at age 76 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2022</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">65</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Postal22</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dbppy22x">dbppy22x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">When were you first told that you had blood pressure problems (year) - at age 76 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2022</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Postal questionnaire</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">65</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Postal22</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dhiba15x">dhiba15x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">If you cannot remember the month and year please give your age - at age 69 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2015</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Home visit</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">4(d)</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">MedicalConditions15</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dhiba215x">dhiba215x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">What was your age when you were diagnosed with blood pressure problems - at age 69 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2015</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Home visit</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">4(d)</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">MedicalConditions15</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dhibm15x">dhibm15x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Month when diagnosed with blood pressure problems - at age 69 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2015</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Home visit</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">4(d)</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">MedicalConditions15</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/dhiby15x">dhiby15x</a></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Year when diagnosed with blood pressure problems - at age 69 years</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">2015</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">Home visit</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%">4(d)</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">MedicalConditions15</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Associated Documents</h2>
+<table class="skip-filter" style="width:55%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="55%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px; border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:17%; word-wrap:break-word; text-align:left" width="17%">Questionnaires</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://skylark.ucl.ac.uk/NSHD/exploring/nshd-questionnaires/" target="_blank">View</a></td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Category Memberships</h2>
+<table class="skip-filter" style="width:55%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="55%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Cardiovascular health [6]"/>
+Cardiovascular health [6]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			Legacy Category			</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Heart and circulatory conditions [51014]"/>
+Heart and circulatory conditions [51014]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			This category contains data from the questionnaires on whether the participant had any heart or circulatory conditions i.e. heart attacks, heart failure, pulmonary embolism, strokes and varicose veins or blood pressure problems.			</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Value Labels</h2>
+<table class="skip-filter" style="width:35%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="35%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Value</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Label</th>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">-9.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Unknown</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">88.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Not applicable</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">99.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Unknown</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Frequency Distribution For lhib89</h2>
+<div class="skip-filter" style="border-collapse:separate; padding-top:0.6em; padding-right:0.5em; padding-bottom:0.6em; padding-left:0.5em; margin:2em">
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:75%; word-wrap:break-word; text-align:left" width="75%"><img alt="Histogram/Bar Chart Plot" src="data:image/png;base64,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"/></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Item</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Value</th>
+</tr>
+<tr>
+<td align="center" colspan="2" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:center" width="140">Summary Statistics
+</td>
+</tr>
+<tr>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Minimum</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">25.0</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 1</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">31.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 2</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">36.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 3</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">40.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 4</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">42.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 5</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 6</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 7</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 8</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Decile 9</td> <!-- Decile Number -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td> <!-- Decile Value -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Maximum</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Mean</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">39.951613</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Std Dev.</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">4.978753</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Variance</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">24.787981</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Series Size</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">310</td>
+</tr>
+</table>
+<p style="margin:1vw; padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Statistics relate to plotted values only.</p>
+</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Missing values and distribution outside 5 and 95 percentiles removed</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"></td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+
+
+
+</body>
+</html>

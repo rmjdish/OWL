@@ -1,0 +1,2443 @@
+<!DOCTYPE html>
+
+<!-- This is SKYLARK.html a Pebble Template which is extensively used by other subtemplates -->
+<html lang="en" template="true">
+<head>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<meta content="text/html; charset=utf-8" http-equiv="content-type"/>
+<title>Condor</title>
+<meta charset="utf-8" content="text/html;" http-equiv="Content-Type"/>
+<meta content="no-cache" http-equiv="Cache-Control"/>
+<meta content="no-cache" name="Pragma"/>
+<meta content="0" http-equiv="Expires"/>
+<!-- This is the top level Pebble template that will be 'inherited' by other templates -->
+<style type="text/css">/* SWIFT/Skylark CSS file
+Change this to alter the overall appearance of SWIFT/Skylark
+
+This is the top level CSS file.
+
+
+General styles
+
+HTML operators
+space : lhs <space> rhs : all rhs which have lhs as a parent
+> : lhs > rhs : all rhs that are immediate descendants of lhs
++ : lhs + rhs : all rhs that are siblings immediatley following lhs
+~ : lhs ~ rhs : all rhs that are siblings (have same parent as) lhs 
+
+*/
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
+
+/*
+  All the CSS rules with [role] as a predicate are used to style the tree
+  display for categories
+*/
+
+*:not([role]) {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: White; /* body background colour */
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* body font size */
+    margin-bottom: 10px;
+    width: 100%;
+}
+table {
+    
+    width: 90%;
+    display: inline-table;
+    border: 0px;
+    border-style: none;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
+
+h1 {
+    color: black; /* h1 font colour */
+    font-size: 2vw;
+}
+
+p {
+    margin: 1vw;
+}
+
+/* These set of rules govern how category search trees are displayed */
+
+.section {
+    max-width: 90%;
+}
+
+
+body ul[role="tree"] {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* body ul[role="tree"] font size */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul:not([role]) {
+    margin: 1vw;
+}
+/* Rule 1 */
+ul[role="tree"] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9vx; /* ul[role="tree"] font size */
+}
+/* Rule 2 */
+ul[role="tree"] li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Rule 3 */
+[role="treeitem"][aria-expanded="false"] + [role="group"] {
+    display: none;
+}
+/* Rule 4 */
+[role="treeitem"][aria-expanded="true"] + [role="group"] {
+    display: block;
+}
+/* Rule 5 */
+/* File within folder */
+[role="treeitem"].doc::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"].doc::before font size */
+    content: '\1f5c8';
+    display: inline-block;
+    padding-right: 2px;
+    padding-left: 5px;
+    vertical-align: middle;
+}
+/* Rule 6 */
+[role="treeitem"][aria-expanded="false"] > ul {
+    display: none;
+}
+/* Rule 7 */
+[role="treeitem"][aria-expanded="true"] > ul {
+    display: block;
+}
+/* Rule 8 */
+/* Closed Folder */
+[role="treeitem"][aria-expanded="false"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"][aria-expanded="false"] font size */
+    content: '\1f5bf';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 9 */
+/* Folder Open */
+[role="treeitem"][aria-expanded="true"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw;
+    content: '\1f5c1';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 10 -- this one sest the width for tree elements across the page */
+[role="treeitem"],
+[role="treeitem"] span {
+    width: 40em;
+    margin: 0;
+    padding: 0.125em;
+    display: block;
+}
+/* Rule 11 */
+/* disable default keyboard focus styling for treeitems
+   Keyboard focus is styled with the following CSS */
+[role="treeitem"]:focus {
+    outline: 0;
+}
+/* Rule 12 */
+[role="treeitem"][aria-selected="true"] {
+    padding-left: 4px;
+    border-left: 5px solid #005a9c; 
+}
+/* Rule 13 */
+[role="treeitem"].focus,
+[role="treeitem"] span.focus {
+    border-color: black; 
+    background-color: #eee; /* [role="treeitem"] span.focus background colour */
+}
+/* Rule 14 */
+[role="treeitem"].hover,
+[role="treeitem"] span:hover {
+    padding-left: 4px;
+    background-color: #ddd; /* [role="treeitem"] span.hover background colour */
+    border-left: 5px solid #333;
+}
+/* End of tree display rules */
+
+select {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: lightgray; /* select background colour */
+    color: black; /* select font colour */
+    margin-bottom: 1px;
+    word-wrap: break-word;
+    padding: 1px;
+    text-align: left;
+}
+
+option {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: #98A69A; /* option background colour */
+    color: Black; /* option font colour */
+    word-wrap: break-word;
+    text-align: left;	
+}
+
+input {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* input font size */
+    background-color: Linen; /* input background colour */
+    color: MidnightBlue; /* input font colour */
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    border: 0px solid Bisque;	
+}
+
+
+header {
+    position: sticky;
+    padding-top:0px;
+    padding-bottom:0px;
+    left: 0px;
+    top: 0px;
+    height: 10%;
+    background-color: rgb(0,138,173); /* header default background colour */
+    width: 95%;
+    box-sizing: border-box;    
+}
+
+footer {
+    background-color: rgb(0,138,173);
+}
+
+/*
+   The banner class is used to style the top of the SWIFT page
+   with the logos and web site title
+*/
+
+.banner {
+    display: inline;
+    background-color: rgb(46,45,98); /* banner background colour */
+    padding-top:4px;
+    padding-bottom:4px;
+    max-width: 90%;
+    border-width: 0px;
+    margin: 0;
+}
+
+/* The next selector applies to h1 within a div with class=banner */
+.banner > h1 {
+    display: inline;
+    font-size: 2vw; /* banner font size */
+    color: black; /* banner font colour */
+    float: left;
+}
+.banner img {
+    display: inline;
+    max-width: 15%;
+    height: auto;
+    padding-top: 20px;
+    margin: 0 auto;
+    float: left;
+}
+
+
+
+/* The results class is used to display output from the various SWIFT functions */
+/* best to wrap elements up in a <div class="results">  ... </div>  */
+
+.results {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* results font size */
+    color: black;  /* results font colour */
+    margin-top: 2%; 
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: white; /* results background colour */
+    display: block;
+}
+/* A division directly inheriting from results */
+.results div {
+    border-collapse: separate;
+    padding-top: 0.6em;
+    padding-right: 0.5em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    margin: 2em;
+}
+
+.results  table {
+    width: 80%;
+    table-layout: fixed;
+    /* border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px; */
+    border-collapse: collapse; 
+    border: none;  
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    margin: 2px;
+}
+
+.results table tr:nth-child(odd) {
+    background-color: rgb(230,230,230); /* results table odd rows background colour */
+}
+.results table tr:nth-child(even) {
+    background-color: white; /* results table even rows background colour */
+
+}
+/*
+.results table th {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #E7BB96; 
+    color: #DCD9CB;
+    border: none;
+}
+*/
+.results table tr:first-child {
+    border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+
+}
+
+.results table tr:last-child  {
+    border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+
+}
+
+/* A table heading element directly following a new row */
+.results tr th {
+    word-wrap: break-word;
+    padding: 7px; 
+    text-align: left;
+    margin: 2px;
+    background-color:  PowderBlue; /* results tr th background colour */
+    color: black; /* results tr th font colour */
+    border: 0px;
+}
+/* A table cell element directly following a new row */
+.results tr td {
+    word-wrap: break-word;
+    padding: 5px;
+    text-align: left;
+    border: 0px solid #98A69A; 
+}
+
+
+.results  h1,h2,p,ul:not([role]),li:not(.doc),form {
+    padding-top: 1px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    padding-left: 5px;
+}
+
+/*  End of Results Class */
+
+/* Sticky form header */
+
+.form-header {
+    position: sticky;
+    width: fit-content;
+    margin-left: auto; /* Move to the right */
+    margin-right: 0; /* Optional: reset right margin */
+    background-color: rgba(255, 255, 255, 1); /* Solid white background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional shadow for effect */
+    z-index: 1000; /* Ensure it is above other content */      
+    top: 25%; /* How far from top of page? */
+    left: 50%;
+    padding: 10px 16px;
+}
+
+/* Table Filter */
+.ddtf-filtered {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.5vw;
+    color: black;
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /*  ddtf-filtered background colour */
+    display: block;
+}
+.ddtf-filtered select {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #4F3A35; /* ddtf-filtered select background colour */
+    color: #98A69A; /* ddtf-filtered select font colour */
+    border: 0px solid #98A69A;
+}
+
+.ddtf-processed {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* ddtf-processed font size */
+    color: black; /* ddtf-processed font colour */
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /* ddtf-processed background colour */
+    display: block;
+}
+/* End of Table Filter Class */
+
+.tab5 {
+    /* background-color: lightblue; */
+    text-align: left;
+    margin: 0px;
+    padding-top: 10px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.tab5 #narrow th, td {
+    border: 0px;
+    width: 80px;
+}
+
+.tab5 #medium th, td {
+    border: 0px;
+    width: 140px;
+}
+
+.tab5 #wide {
+    border: 1px;
+    width: 500px;
+}
+
+#menu-bar {
+    width: 95%;
+    margin: 0; /* Use padding instead */
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    height: 3em;
+    line-height: 100%;
+    /* Take out all the curvy borders */
+    border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px;
+
+    box-shadow: 2px 2px 3px #666666;
+    -webkit-box-shadow: 2px 2px 3px #666666;
+    -moz-box-shadow: 2px 2px 3px #666666;
+    background: MidnightBlue; /* menu-bar background colour */
+    /* background: #0B736F;  dark green menu bar */
+    /* background: #424242; very dark brown menu bar*/
+    border: double 1px #32323f;
+    position:relative;
+    z-index:999; /* Bring to the front; -1 is to the back */
+}
+#menu-bar li {   /* Level 1 menu item; careful this is the word not the box */
+    padding-top: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    padding-right: 0em;
+    float: left;
+    position: relative;
+    top: 0em;
+    left: 0em;
+    list-style: none;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar a { /* The actual links within menu items */
+    font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw; /* menu-bar a font size */
+    color: #E7E5E5; /* menu-bar a font colour */
+    text-decoration: none;
+    display: block;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    margin: 0.2em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    text-shadow: 2px 2px 3px #000000;
+}
+#menu-bar ul li ul li a {  /* A Level 2 submenu item */
+    position: relative;
+    font-size: 0.8vw;  
+    top: 0.5em;
+    left: 0.5em;
+    padding-left: 0.1em;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar .active a, #menu-bar li:hover > a { /* A link item that is in focus */
+    /* background: ochre; */
+    color: #424242; /* very dark grey */
+    background: linear-gradient(top,  #EBEBEB,  #A1A1A1); /* grey gradient */
+    background: -ms-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    background: -webkit-gradient(linear, left top, left bottom, from(#EBEBEB), to(#A1A1A1));
+    background: -moz-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    color: orange;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    text-shadow: 2px 2px 3px #FFFFFF;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+
+#menu-bar ul a:hover {
+    background: orange; /* set to orange but can't see it */
+    /* The next set of backgrounds set the sub-menu focus background  */
+    background: linear-gradient(top,  orange,  darkorange);
+    background: -ms-linear-gradient(top,  orange,  darkorange);
+    background: -webkit-gradient(linear, left top, left bottom, from(orange), to(darkorange));
+    background: -moz-linear-gradient(top,  orange,  darkorange);
+    color: black;
+    /* Curvy Borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+#menu-bar li:not([role="treeitem"]):hover > ul {
+    display: block;
+}
+
+#menu-bar ul { /* Key to moving menu items on page */
+    background: #DDDDDD;
+    background: linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -ms-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#CFCFCF));
+    background: -moz-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    display: none;  /* This negates the transition property below what if we use block instead? */
+    margin: 0.6em;
+    padding-top: 0.6em;
+    padding-right: 0.8em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    width: 12em;
+    position: relative; /* was absolute changing to relative */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: solid 1px #B4B4B4;
+    /* Curvy Border */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    -webkit-box-shadow: 2px 2px 3px #222222;
+    -moz-box-shadow: 2px 2px 3px #222222;
+    box-shadow: 2px 2px 3px #222222;
+
+}
+#menu-bar ul li {
+    float: none;
+    margin: 0;
+    padding: 0;
+
+}
+#menu-bar ul a { /* the text indicating a level 1 link */
+    padding-top: 0.6em;
+    padding-right: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    /* Original Setting color:#424242; */
+    color:#424242; /* very dark grey */
+    font-size:0.8vw;
+    font-style: normal;
+    font-family: Montserrat, sans-serif;
+    font-weight: normal;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+
+#menu-bar ul li:hover a, #menu-bar li:hover li a {
+    background: none; /* was none - background to drop down menu items */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: none;
+    color: #ff9933; /* orange */
+    -box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+}
+
+#menu-bar ul li:first-child > a {
+    /*
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+   */
+}
+
+#menu-bar ul li:last-child > a {
+    /*
+	border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+   */
+}
+
+#menu-bar:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+#menu-bar form {
+    display: inline-block;
+    /* height: 1em; */
+    line-height: 100%;
+    /* width: 10em; */
+    padding: 0;
+    margin: 0;
+}
+/* This is the Search Button */
+#menu-bar div > input {
+    box-sizing: border-box;
+    border: 0 none;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-image: url("search.ico");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-color: Bisque;
+    max-width: 100%;
+    min-width: 5px; 
+    height: auto; 
+    margin: 0;
+    text-align: center;
+    cursor: pointer;
+} 
+
+#menu-bar div > input:hover { 
+    background-image: url("active-search.png");
+    background-color: grey;
+}
+
+/* This is the Search Text Box - > is immediate descendant operator */
+#menu-bar li > input {
+    padding: 0 0 0 0;
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    vertical-align: text-bottom;
+    border: 0 none;
+    max-width: 100%;
+    min-width: 15em;
+    height: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0.6em;
+    color: darkblue;
+    outline: none;
+    background: Bisque;
+    box-sizing: border-box;
+    transition: all 0.1s;
+}
+
+#menu-bar {
+    display: inline-block;
+}
+
+html[xmlns] #menu-bar {
+    display: block;
+}
+
+* html #menu-bar  {
+    height: 1%;
+}
+
+
+
+/* Form Elements for SWIFT */
+
+/* Rounded Corner for Buttons */
+.tb5 {
+    border:2px solid #456879;
+    border-radius:10px;
+}
+
+/* Rounded Corners for Text Area */
+.ta5 {
+    border: 2px solid #765942;
+    border-radius: 10px;
+    height: 60px;
+    width: 230px;
+}
+
+/* More rounded buttons for a form */
+
+.testbutton {
+    font-family: arial;
+    color: black;
+    font-size: 0.8vw;
+    text-shadow: 1px 1px 0px #7CACDE;
+    box-shadow: 1px 1px 1px #BEE2F9;
+    padding: 4px 2px 4px 2px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    border: 1px solid #3866A3;
+    background: #F0F0F0; /* F0F0F0 is light grey */
+}
+
+.testbutton:hover {
+    color: #FFFFFF; /* FFFFFF is #98A69A */
+    background: orange;
+}
+
+/* Stuff for Cookie Banner at bottom of welcome page */
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+        background: #DDDDDD;
+        color: black;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 5px;
+}
+    
+.btn:hover {
+    background: orange;
+    transform: translateY(-2px);
+}
+    
+.btn-secondary {
+    background: #e2e8f0;
+    color: black;
+}
+    
+.btn-secondary:hover {
+    background: orange;
+}
+    
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(0,138,173);
+    color: black;
+    padding: 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.5s ease-out;
+}
+    
+.cookie-banner.active {
+    transform: translateY(0);
+}
+
+.cookie-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cookie-text {
+    flex: 1;
+    min-width: 300px;
+    padding-right: 20px;
+}
+
+.cookie-text h3 {
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.cookie-text p {
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.cookie-text a {
+    color: sandybrown;
+}
+.cookie-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cookie-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 5px;
+}
+
+.cookie-btn.accept {
+    background: lawngreen;
+    color: black;
+}
+
+.cookie-btn.accept:hover {
+    background: orange;
+}
+
+.cookie-btn.reject {
+    background: crimson;
+    color: white;
+    border: 1px solid #4a5568;
+}
+
+.cookie-btn.reject:hover {
+    background: orange;
+    color: black;
+}
+
+.link {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cookie-text {
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* End of Cookie Stuff */
+
+/* Attempt at simpler Drop Down Menu Items */
+
+/* 
+    An other menu style based on CSS3 - not sure how this will work but here goes
+*/
+
+/* Comment all navs out for now
+
+nav ul ul {
+	display: none;
+}
+
+nav ul li:hover > ul {
+	display: block;
+}
+
+nav ul:not([role]) {
+	width: 40%;
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 2px 0px 2px;
+	margin: 0px 4px 0px 4px; 
+
+
+  	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+  	
+  	box-shadow: 2px 2px 3px #666666;
+  	-webkit-box-shadow: 2px 2px 3px #666666;
+  	-moz-box-shadow: 2px 2px 3px #666666;
+
+	background: MidnightBlue;
+	list-style: none;
+	position: relative;
+	display: inline-table;
+}
+
+nav ul:after {
+	content: ""; clear: both; display: block;
+}
+
+nav:not([aria-label]) ul li {
+	float: left;
+}
+
+nav ul li:hover {
+	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+	
+	border-style: none; 
+	border-width: 0px;
+	margin: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	background: blue;
+}
+
+nav ul li:hover a {
+	color: #98A69A;
+	margin: 0;
+}
+	
+nav ul li a {
+	font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw;
+	border-style: none; 
+	border-width: 0px;
+	display: block; 
+	padding: 0px 4px 0px 4px;
+	margin: 0px 0px 0px 0px;
+	color: #98A69A; 
+	text-decoration: none;
+}
+
+nav ul li:first-child > a {
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+
+}
+nav ul li:last-child > a {
+  border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+
+}
+
+nav ul ul:not([role]) {
+	background: #98A69A; 
+	border-radius: 0px; 
+	padding: 0px 4px 0px 4px;
+	position: absolute; 
+	margin: 0px 4px 0px 4px;
+	top: 100%;
+	border-style: none; 
+	border-width: 0px;
+}
+
+nav ul ul li:not([role]) {
+	float: none; 
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	margin: 0px 4px 0px 4px;
+	
+	position: relative;
+}
+
+nav ul ul li a {
+	padding: 0px 6px 0px 6px;
+	font-style:normal;
+  	font-family:arial;
+  	font-weight: normal;
+  	text-shadow: 2px 2px 3px #FFFFFF;
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px;
+	margin: 0px 4px 0px 4px;
+	background: DimGrey;
+}	
+
+nav ul ul li a:hover {
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px; 
+	background: Gainsboro;
+}
+
+nav ul ul ul {
+	position: absolute; left: 100%; top:0;
+}
+
+*/
+</style>
+<script src="js/treeview-navigation.js" type="text/javascript"></script>
+<script src="js/treeitem.js" type="text/javascript"></script>
+<script src="js/treeitemClick.js" type="text/javascript"></script>
+<script src="js/FormValidation.js"></script>
+<script src="js/Help.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="js/ddtf.js"></script>
+<!-- 
+	 This is Google's version 3 tags.  Never made it work properly
+	 <script src='https://www.google.com/recaptcha/api.js?render=6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV'></script>
+	 -->
+<!--  Make sure to use the right Site key here
+
+	       kiwidev = 6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV
+	       skylark = 6LdF3XgUAAAAAACAPmW7swE2bLNfxQlPvcu4JM2H
+
+	       reCAPTCHA version 2 keys
+
+	       kiwidev = 6LeBf3kUAAAAADU7T5AROQx9hj8LLJYke6i58Fqd
+	       kiwi	= 6LcohasUAAAAAPVpqmaGF6Mkag3vmJKhHutoPKEa
+	       version 2 script reference is below this
+	   -->
+<script src="https://www.google.com/recaptcha/api.js"></script>
+<!--  this is version 3 which doesn't work
+	       <script src='https://www.google.com/recaptcha/api.js?render=6LeLAnkUAAAAAOL6qoCApkjOxKdbw4cy-xrg1lRV'></script>
+	       -->
+<style type="text/css">/* SWIFT/Skylark CSS file
+Change this to alter the overall appearance of SWIFT/Skylark
+
+This is the top level CSS file.
+
+
+General styles
+
+HTML operators
+space : lhs <space> rhs : all rhs which have lhs as a parent
+> : lhs > rhs : all rhs that are immediate descendants of lhs
++ : lhs + rhs : all rhs that are siblings immediatley following lhs
+~ : lhs ~ rhs : all rhs that are siblings (have same parent as) lhs 
+
+*/
+@import url(https://fonts.googleapis.com/css?family=Montserrat);
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap');
+
+/*
+  All the CSS rules with [role] as a predicate are used to style the tree
+  display for categories
+*/
+
+*:not([role]) {
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: White; /* body background colour */
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* body font size */
+    margin-bottom: 10px;
+    width: 100%;
+}
+table {
+    
+    width: 90%;
+    display: inline-table;
+    border: 0px;
+    border-style: none;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+}
+
+h1 {
+    color: black; /* h1 font colour */
+    font-size: 2vw;
+}
+
+p {
+    margin: 1vw;
+}
+
+/* These set of rules govern how category search trees are displayed */
+
+.section {
+    max-width: 90%;
+}
+
+
+body ul[role="tree"] {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* body ul[role="tree"] font size */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+ul:not([role]) {
+    margin: 1vw;
+}
+/* Rule 1 */
+ul[role="tree"] {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9vx; /* ul[role="tree"] font size */
+}
+/* Rule 2 */
+ul[role="tree"] li {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+/* Rule 3 */
+[role="treeitem"][aria-expanded="false"] + [role="group"] {
+    display: none;
+}
+/* Rule 4 */
+[role="treeitem"][aria-expanded="true"] + [role="group"] {
+    display: block;
+}
+/* Rule 5 */
+/* File within folder */
+[role="treeitem"].doc::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"].doc::before font size */
+    content: '\1f5c8';
+    display: inline-block;
+    padding-right: 2px;
+    padding-left: 5px;
+    vertical-align: middle;
+}
+/* Rule 6 */
+[role="treeitem"][aria-expanded="false"] > ul {
+    display: none;
+}
+/* Rule 7 */
+[role="treeitem"][aria-expanded="true"] > ul {
+    display: block;
+}
+/* Rule 8 */
+/* Closed Folder */
+[role="treeitem"][aria-expanded="false"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw; /* [role="treeitem"][aria-expanded="false"] font size */
+    content: '\1f5bf';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 9 */
+/* Folder Open */
+[role="treeitem"][aria-expanded="true"] > span::before {
+    font-family: "Noto+Sans+Symbols+2";
+    font-size: 0.9vw;
+    content: '\1f5c1';
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight: 900;
+}
+/* Rule 10 -- this one sest the width for tree elements across the page */
+[role="treeitem"],
+[role="treeitem"] span {
+    width: 40em;
+    margin: 0;
+    padding: 0.125em;
+    display: block;
+}
+/* Rule 11 */
+/* disable default keyboard focus styling for treeitems
+   Keyboard focus is styled with the following CSS */
+[role="treeitem"]:focus {
+    outline: 0;
+}
+/* Rule 12 */
+[role="treeitem"][aria-selected="true"] {
+    padding-left: 4px;
+    border-left: 5px solid #005a9c; 
+}
+/* Rule 13 */
+[role="treeitem"].focus,
+[role="treeitem"] span.focus {
+    border-color: black; 
+    background-color: #eee; /* [role="treeitem"] span.focus background colour */
+}
+/* Rule 14 */
+[role="treeitem"].hover,
+[role="treeitem"] span:hover {
+    padding-left: 4px;
+    background-color: #ddd; /* [role="treeitem"] span.hover background colour */
+    border-left: 5px solid #333;
+}
+/* End of tree display rules */
+
+select {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: lightgray; /* select background colour */
+    color: black; /* select font colour */
+    margin-bottom: 1px;
+    word-wrap: break-word;
+    padding: 1px;
+    text-align: left;
+}
+
+option {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    background-color: #98A69A; /* option background colour */
+    color: Black; /* option font colour */
+    word-wrap: break-word;
+    text-align: left;	
+}
+
+input {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* input font size */
+    background-color: Linen; /* input background colour */
+    color: MidnightBlue; /* input font colour */
+    margin-bottom: 10px;
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    border: 0px solid Bisque;	
+}
+
+
+header {
+    position: sticky;
+    padding-top:0px;
+    padding-bottom:0px;
+    left: 0px;
+    top: 0px;
+    height: 10%;
+    background-color: rgb(0,138,173); /* header default background colour */
+    width: 95%;
+    box-sizing: border-box;    
+}
+
+footer {
+    background-color: rgb(0,138,173);
+}
+
+/*
+   The banner class is used to style the top of the SWIFT page
+   with the logos and web site title
+*/
+
+.banner {
+    display: inline;
+    background-color: rgb(46,45,98); /* banner background colour */
+    padding-top:4px;
+    padding-bottom:4px;
+    max-width: 90%;
+    border-width: 0px;
+    margin: 0;
+}
+
+/* The next selector applies to h1 within a div with class=banner */
+.banner > h1 {
+    display: inline;
+    font-size: 2vw; /* banner font size */
+    color: black; /* banner font colour */
+    float: left;
+}
+.banner img {
+    display: inline;
+    max-width: 15%;
+    height: auto;
+    padding-top: 20px;
+    margin: 0 auto;
+    float: left;
+}
+
+
+
+/* The results class is used to display output from the various SWIFT functions */
+/* best to wrap elements up in a <div class="results">  ... </div>  */
+
+.results {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* results font size */
+    color: black;  /* results font colour */
+    margin-top: 2%; 
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: white; /* results background colour */
+    display: block;
+}
+/* A division directly inheriting from results */
+.results div {
+    border-collapse: separate;
+    padding-top: 0.6em;
+    padding-right: 0.5em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    margin: 2em;
+}
+
+.results  table {
+    width: 80%;
+    table-layout: fixed;
+    /* border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px; */
+    border-collapse: collapse; 
+    border: none;  
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    margin: 2px;
+}
+
+.results table tr:nth-child(odd) {
+    background-color: rgb(230,230,230); /* results table odd rows background colour */
+}
+.results table tr:nth-child(even) {
+    background-color: white; /* results table even rows background colour */
+
+}
+/*
+.results table th {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #E7BB96; 
+    color: #DCD9CB;
+    border: none;
+}
+*/
+.results table tr:first-child {
+    border-top-left-radius: 10px;
+    -webkit-border-top-left-radius: 10px;
+    -moz-border-radius-topleft: 10px;
+    border-top-right-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    -moz-border-radius-topright: 10px;
+
+}
+
+.results table tr:last-child  {
+    border-bottom-left-radius: 10px;
+    -webkit-border-bottom-left-radius: 10px;
+    -moz-border-radius-bottomleft: 10px;
+    border-bottom-right-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    -moz-border-radius-bottomright: 10px;
+
+}
+
+/* A table heading element directly following a new row */
+.results tr th {
+    word-wrap: break-word;
+    padding: 7px; 
+    text-align: left;
+    margin: 2px;
+    background-color:  PowderBlue; /* results tr th background colour */
+    color: black; /* results tr th font colour */
+    border: 0px;
+}
+/* A table cell element directly following a new row */
+.results tr td {
+    word-wrap: break-word;
+    padding: 5px;
+    text-align: left;
+    border: 0px solid #98A69A; 
+}
+
+
+.results  h1,h2,p,ul:not([role]),li:not(.doc),form {
+    padding-top: 1px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    padding-left: 5px;
+}
+
+/*  End of Results Class */
+
+/* Sticky form header */
+
+.form-header {
+    position: sticky;
+    width: fit-content;
+    margin-left: auto; /* Move to the right */
+    margin-right: 0; /* Optional: reset right margin */
+    background-color: rgba(255, 255, 255, 1); /* Solid white background */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2); /* Optional shadow for effect */
+    z-index: 1000; /* Ensure it is above other content */      
+    top: 25%; /* How far from top of page? */
+    left: 50%;
+    padding: 10px 16px;
+}
+
+/* Table Filter */
+.ddtf-filtered {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.5vw;
+    color: black;
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /*  ddtf-filtered background colour */
+    display: block;
+}
+.ddtf-filtered select {
+    word-wrap: break-word;
+    padding: 7px;
+    text-align: left;
+    margin: 2px;
+    background-color: #4F3A35; /* ddtf-filtered select background colour */
+    color: #98A69A; /* ddtf-filtered select font colour */
+    border: 0px solid #98A69A;
+}
+
+.ddtf-processed {
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw; /* ddtf-processed font size */
+    color: black; /* ddtf-processed font colour */
+    margin-top: 15%;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.4em;
+    padding-left: 0.6em;
+    background-color: #EEF4F5; /* ddtf-processed background colour */
+    display: block;
+}
+/* End of Table Filter Class */
+
+.tab5 {
+    /* background-color: lightblue; */
+    text-align: left;
+    margin: 0px;
+    padding-top: 10px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+}
+
+.tab5 #narrow th, td {
+    border: 0px;
+    width: 80px;
+}
+
+.tab5 #medium th, td {
+    border: 0px;
+    width: 140px;
+}
+
+.tab5 #wide {
+    border: 1px;
+    width: 500px;
+}
+
+#menu-bar {
+    width: 95%;
+    margin: 0; /* Use padding instead */
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    height: 3em;
+    line-height: 100%;
+    /* Take out all the curvy borders */
+    border-radius: 36px;
+    -webkit-border-radius: 36px;
+    -moz-border-radius: 36px;
+
+    box-shadow: 2px 2px 3px #666666;
+    -webkit-box-shadow: 2px 2px 3px #666666;
+    -moz-box-shadow: 2px 2px 3px #666666;
+    background: MidnightBlue; /* menu-bar background colour */
+    /* background: #0B736F;  dark green menu bar */
+    /* background: #424242; very dark brown menu bar*/
+    border: double 1px #32323f;
+    position:relative;
+    z-index:999; /* Bring to the front; -1 is to the back */
+}
+#menu-bar li {   /* Level 1 menu item; careful this is the word not the box */
+    padding-top: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    padding-right: 0em;
+    float: left;
+    position: relative;
+    top: 0em;
+    left: 0em;
+    list-style: none;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar a { /* The actual links within menu items */
+    font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw; /* menu-bar a font size */
+    color: #E7E5E5; /* menu-bar a font colour */
+    text-decoration: none;
+    display: block;
+    padding-top: 0.6em;
+    padding-right: 0.6em;
+    padding-bottom: 0.6em;
+    padding-left: 0.6em;
+    margin: 0.2em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    text-shadow: 2px 2px 3px #000000;
+}
+#menu-bar ul li ul li a {  /* A Level 2 submenu item */
+    position: relative;
+    font-size: 0.8vw;  
+    top: 0.5em;
+    left: 0.5em;
+    padding-left: 0.1em;
+    width: 10em;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+#menu-bar .active a, #menu-bar li:hover > a { /* A link item that is in focus */
+    /* background: ochre; */
+    color: #424242 !important; /* very dark grey */
+    background: linear-gradient(top,  #EBEBEB,  #A1A1A1); /* grey gradient */
+    background: -ms-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    background: -webkit-gradient(linear, left top, left bottom, from(#EBEBEB), to(#A1A1A1));
+    background: -moz-linear-gradient(top,  #EBEBEB,  #A1A1A1);
+    color: orange;
+    -webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+    text-shadow: 2px 2px 3px #FFFFFF;
+    /* curvy borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+}
+
+#menu-bar ul a:hover {
+    background: orange; /* set to orange but can't see it */
+    /* The next set of backgrounds set the sub-menu focus background  */
+    background: linear-gradient(top,  orange,  darkorange) !important;
+    background: -ms-linear-gradient(top,  orange,  darkorange) !important;
+    background: -webkit-gradient(linear, left top, left bottom, from(orange), to(darkorange)) !important;
+    background: -moz-linear-gradient(top,  orange,  darkorange) !important;
+    color: black !important;
+    /* Curvy Borders */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+#menu-bar li:not([role="treeitem"]):hover > ul {
+    display: block;
+}
+
+#menu-bar ul { /* Key to moving menu items on page */
+    background: #DDDDDD;
+    background: linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -ms-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    background: -webkit-gradient(linear, left top, left bottom, from(#FFFFFF), to(#CFCFCF));
+    background: -moz-linear-gradient(top,  #FFFFFF,  #CFCFCF);
+    display: none;  /* This negates the transition property below what if we use block instead? */
+    margin: 0.6em;
+    padding-top: 0.6em;
+    padding-right: 0.8em;
+    padding-bottom: 0.6em;
+    padding-left: 0em;
+    width: 12em;
+    position: relative; /* was absolute changing to relative */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: solid 1px #B4B4B4;
+    /* Curvy Border */
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+
+    -webkit-box-shadow: 2px 2px 3px #222222;
+    -moz-box-shadow: 2px 2px 3px #222222;
+    box-shadow: 2px 2px 3px #222222;
+
+}
+#menu-bar ul li {
+    float: none;
+    margin: 0;
+    padding: 0;
+
+}
+#menu-bar ul a { /* the text indicating a level 1 link */
+    padding-top: 0.6em;
+    padding-right: 0em;
+    padding-bottom: 0.6em;
+    padding-left: 0.5em;
+    /* Original Setting color:#424242 !important; */
+    color:#424242 !important; /* very dark grey */
+    font-size:0.8vw;
+    font-style: normal;
+    font-family: Montserrat, sans-serif;
+    font-weight: normal;
+    text-shadow: 2px 2px 3px #FFFFFF;
+
+}
+
+#menu-bar ul li:hover a, #menu-bar li:hover li a {
+    background: none; /* was none - background to drop down menu items */
+    top:  0.2em;
+    left: 0.2em;        /* This should be the same to move over submenus as above */
+    border: none;
+    color: #ff9933; /* orange */
+    -box-shadow: none;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+}
+
+#menu-bar ul li:first-child > a {
+    /*
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+   */
+}
+
+#menu-bar ul li:last-child > a {
+    /*
+	border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+   */
+}
+
+#menu-bar:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+}
+
+#menu-bar form {
+    display: inline-block;
+    /* height: 1em; */
+    line-height: 100%;
+    /* width: 10em; */
+    padding: 0;
+    margin: 0;
+}
+/* This is the Search Button */
+#menu-bar div > input {
+    box-sizing: border-box;
+    border: 0 none;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-image: url("search.ico");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-color: Bisque;
+    max-width: 100%;
+    min-width: 5px; 
+    height: auto; 
+    margin: 0;
+    text-align: center;
+    cursor: pointer;
+} 
+
+#menu-bar div > input:hover { 
+    background-image: url("active-search.png");
+    background-color: grey;
+}
+
+/* This is the Search Text Box - > is immediate descendant operator */
+#menu-bar li > input {
+    padding: 0 0 0 0;
+    font-family: Montserrat, sans-serif;
+    font-size: 0.8vw;
+    vertical-align: text-bottom;
+    border: 0 none;
+    max-width: 100%;
+    min-width: 15em;
+    height: auto;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0.6em;
+    color: darkblue;
+    outline: none;
+    background: Bisque;
+    box-sizing: border-box;
+    transition: all 0.1s;
+}
+
+#menu-bar {
+    display: inline-block;
+}
+
+html[xmlns] #menu-bar {
+    display: block;
+}
+
+* html #menu-bar  {
+    height: 1%;
+}
+
+
+
+/* Form Elements for SWIFT */
+
+/* Rounded Corner for Buttons */
+.tb5 {
+    border:2px solid #456879;
+    border-radius:10px;
+}
+
+/* Rounded Corners for Text Area */
+.ta5 {
+    border: 2px solid #765942;
+    border-radius: 10px;
+    height: 60px;
+    width: 230px;
+}
+
+/* More rounded buttons for a form */
+
+.testbutton {
+    font-family: arial;
+    color: black !important;
+    font-size: 0.8vw;
+    text-shadow: 1px 1px 0px #7CACDE;
+    box-shadow: 1px 1px 1px #BEE2F9;
+    padding: 4px 2px 4px 2px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    border: 1px solid #3866A3;
+    background: #F0F0F0; /* F0F0F0 is light grey */
+}
+
+.testbutton:hover {
+    color: #FFFFFF !important; /* FFFFFF is #98A69A */
+    background: orange;
+}
+
+/* Stuff for Cookie Banner at bottom of welcome page */
+
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+        background: #DDDDDD;
+        color: black;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        margin: 5px;
+}
+    
+.btn:hover {
+    background: orange;
+    transform: translateY(-2px);
+}
+    
+.btn-secondary {
+    background: #e2e8f0;
+    color: black;
+}
+    
+.btn-secondary:hover {
+    background: orange;
+}
+    
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(0,138,173);
+    color: black;
+    padding: 20px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    transform: translateY(100%);
+    transition: transform 0.5s ease-out;
+}
+    
+.cookie-banner.active {
+    transform: translateY(0);
+}
+
+.cookie-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cookie-text {
+    flex: 1;
+    min-width: 300px;
+    padding-right: 20px;
+}
+
+.cookie-text h3 {
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.cookie-text p {
+    line-height: 1.5;
+    color: #e2e8f0;
+}
+
+.cookie-text a {
+    color: sandybrown;
+}
+.cookie-actions {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.cookie-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin: 5px;
+}
+
+.cookie-btn.accept {
+    background: lawngreen;
+    color: black;
+}
+
+.cookie-btn.accept:hover {
+    background: orange;
+}
+
+.cookie-btn.reject {
+    background: crimson;
+    color: white;
+    border: 1px solid #4a5568;
+}
+
+.cookie-btn.reject:hover {
+    background: orange;
+    color: black;
+}
+
+.link {
+    color: #4299e1;
+    text-decoration: none;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .cookie-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cookie-text {
+        padding-right: 0;
+        margin-bottom: 15px;
+    }
+}
+
+/* End of Cookie Stuff */
+
+/* Attempt at simpler Drop Down Menu Items */
+
+/* 
+    An other menu style based on CSS3 - not sure how this will work but here goes
+*/
+
+/* Comment all navs out for now
+
+nav ul ul {
+	display: none;
+}
+
+nav ul li:hover > ul {
+	display: block;
+}
+
+nav ul:not([role]) {
+	width: 40%;
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 2px 0px 2px;
+	margin: 0px 4px 0px 4px; 
+
+
+  	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+  	
+  	box-shadow: 2px 2px 3px #666666;
+  	-webkit-box-shadow: 2px 2px 3px #666666;
+  	-moz-box-shadow: 2px 2px 3px #666666;
+
+	background: MidnightBlue;
+	list-style: none;
+	position: relative;
+	display: inline-table;
+}
+
+nav ul:after {
+	content: ""; clear: both; display: block;
+}
+
+nav:not([aria-label]) ul li {
+	float: left;
+}
+
+nav ul li:hover {
+	border-radius: 10px;
+  	-webkit-border-radius: 10px;
+  	-moz-border-radius: 10px;
+	
+	border-style: none; 
+	border-width: 0px;
+	margin: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	background: blue;
+}
+
+nav ul li:hover a {
+	color: #98A69A;
+	margin: 0;
+}
+	
+nav ul li a {
+	font-weight: bold;
+    font-family: arial;
+    font-style: normal;
+    font-size: 0.8vw;
+	border-style: none; 
+	border-width: 0px;
+	display: block; 
+	padding: 0px 4px 0px 4px;
+	margin: 0px 0px 0px 0px;
+	color: #98A69A; 
+	text-decoration: none;
+}
+
+nav ul li:first-child > a {
+  border-top-left-radius: 10px;
+  -webkit-border-top-left-radius: 10px;
+  -moz-border-radius-topleft: 10px;
+  border-top-right-radius: 10px;
+  -webkit-border-top-right-radius: 10px;
+  -moz-border-radius-topright: 10px;
+
+}
+nav ul li:last-child > a {
+  border-bottom-left-radius: 10px;
+  -webkit-border-bottom-left-radius: 10px;
+  -moz-border-radius-bottomleft: 10px;
+  border-bottom-right-radius: 10px;
+  -webkit-border-bottom-right-radius: 10px;
+  -moz-border-radius-bottomright: 10px;
+
+}
+
+nav ul ul:not([role]) {
+	background: #98A69A; 
+	border-radius: 0px; 
+	padding: 0px 4px 0px 4px;
+	position: absolute; 
+	margin: 0px 4px 0px 4px;
+	top: 100%;
+	border-style: none; 
+	border-width: 0px;
+}
+
+nav ul ul li:not([role]) {
+	float: none; 
+	border-style: none;
+	border-width: 0px 0px 0px 0px;
+	padding: 0px 4px 0px 4px;
+	margin: 0px 4px 0px 4px;
+	
+	position: relative;
+}
+
+nav ul ul li a {
+	padding: 0px 6px 0px 6px;
+	font-style:normal;
+  	font-family:arial;
+  	font-weight: normal;
+  	text-shadow: 2px 2px 3px #FFFFFF;
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px;
+	margin: 0px 4px 0px 4px;
+	background: DimGrey;
+}	
+
+nav ul ul li a:hover {
+	border-style: solid; 
+	border-width: 0px 0px 0px 0px; 
+	background: Gainsboro;
+}
+
+nav ul ul ul {
+	position: absolute; left: 100%; top:0;
+}
+
+*/
+</style>
+</head>
+<body bgcolor="White" style="background-color:White; font-family:Montserrat, sans-serif; font-size:0.8vw; margin-bottom:10px; width:100%" width="100%">
+<header bgcolor="rgb(0, 138, 173)" height="10%" style="position:sticky; padding-top:0; padding-bottom:0; left:0; top:0; height:10%; background-color:rgb(0, 138, 173); width:95%; box-sizing:border-box" width="95%">
+<table style="width:90%; display:inline-table; border:0; border-style:none; border-collapse:collapse" width="90%">
+<tbody>
+<tr>
+<td style="padding:10px; border:0; width:140px" width="140">
+<div bgcolor="rgb(46, 45, 98)" class="banner" style="display:inline; background-color:rgb(46, 45, 98); padding-top:4px; padding-bottom:4px; max-width:90%; border-width:0; margin:0">
+<img align="left" alt="National Survey of Health &amp; Development" height="auto" src="images/NSHDLogo.png" style="display:inline; max-width:15%; height:auto; padding-top:20px; margin:0 auto; float:left"/>
+<h1 style="color:black; font-size:2vw; display:inline; float:left">  MRC National Survey of Health and Development  </h1>
+<img align="left" alt="UKRI" height="auto" src="images/ukrimrc.png" style="display:inline; max-width:15%; height:auto; padding-top:20px; margin:0 auto; float:left"/>
+</div>
+</td>
+</tr>
+<tr>
+
+</tr>
+</tbody>
+</table>
+</header>
+<div bgcolor="white" class="results" style="font-family:Montserrat, sans-serif; font-size:0.8vw; color:black; margin-top:2%; padding-top:0.6em; padding-right:0.6em; padding-bottom:0.4em; padding-left:0.6em; background-color:white; display:block">
+<div bgcolor="white" class="results" style="font-family:Montserrat, sans-serif; font-size:0.8vw; color:black; margin-top:2%; padding-top:0.6em; padding-right:0.5em; padding-bottom:0.6em; padding-left:0.5em; background-color:white; display:block; border-collapse:separate; margin:2em">
+<!-- <p style="color:maroon;font-size:110%;text-align:center;line-height: 70%;">User Name: i.shah Type: Internal</p> -->
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Variable Metadata</h2>
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Variable</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">oul89</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Field ID</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=32859">32859</a></td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Label</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Please describe longest job since 1982. [OUG classification] - at age 43 years</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Card	Number</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">de89d</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Form</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">A - Main questionnaire</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Question</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">49(c)</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Year</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">1989</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Derived Status</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">0</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Later Version</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Units</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">OPCS (1980)</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Sensitive</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">1</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Reason Public</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">NA</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Reason Sensitive</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Possible low cell count issue</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:10%; word-wrap:break-word; text-align:left" width="10%"><strong>Notes</strong></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Questions about work asked in the 1989 A questionnaire.</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Linked and Longitudinal Variables</h2>
+<p style="margin:1vw; padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">There are no associated variables.</p>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Associated Documents</h2>
+<table class="skip-filter" style="width:55%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="55%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px; border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:17%; word-wrap:break-word; text-align:left" width="17%">Questionnaires</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"><a href="https://skylark.ucl.ac.uk/NSHD/exploring/nshd-questionnaires/" target="_blank">View</a></td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Category Memberships</h2>
+<table class="skip-filter" style="width:55%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="55%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Employment history [23]"/>
+Employment history [23]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			Legacy Category			</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:20%; word-wrap:break-word; text-align:left" width="20%">
+<!-- Insert Form Here!! -->
+<form action="search" method="post" name="input" onsubmit="return validateSearchForm(this)" style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px" target="_self">
+<input align="left" bgcolor="Linen" name="type" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="c"/>
+<input align="left" bgcolor="Linen" name="category" style="font-family:Montserrat, sans-serif; font-size:0.8vw; background-color:Linen; color:MidnightBlue; margin-bottom:10px; word-wrap:break-word; padding:7px; text-align:left; margin:2px; border:0 solid Bisque" type="hidden" value="Employment history [5154]"/>
+Employment history [5154]
+</form>
+</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+
+			This category contains data on the employment history which includes voluntary work and retirement.			</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Value Labels</h2>
+<table class="skip-filter" style="width:35%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="35%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0; width:10%" width="10%">Value</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Label</th>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">6.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Treasurers and company financial managers</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">13.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Marketing and sales managers</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">32.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Higher and further education teaching professionals</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">33.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Primary, secondary (and middle school deemed primary/secondary), nursery and special educ teaching proffessionals</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">39.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Social workers, probation officers, welfare, community and youth workers and occupational hygienists and safety officers (health and safety)</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Nurses</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">99.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Computer systems and data processing managers, Other financial institution and office managers, Travel agence manager.</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">101.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Managers and proprietors in service industries n.e.c.</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">111.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Other managers in farming, horticulture, forestry and fishing n.e.c., Registrars and administrators of educational establishments</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">115.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Civil Service administrative officers and assistants, Local government clerical officers and assistants, Accounts clerks etc</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">116.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Retail cash desk and check-out operators</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">117.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Receptionists</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">118.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Medical secretaries, Legal secretaries, Typists and word processor operators and other secretaries etc</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">125.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Sales assistants</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">133.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Technical and wholesale sales representatives</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">134.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Other sales representatives n.e.c.</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">135.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Officers in United Kingdom armed forces</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">151.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Educational assistants, Other childcare and related occupations n.e.c, Cleaners, domestics</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">156.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Hospital ward assistants, Care assistants and attendants</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">158.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Window cleaners, Road sweepers</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">248.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Metal working production and maintenance fitters</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">253.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Electricians, electrical maintenance fitters, Auto electricians</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">287.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Packers, bottlers, canners, fillers</td>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">326.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Drivers of road goods vehicles</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">888.0</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Not applicable</td>
+</tr>
+</table>
+<h2 style="padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Frequency Distribution For oul89</h2>
+<div class="skip-filter" style="border-collapse:separate; padding-top:0.6em; padding-right:0.5em; padding-bottom:0.6em; padding-left:0.5em; margin:2em">
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:75%; word-wrap:break-word; text-align:left" width="75%"><img alt="Histogram/Bar Chart Plot" src="data:image/png;base64,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YDQaMRqNdOrU6bkuc0ZGBh988AFr1qxh+/btfPLJJ891eQEaN26snd8+ffrw2muvPfdlBgnAL62cX4xWVla4urpy/fp1TCaTuYuVi16vz5Ola9euXbRv3x6Ajh075pom8nlQsmRJHBwcALCyskKv1z/XZba0tESnu/s1kJSURN26dZ/r8gIcOHCA0qVL4+zsDDz//xMAV65cwdfXlx49enDt2rXnusz79u3D3t6eHj160Lx5c/bt2/dcl/d+y5Yt4/XXX38hyiwB+CV148YNihYtqj0vVKgQiYmJZizRo7m33EWLFuXGjRtmLlH+0tLSmDhxIsOHD3/uy3zs2DG8vLx4++23ad68+XNf3ilTpjBu3Djt+fNeXoDz58+zY8cOOnTowKhRo57rMl+5coXjx4+zfPlyQkJCeOutt57r8t4rMjISa2trKlSo8EKUWQLwS6po0aLcunVLe3779m2t5vY8u7fct27dwtHR0bwFykdWVhY9e/Zk9OjR1K5d+7kvc7169di3bx/r1q3j7bfffq7L++uvv9KoUSOKFSumvfY8lzdH8eLFAejWrRtHjx59rsvs6OhIkyZNKFSoEOXKlcPe3h57e/vntrz3Wrp0KT179gRejP8LCcAvKQ8PD3bu3ElWVhZnz56lePHiWlPk88zHx4eNGzcCsH79eu0+4PNCKcWAAQNo3bo1r776KvB8l/nexPEODg7Y2dk91+U9duwYRqORNm3a8McffzBixAjq1Knz3JYXICUlhezsbAB27txJlSpVnutz7OHhQWRkJFlZWSQmJpKUlESLFi2e2/Lea+XKlXTr1g14vj93GiVeWvPmzVNeXl6qSZMm6tixY+YuTr46d+6sKlasqGrVqqXeffddlZKSorp166aaNWumevfurdLT081dxFw2bdqkbG1tla+vr/L19VXDhw9/rsu8detW1axZM2UwGJSvr6/6888/n+vy3iswMFDt27fvuS/v4cOHVf369VWzZs2Uv7+/OnPmzHNf5u+//141adJENW7cWG3YsOG5L69SSu3fv1+1a9dOe/4ilFkyYQkhhBBm8Py3OQohhBD/QRKAhRBCCDOQACyEEEKYgQRgIYQQwgwkAAshhBBmIAFYCCGEMAMJwEIIIYQZSAAWQgghzEACsBBCCGEGEoCFEEIIM5AALIQQQpiBBGAhhBDCDCQACyGEEGbw/wBGVXLfVzGgNgAAAABJRU5ErkJggg=="/></td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">
+<table style="width:80%; display:inline-table; border:none; border-style:none; border-collapse:collapse; table-layout:fixed; padding-top:10px; padding-right:10px; padding-bottom:10px; padding-left:10px; margin:2px" width="80%">
+<tr style="border-top-left-radius:10px; -webkit-border-top-left-radius:10px; -moz-border-radius-topleft:10px; border-top-right-radius:10px; -webkit-border-top-right-radius:10px; -moz-border-radius-topright:10px">
+<th align="center" bgcolor="PowderBlue" colspan="2" style="padding:7px; word-wrap:break-word; text-align:center; margin:2px; background-color:PowderBlue; color:black; border:0">Frequency Table</th>
+</tr>
+<tr>
+</tr>
+<tr>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Value</th>
+<th align="left" bgcolor="PowderBlue" class="skip-filter" style="padding:7px; word-wrap:break-word; text-align:left; margin:2px; background-color:PowderBlue; color:black; border:0">Count</th>
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">6.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">12</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">13.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">10</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">32.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">10</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">33.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">49</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">39.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">15</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">43.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">30</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">99.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">27</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">101.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">46</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">111.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">25</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">115.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">73</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">116.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">10</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">117.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">11</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">118.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">47</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">125.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">47</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">133.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">13</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">134.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">11</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">135.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">14</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">151.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">17</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">156.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">11</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">158.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">21</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">248.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">14</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">253.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">14</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">287.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">10</td> <!-- Count -->
+</tr>
+<tr>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">326.0</td> <!-- Unique Value -->
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">12</td> <!-- Count -->
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Series Size</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">549</td>
+</tr>
+</table>
+<p style="margin:1vw; padding-top:1px; padding-right:5px; padding-bottom:1px; padding-left:5px">Statistics relate to plotted values only.</p>
+</td>
+</tr>
+<tr style="border-bottom-left-radius:10px; -webkit-border-bottom-left-radius:10px; -moz-border-radius-bottomleft:10px; border-bottom-right-radius:10px; -webkit-border-bottom-right-radius:10px; -moz-border-radius-bottomright:10px">
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140">Missing values have been removed and low cell counts excluded</td>
+<td align="left" style="padding:5px; border:0 solid #98A69A; width:140px; word-wrap:break-word; text-align:left" width="140"></td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+
+
+
+</body>
+</html>

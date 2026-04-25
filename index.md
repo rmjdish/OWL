@@ -1,35 +1,75 @@
 ---
 title: Home
-layout: home
+layout: default
+nav_order: 1
+classes: home-page
 ---
 
-This is a *bare-minimum* template to create a Jekyll site that uses the [Just the Docs] theme. You can easily set the created site to be published on [GitHub Pages] – the [README] file explains how to do that, along with other details.
+<div class="home-page">
 
-If [Jekyll] is installed on your computer, you can also build and preview the created site *locally*. This lets you test changes before committing them, and avoids waiting for GitHub Pages.[^1] And you will be able to deploy your local build to a different platform than GitHub Pages.
+  <h2>About This Resource</h2>
+  <p>
+    The NSHD Data Dictionary is a comprehensive metadata browser for the 1946 British birth cohort study.
+    It provides researchers with detailed information about the variables, assays, and data collected
+    across decades of longitudinal follow-up, serving as a comprehensive reference for all data held within the cohort.
+  </p>
 
-More specifically, the created site:
+  <h2>Data Coverage</h2>
+  <p>
+    The dictionary spans a wide range of domains including clinical assessments, cognitive testing,
+    biological assays, lifestyle questionnaires, and socioeconomic measures. Variables are organised
+    into categories and subcategories, making it straightforward to locate data from specific sweeps
+    or topic areas across the cohort's history.
+  </p>
 
-- uses a gem-based approach, i.e. uses a `Gemfile` and loads the `just-the-docs` gem
-- uses the [GitHub Pages / Actions workflow] to build and publish the site on GitHub Pages
+  <h2>How to Use This Site</h2>
+  <p>
+	Use the navigation panel on the left to browse categories of variables. Each category contains 
+	detailed metadata including variable labels, field IDs, and links to further documentation. 
+	You can search and filter within any category to find the variables most relevant to your research, 
+	or use the Data Dictionary search tool to query the entire metadata repository at once, allowing you 
+	to quickly locate specific variables, concepts, or keywords across all topics and sweeps.
+  </p>
 
-Other than that, you're free to customize sites that you create with this template, however you like. You can easily change the versions of `just-the-docs` and Jekyll it uses, as well as adding further plugins.
+  <h2>Access and Permissions</h2>
+  <p>
+    Some variables may not be publicly displayed due to data sensitivity or access restrictions.
+    If you believe a variable should be visible or require access to restricted data, please contact
+    the NSHD data access team directly for further guidance.
+  </p>
 
-[Browse our documentation][Just the Docs] to learn more about how to use this theme.
+</div>
 
-To get started with creating a site, simply:
+<style>
+/* -----------------------------------------
+   HOME PAGE — SCOPED STYLING ONLY FOR THIS PAGE
+   ----------------------------------------- */
 
-1. click "[use this template]" to create a GitHub repository
-2. go to Settings > Pages > Build and deployment > Source, and select GitHub Actions
+.home-page h1 {
+  font-size: 28px !important;
+  font-weight: bold !important;
+  color: #333 !important;
+  margin-top: 10px !important;
+  text-decoration: underline !important;
+  text-underline-offset: 4px !important;
+}
 
-If you want to maintain your docs in the `docs` directory of an existing project repo, see [Hosting your docs from an existing project repo](https://github.com/just-the-docs/just-the-docs-template/blob/main/README.md#hosting-your-docs-from-an-existing-project-repo) in the template README.
+.home-page h2 {
+  font-size: 22px !important;
+  font-weight: bold !important;
+  color: #444 !important;
+  margin-top: 30px !important;
+}
 
-----
+.home-page p {
+  max-width: 750px !important;
+  line-height: 1.65 !important;
+  margin-bottom: 15px !important;
+  color: #333 !important;
+}
 
-[^1]: [It can take up to 10 minutes for changes to your site to publish after you push the changes to GitHub](https://docs.github.com/en/pages/setting-up-a-github-pages-site-with-jekyll/creating-a-github-pages-site-with-jekyll#creating-your-site).
+.home-page {
+  padding-bottom: 20px !important;
+}
+</style>
 
-[Just the Docs]: https://just-the-docs.github.io/just-the-docs/
-[GitHub Pages]: https://docs.github.com/en/pages
-[README]: https://github.com/just-the-docs/just-the-docs-template/blob/main/README.md
-[Jekyll]: https://jekyllrb.com
-[GitHub Pages / Actions workflow]: https://github.blog/changelog/2022-07-27-github-pages-custom-github-actions-workflows-beta/
-[use this template]: https://github.com/just-the-docs/just-the-docs-template/generate
