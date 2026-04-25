@@ -18,13 +18,13 @@ classes: page-search-data-dictionary
 
 <div id="data-dictionary-app">
 
-  <!-- FILTER BAR -->
-<div id="filter-box" class="filter-box">
-  <div class="filter-box-inner">
-    <div class="filter-title">Filters</div>
-    <div id="filter-bar" class="filter-bar"></div>
+  <!-- FILTER BOX -->
+  <div id="filter-box" class="filter-box">
+    <div class="filter-box-inner">
+      <div class="filter-title">Filters</div>
+      <div id="filter-bar" class="filter-bar"></div>
+    </div>
   </div>
-</div>
 
   <!-- SEARCH + PAGE SIZE + RESET + PAGINATION -->
   <div id="search-pagination-top" class="search-pagination-top">
@@ -38,7 +38,8 @@ classes: page-search-data-dictionary
     </select>
     <button id="resetFiltersBtn">Reset Filters</button>
     <button id="downloadCsvBtn" class="download-btn">Download Results (CSV)</button>
-	<a href="NSHD_Data_Dictionary-Public.xlsx" download class="download-excel-btn">Download Data Dictionary</a>	<div id="paginationTop"></div>
+    <a href="NSHD_Data_Dictionary-Public.xlsx" download class="download-excel-btn">Download Data Dictionary</a>
+    <div id="paginationTop"></div>
   </div>
 
   <!-- TABLE WRAPPER -->
@@ -54,11 +55,25 @@ classes: page-search-data-dictionary
   <!-- BOTTOM PAGINATION -->
   <div id="paginationBottom"></div>
 
+  <!-- ⭐⭐⭐ BASKET PANEL (NEW) ⭐⭐⭐ -->
+  <div id="basketPanel" class="basket-panel" style="margin-top:30px; padding:15px; border:2px solid #4b067a; border-radius:8px; background:#fafafa;">
+    <h3 style="margin-top:0;">Basket (<span id="basketCount">0</span>)</h3>
+    <ul id="basketList" style="padding-left:20px;"></ul>
+
+    <button id="clearBasketBtn" style="margin-right:10px; padding:6px 12px; background:#4b067a; color:white; border:none; border-radius:4px; cursor:pointer;">
+      Clear Basket
+    </button>
+
+    <button id="downloadBasketBtn" style="padding:6px 12px; background:#2e7d32; color:white; border:none; border-radius:4px; cursor:pointer;">
+      Download Basket (CSV)
+    </button>
+  </div>
+  <!-- ⭐⭐⭐ END BASKET PANEL ⭐⭐⭐ -->
+
 </div>
 </div> <!-- end dataUI -->
 
 <style>
-
 /* ⭐ LOADING SCREEN */
 .loading-screen {
   display: flex;
@@ -101,15 +116,14 @@ classes: page-search-data-dictionary
   }
 }
 
-
 /* ⭐ FILTER BOX CONTAINER */
 .page-search-data-dictionary .filter-box {
-  background: #ffffff;          /* white box */
-  border: 1px solid #ccc;       /* subtle border */
+  background: #ffffff;
+  border: 1px solid #ccc;
   border-radius: 6px;
   padding: 16px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08); /* soft shadow */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
 }
 
 /* ⭐ FILTER BOX TITLE */
@@ -117,7 +131,7 @@ classes: page-search-data-dictionary
   font-size: 16px;
   font-weight: bold;
   margin-bottom: 12px;
-  color: #4b067a;               /* matches your theme */
+  color: #4b067a;
 }
 
 /* ⭐ FILTER BAR INSIDE THE BOX */
@@ -156,16 +170,14 @@ classes: page-search-data-dictionary
 /* ⭐ FILTER BAR SHRINKS + WRAPS */
 .page-search-data-dictionary .filter-bar {
   display: flex;
-  flex-wrap: wrap;     /* <-- THIS FIXES SHRINKING */
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .page-search-data-dictionary .filter-bar select {
-  flex: 1 1 200px;     /* <-- SHRINKS DOWN TO 200px */
-  min-width: 150px;    /* <-- NEVER gets too small */
+  flex: 1 1 200px;
+  min-width: 150px;
 }
-
-
 
 /* RESET BUTTON */
 #resetFiltersBtn {
@@ -180,25 +192,24 @@ classes: page-search-data-dictionary
 }
 
 .page-search-data-dictionary .download-btn {
-    margin-left: 10px;
-    padding: 6px 14px;
-    background: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
+  margin-left: 10px;
+  padding: 6px 14px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
 }
 
 .page-search-data-dictionary .download-btn:hover {
-    background: #45a049;
+  background: #45a049;
 }
-
 
 .page-search-data-dictionary .download-excel-btn {
   margin-left: 10px;
   padding: 6px 14px;
-  background: #1976D2; /* blue to differentiate, or choose your colour */
+  background: #1976D2;
   color: white;
   border-radius: 4px;
   text-decoration: none;
@@ -208,8 +219,6 @@ classes: page-search-data-dictionary
 .page-search-data-dictionary .download-excel-btn:hover {
   background: #0F5BA5;
 }
-
-
 
 #resetFiltersBtn:hover {
   background: #36045a;
@@ -228,11 +237,11 @@ classes: page-search-data-dictionary
   position: sticky;
   top: 0;
   z-index: 50;
-  padding: 0; /* padding moved into .th-inner */
+  padding: 0;
   border-bottom: 2px solid #4b067a;
 }
 
-/* ⭐ HEADER INNER WRAPPER — TRANSPARENT (so pastel shows fully) */
+/* ⭐ HEADER INNER WRAPPER */
 #myTable thead th .th-inner {
   width: 100%;
   height: 100%;
@@ -289,15 +298,13 @@ classes: page-search-data-dictionary
 #myTable col.col-5 { width: 10%; }
 #myTable col.col-6 { width: 10%; }
 
-
-/* ⭐ COLUMN COLOURS — APPLY TO BOTH HEADER + BODY */
+/* ⭐ COLUMN COLOURS */
 #myTable th:nth-child(1), #myTable tbody td:nth-child(1) { background: #F3E5F5 !important; }
 #myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #E8F5E9 !important; }
 #myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E3F2FD !important; }
 #myTable th:nth-child(4), #myTable tbody td:nth-child(4) { background: #FFF3E0 !important; }
 #myTable th:nth-child(5), #myTable tbody td:nth-child(5) { background: #FCE4EC !important; }
 #myTable th:nth-child(6), #myTable tbody td:nth-child(6) { background: #EDE7F6 !important; }
-
 
 /* ⭐ HEADER TEXT + ICONS = BLACK */
 #myTable thead th .header-label,
@@ -308,9 +315,9 @@ classes: page-search-data-dictionary
 /* ALIGNMENT */
 #myTable th:nth-child(1), #myTable td:nth-child(1),
 #myTable th:nth-child(3), #myTable td:nth-child(3),
-#myTable th:nth-child(4), #myTable td:nth-child(4),  
-#myTable th:nth-child(4), #myTable td:nth-child(5) { 
-  text-align: left !important; 
+#myTable th:nth-child(4), #myTable td:nth-child(4),
+#myTable th:nth-child(5), #myTable td:nth-child(5) {
+  text-align: left !important;
 }
 
 #myTable th:nth-child(2), #myTable td:nth-child(2),
@@ -328,11 +335,8 @@ classes: page-search-data-dictionary
 .page-search-data-dictionary * {
   box-sizing: border-box;
 }
-
-
 </style>
 
 <script src="/data_dict/assets/js/data_dictionary.js"></script>
 
 </div>
-
