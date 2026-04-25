@@ -305,12 +305,13 @@ classes: page-search-data-dictionary
 }
 
 /* ⭐ RESPONSIVE COLUMN WIDTHS */
-#myTable col.col-1 { width: 11%; }
-#myTable col.col-2 { width: 9%; }
-#myTable col.col-3 { width: 10%; }
-#myTable col.col-4 { width: 50%; }
-#myTable col.col-5 { width: 10%; }
+#myTable col.col-1 { width: 5%; }
+#myTable col.col-2 { width: 11%; }
+#myTable col.col-3 { width: 9%; }
+#myTable col.col-4 { width: 10%; }
+#myTable col.col-5 { width: 45%; }
 #myTable col.col-6 { width: 10%; }
+#myTable col.col-7 { width: 10%; }
 
 /* ⭐ COLUMN COLOURS */
 #myTable th:nth-child(1), #myTable tbody td:nth-child(1) { background: #F3E5F5 !important; }
