@@ -304,24 +304,6 @@ classes: page-search-data-dictionary
   white-space: normal;
 }
 
-/* ⭐ Checkbox column */
-#myTable td.select-cell,
-#myTable th.select-cell {
-  width: 40px !important;
-  min-width: 40px !important;
-  max-width: 40px !important;
-  background: white !important;
-  text-align: center !important;
-}
-
-/* ⭐ RESPONSIVE COLUMN WIDTHS */
-#myTable col.col-1 { width: 40px !important; }   /* checkbox */
-#myTable col.col-2 { width: 11%; }
-#myTable col.col-3 { width: 9%; }
-#myTable col.col-4 { width: 10%; }
-#myTable col.col-5 { width: 45%; }
-#myTable col.col-6 { width: 10%; }
-#myTable col.col-7 { width: 10%; }
 
 /* ⭐ COLUMN COLOURS */
 #myTable th:nth-child(1), #myTable td:nth-child(1) { background: white !important; } /* checkbox */
@@ -351,6 +333,50 @@ classes: page-search-data-dictionary
   text-align: center !important;
 }
 
+
+/* Checkbox column */
+#myTable th:nth-child(1),
+#myTable td:nth-child(1) {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  text-align: center;
+}
+
+/* Topic */
+#myTable th:nth-child(2),
+#myTable td:nth-child(2) {
+  width: 11%;
+}
+
+/* Subtopic 1 */
+#myTable th:nth-child(3),
+#myTable td:nth-child(3) {
+  width: 9%;
+}
+
+/* Subtopic 2 */
+#myTable th:nth-child(4),
+#myTable td:nth-child(4) {
+  width: 10%;
+}
+
+/* Description (wide) */
+#myTable th:nth-child(5),
+#myTable td:nth-child(5) {
+  width: 50%;
+}
+
+/* Next columns */
+#myTable th:nth-child(6),
+#myTable td:nth-child(6),
+#myTable th:nth-child(7),
+#myTable td:nth-child(7) {
+  width: 10%;
+}
+
+
+
 /* ⭐ GLOBAL RESPONSIVE SHRINKING */
 .page-search-data-dictionary {
   width: 100%;
@@ -361,6 +387,7 @@ classes: page-search-data-dictionary
 .page-search-data-dictionary * {
   box-sizing: border-box;
 }
+
 </style>
 
 <script src="/OWL/assets/js/data_dictionary.js"></script>
