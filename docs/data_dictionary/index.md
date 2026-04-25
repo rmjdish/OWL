@@ -304,6 +304,16 @@ classes: page-search-data-dictionary
   white-space: normal;
 }
 
+/* ⭐ Checkbox column */
+#myTable td.select-cell,
+#myTable th.select-cell {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
+  background: white !important;
+  text-align: center !important;
+}
+
 /* ⭐ RESPONSIVE COLUMN WIDTHS */
 #myTable col.col-1 { width: 40px !important; }   /* checkbox */
 #myTable col.col-2 { width: 11%; }
@@ -314,12 +324,13 @@ classes: page-search-data-dictionary
 #myTable col.col-7 { width: 10%; }
 
 /* ⭐ COLUMN COLOURS */
-#myTable th:nth-child(1), #myTable tbody td:nth-child(1) { background: #F3E5F5 !important; }
-#myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #E8F5E9 !important; }
-#myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E3F2FD !important; }
-#myTable th:nth-child(4), #myTable tbody td:nth-child(4) { background: #FFF3E0 !important; }
-#myTable th:nth-child(5), #myTable tbody td:nth-child(5) { background: #FCE4EC !important; }
-#myTable th:nth-child(6), #myTable tbody td:nth-child(6) { background: #EDE7F6 !important; }
+#myTable th:nth-child(1), #myTable td:nth-child(1) { background: white !important; } /* checkbox */
+#myTable th:nth-child(2), #myTable tbody td:nth-child(1) { background: #F3E5F5 !important; }
+#myTable th:nth-child(3), #myTable tbody td:nth-child(2) { background: #E8F5E9 !important; }
+#myTable th:nth-child(4), #myTable tbody td:nth-child(3) { background: #E3F2FD !important; }
+#myTable th:nth-child(5), #myTable tbody td:nth-child(4) { background: #FFF3E0 !important; }
+#myTable th:nth-child(6), #myTable tbody td:nth-child(5) { background: #FCE4EC !important; }
+#myTable th:nth-child(7), #myTable tbody td:nth-child(6) { background: #EDE7F6 !important; }
 
 /* ⭐ HEADER TEXT + ICONS = BLACK */
 #myTable thead th .header-label,
