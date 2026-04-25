@@ -75,10 +75,150 @@ classes: page-search-data-dictionary
 <style>
 
 /* ============================================================
-   FIX: Remove duplicate <style> tags and conflicting rules
+   FILTER BAR — Sticky Layer 1 (Top)
+   ============================================================ */
+.page-nshd_data_dictionary_public .filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+  margin-bottom: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: white;
+  padding: 10px 0;
+}
+
+/* Locked filter widths */
+.page-nshd_data_dictionary_public .filters select {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  appearance: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  font-size: 14px;
+  padding: 6px 10px;
+}
+
+
+/* ============================================================
+   SEARCH BAR — Sticky Layer 2
+   ============================================================ */
+.page-nshd_data_dictionary_public .search-row {
+  position: sticky;
+  top: 60px;
+  z-index: 900;
+  background: white;
+  padding: 8px 0 12px 0;
+}
+
+.page-nshd_data_dictionary_public .search-row input {
+  width: 260px;
+  padding: 6px 10px;
+  border: 1px solid #7e57c2;
+  border-radius: 4px;
+}
+
+
+/* ============================================================
+   TOP PAGINATION — Sticky Layer 3
+   ============================================================ */
+.page-nshd_data_dictionary_public #pagination-top {
+  position: sticky;
+  top: 110px;
+  z-index: 800;
+  background: white;
+  padding: 10px 0;
+}
+
+
+/* ============================================================
+   TABLE HEADER — Sticky Layer 4
+   ============================================================ */
+.page-nshd_data_dictionary_public #myTable thead th {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  padding: 0;
+  border-bottom: 2px solid #4b067a;
+}
+
+#myTable thead th .th-inner {
+  width: 100%;
+  height: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+
+/* ============================================================
+   TABLE WRAPPER
+   ============================================================ */
+.page-search-data-dictionary #table-wrapper {
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: auto;
+  position: relative;
+}
+
+
+/* ============================================================
+   TABLE BASE
+   ============================================================ */
+#myTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+#myTable td,
+#myTable th {
+  padding: 6px 10px;
+  vertical-align: top;
+  word-break: break-word;
+  white-space: normal;
+}
+
+
+/* ============================================================
+   ROW STRIPING
+   ============================================================ */
+#myTable tbody tr:nth-child(odd) { background: #f7f7f7 !important; }
+#myTable tbody tr:nth-child(even) { background: #ececec !important; }
+
+
+/* ============================================================
+   SORT ICONS
+   ============================================================ */
+.sort-icon {
+  font-size: 12px;
+  margin-left: 6px;
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+}
+
+.sortable-header:hover .sort-icon {
+  opacity: 0.9;
+}
+
+#myTable thead th .header-label,
+#myTable thead th .sort-icon {
+  color: black !important;
+}
+
+
+/* ============================================================
+   COLUMN COLOURS + WIDTHS (FINAL, CORRECT)
    ============================================================ */
 
-/* Checkbox column */
+/* 1 — Checkbox */
 #myTable th:nth-child(1),
 #myTable td:nth-child(1) {
   width: 40px;
@@ -88,7 +228,7 @@ classes: page-search-data-dictionary
   text-align: center;
 }
 
-/* Topic */
+/* 2 — Topic */
 #myTable th:nth-child(2),
 #myTable td:nth-child(2) {
   width: 11%;
@@ -96,7 +236,7 @@ classes: page-search-data-dictionary
   text-align: left;
 }
 
-/* Subtopic 1 */
+/* 3 — Subtopic 1 */
 #myTable th:nth-child(3),
 #myTable td:nth-child(3) {
   width: 9%;
@@ -104,7 +244,7 @@ classes: page-search-data-dictionary
   text-align: left;
 }
 
-/* Subtopic 2 */
+/* 4 — Subtopic 2 */
 #myTable th:nth-child(4),
 #myTable td:nth-child(4) {
   width: 10%;
@@ -112,58 +252,49 @@ classes: page-search-data-dictionary
   text-align: left;
 }
 
-/* Description */
+/* 5 — Subtopic 3 */
 #myTable th:nth-child(5),
 #myTable td:nth-child(5) {
-  width: 50%;
+  width: 10%;
   background: #FFF3E0 !important;
   text-align: left;
 }
 
-/* Subtopic 4 */
+/* 6 — Subtopic 4 */
 #myTable th:nth-child(6),
 #myTable td:nth-child(6) {
   width: 10%;
   background: #FCE4EC !important;
-  text-align: center;
+  text-align: left;
 }
 
-/* NSHD Variable Name */
+/* 7 — NSHD Variable Name */
 #myTable th:nth-child(7),
 #myTable td:nth-child(7) {
   width: 10%;
   background: #EDE7F6 !important;
-  text-align: center;
+  text-align: left;
 }
 
-/* Header text */
-#myTable thead th .header-label,
-#myTable thead th .sort-icon {
-  color: black !important;
+/* Remaining columns auto-size */
+#myTable th:nth-child(n+8),
+#myTable td:nth-child(n+8) {
+  background: white !important;
+  text-align: left;
 }
 
-/* Sticky header */
-#myTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  border-bottom: 2px solid #4b067a;
-}
 
-/* Row striping */
-#myTable tbody tr:nth-child(odd) { background: #f7f7f7 !important; }
-#myTable tbody tr:nth-child(even) { background: #ececec !important; }
-
-/* Base table */
-#myTable {
+/* ============================================================
+   GLOBAL RESPONSIVE SHRINKING
+   ============================================================ */
+.page-search-data-dictionary {
   width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
-#myTable td, #myTable th {
-  padding: 6px 10px;
-  word-break: break-word;
+.page-search-data-dictionary * {
+  box-sizing: border-box;
 }
 
 </style>
