@@ -466,18 +466,26 @@ function downloadFilteredCSV() {
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
   
-document.addEventListener("DOMContentLoaded", () => {
+// ⭐ Wait until the Just‑the‑Docs header is actually rendered
+function waitForHeader() {
   const searchBox = document.querySelector(".site-header-container .search");
   const basket = document.getElementById("basketTop");
 
   if (searchBox && basket) {
     basket.style.display = "flex";   // make visible
     searchBox.insertAdjacentElement("afterend", basket);
+
+    updateBasketCountUI();
+
+    basket.addEventListener("click", () => {
+      window.location = "/OWL/docs/basket/";
+    });
+
+    return; // done
   }
 
-  updateBasketCountUI();
+  // Try again in 50ms until header exists
+  setTimeout(waitForHeader, 50);
+}
 
-  basket.addEventListener("click", () => {
-    window.location = "/OWL/docs/baskets/";
-  });
-});
+waitForHeader();
