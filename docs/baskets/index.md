@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Basket
-nav_order: 3
+nav_exclude: true
 ---
 
 <h1>Variable Basket</h1>
