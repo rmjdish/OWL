@@ -43,10 +43,12 @@ function removeFromBasket(varName) {
 
 function updateBasketCountUI() {
   const basket = loadBasket();
-  const elMain = document.getElementById("basketCount");
-  const elSidebar = document.getElementById("sidebarBasketCount");
-  if (elMain) elMain.textContent = basket.length;
-  if (elSidebar) elSidebar.textContent = basket.length;
+
+  const el1 = document.getElementById("basketCount");          // search page
+  const el2 = document.getElementById("sidebarBasketCount");   // sidebar
+
+  if (el1) el1.textContent = basket.length;
+  if (el2) el2.textContent = basket.length;
 }
 
 // ---------------- FILTER CONFIG ----------------
