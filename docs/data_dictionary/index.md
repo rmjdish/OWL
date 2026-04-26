@@ -290,13 +290,30 @@ classes: page-search-data-dictionary
 #myTable col.col-6 { width: 10%; }
 
 
-/* ⭐ COLUMN COLOURS — APPLY TO BOTH HEADER + BODY */
-#myTable th:nth-child(1), #myTable tbody td:nth-child(1) { background: #F3E5F5 !important; }
-#myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #E8F5E9 !important; }
-#myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E3F2FD !important; }
-#myTable th:nth-child(4), #myTable tbody td:nth-child(4) { background: #FFF3E0 !important; }
-#myTable th:nth-child(5), #myTable tbody td:nth-child(5) { background: #FCE4EC !important; }
-#myTable th:nth-child(6), #myTable tbody td:nth-child(6) { background: #EDE7F6 !important; }
+/* ⭐ Checkbox column */
+#myTable col.col-select {
+  width: 20px;
+}
+
+#myTable th.select-header,
+#myTable td.select-cell {
+  background: #ffffff !important;
+  text-align: center;
+}
+
+/* Keep checkbox small and centered */
+#myTable td.select-cell input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+}
+
+/* ⭐ Adjust pastel column mapping (shift by 1 because of checkbox column) */
+#myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #F3E5F5 !important; }
+#myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E8F5E9 !important; }
+#myTable th:nth-child(4), #myTable tbody td:nth-child(4) { background: #E3F2FD !important; }
+#myTable th:nth-child(5), #myTable tbody td:nth-child(5) { background: #FFF3E0 !important; }
+#myTable th:nth-child(6), #myTable tbody td:nth-child(6) { background: #FCE4EC !important; }
+#myTable th:nth-child(7), #myTable tbody td:nth-child(7) { background: #EDE7F6 !important; }
 
 
 /* ⭐ HEADER TEXT + ICONS = BLACK */
@@ -305,16 +322,16 @@ classes: page-search-data-dictionary
   color: black !important;
 }
 
-/* ALIGNMENT */
-#myTable th:nth-child(1), #myTable td:nth-child(1),
-#myTable th:nth-child(3), #myTable td:nth-child(3),
-#myTable th:nth-child(4), #myTable td:nth-child(4),  
-#myTable th:nth-child(4), #myTable td:nth-child(5) { 
-  text-align: left !important; 
+/* Alignment (shifted by 1) */
+#myTable th:nth-child(2), #myTable td:nth-child(2),
+#myTable th:nth-child(4), #myTable td:nth-child(4),
+#myTable th:nth-child(5), #myTable td:nth-child(5),
+#myTable th:nth-child(6), #myTable td:nth-child(6) {
+  text-align: left !important;
 }
 
-#myTable th:nth-child(2), #myTable td:nth-child(2),
-#myTable th:nth-child(6), #myTable td:nth-child(6) {
+#myTable th:nth-child(3), #myTable td:nth-child(3),
+#myTable th:nth-child(7), #myTable td:nth-child(7) {
   text-align: center !important;
 }
 
@@ -332,7 +349,7 @@ classes: page-search-data-dictionary
 
 </style>
 
-<script src="/data_dict/assets/js/data_dictionary.js"></script>
+<script src="/OWL/assets/js/data_dictionary.js"></script>
 
 </div>
 

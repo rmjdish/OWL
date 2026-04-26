@@ -5,6 +5,48 @@ let pageSize = 15;
 let sortColumn = null;
 let sortDirection = 1; // 1 = asc, -1 = desc
 
+const BASKET_KEY = "nshd_variable_basket";
+
+function loadBasket() {
+  try {
+    return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveBasket(basket) {
+  localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
+}
+
+function isInBasket(varName) {
+  const basket = loadBasket();
+  return basket.some(item => item.varName === varName);
+}
+
+function addToBasket(varName, label) {
+  const basket = loadBasket();
+  if (!basket.some(item => item.varName === varName)) {
+    basket.push({ varName, label });
+    saveBasket(basket);
+  }
+  updateBasketCountUI();
+}
+
+function removeFromBasket(varName) {
+  let basket = loadBasket();
+  basket = basket.filter(item => item.varName !== varName);
+  saveBasket(basket);
+  updateBasketCountUI();
+}
+
+function updateBasketCountUI() {
+  const basket = loadBasket();
+  const el = document.getElementById("basketCount");
+  if (el) el.textContent = basket.length;
+}
+
+
 const filterColumns = [
   "Topic",
   "Subtopic 1",
@@ -32,6 +74,8 @@ fetch("NSHD_Data_Dictionary_Public.json")
     // ⭐ NEW: hide loading screen, show UI
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.display = "block";
+
+    updateBasketCountUI(); // ⭐ NEW
   });
 
 /* ---------------------------------------------------
@@ -215,36 +259,65 @@ function buildTableHeader() {
   const table = document.getElementById("myTable");
   const colgroup = document.createElement("colgroup");
 
-  colgroup.innerHTML = tableColumns
-    .map((_, i) => `<col class="col-${i+1}">`)
-    .join("");
+  // ⭐ First column = checkbox
+  colgroup.innerHTML =
+    `<col class="col-select">` +
+    tableColumns.map((_, i) => `<col class="col-${i + 1}">`).join("");
 
   table.prepend(colgroup);
 
-tableColumns.forEach(col => {
-  const th = document.createElement("th");
-  th.classList.add("sortable-header");
-
-  th.innerHTML = `
+  // ⭐ Checkbox header (master toggle for current page)
+  const thSelect = document.createElement("th");
+  thSelect.classList.add("select-header");
+  thSelect.innerHTML = `
     <div class="th-inner">
-      <span class="header-label">${col}</span>
-      <span class="sort-icon">⇅</span>
+      <input type="checkbox" id="selectAllPage">
     </div>
   `;
+  headerRow.appendChild(thSelect);
 
-  th.addEventListener("click", () => {
-    if (sortColumn === col) {
-      sortDirection *= -1;
-    } else {
-      sortColumn = col;
-      sortDirection = 1;
-    }
-
-    updateSortIcons();
-    currentPage = 1;
-    renderTable();
-    renderPagination();
+  document.getElementById("selectAllPage").addEventListener("change", e => {
+    const checked = e.target.checked;
+    const start = (currentPage - 1) * pageSize;
+    const end = start + pageSize;
+    filteredData.slice(start, end).forEach(row => {
+      const varName = row["NSHD Variable Name"];
+      const label = row["Variable label"] ?? "";
+      if (!varName) return;
+      if (checked) {
+        addToBasket(varName, label);
+      } else {
+        removeFromBasket(varName);
+      }
+    });
+    renderTable(); // re-render to sync checkboxes
   });
+
+  // ⭐ Existing sortable headers
+  tableColumns.forEach(col => {
+    const th = document.createElement("th");
+    th.classList.add("sortable-header");
+
+    th.innerHTML = `
+      <div class="th-inner">
+        <span class="header-label">${col}</span>
+        <span class="sort-icon">⇅</span>
+      </div>
+    `;
+
+    th.addEventListener("click", () => {
+      if (sortColumn === col) {
+        sortDirection *= -1;
+      } else {
+        sortColumn = col;
+        sortDirection = 1;
+      }
+
+      updateSortIcons();
+      currentPage = 1;
+      renderTable();
+      renderPagination();
+    });
 
   headerRow.appendChild(th);
 });
@@ -254,7 +327,7 @@ tableColumns.forEach(col => {
    RENDER TABLE
 --------------------------------------------------- */
 function renderTable() {
-  sortData(); // ⭐ NEW
+  sortData();
   const body = document.getElementById("table-body");
   body.innerHTML = "";
 
@@ -264,41 +337,64 @@ function renderTable() {
   filteredData.slice(start, end).forEach(row => {
     const tr = document.createElement("tr");
 
-	tableColumns.forEach(col => {
-	  const td = document.createElement("td");
-	  const value = row[col] ?? "";
+    // ⭐ Checkbox cell
+    const tdSelect = document.createElement("td");
+    tdSelect.classList.add("select-cell");
+    const varName = row["NSHD Variable Name"];
+    const label = row["Variable label"] ?? "";
+    const checked = varName && isInBasket(varName);
 
-	  /* ⭐ 1. MAKE SHOWCASE FIELD ID INTO A LINK */
-	  if (col === "Showcase Field ID" && value !== "") {
-		td.innerHTML = `
-		  <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}"
-			 target="_blank"
-			 class="field-link">
-			 ${value}
-		  </a>
-		`;
-	  }
+    tdSelect.innerHTML = `
+      <input type="checkbox" class="row-select"
+             data-var-name="${varName || ""}"
+             data-label="${label.replace(/"/g, "&quot;")}"
+             ${checked ? "checked" : ""}>
+    `;
+    tr.appendChild(tdSelect);
 
-	  /* ⭐ 2. MAKE NSHD VARIABLE NAME INTO A LINK */
-	  else if (col === "NSHD Variable Name" && value !== "") {
-		td.innerHTML = `
-		  <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${value}"
-			 target="_blank"
-			 class="field-link">
-			 ${value}
-		  </a>
-		`;
-	  }
+    // ⭐ Existing data cells
+    tableColumns.forEach(col => {
+      const td = document.createElement("td");
+      const value = row[col] ?? "";
 
-	  /* ⭐ 3. DEFAULT CELL */
-	  else {
-		td.textContent = value;
-	  }
+      if (col === "Showcase Field ID" && value !== "") {
+        td.innerHTML = `
+          <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}"
+             target="_blank"
+             class="field-link">
+             ${value}
+          </a>
+        `;
+      } else if (col === "NSHD Variable Name" && value !== "") {
+        td.innerHTML = `
+          <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${value}"
+             target="_blank"
+             class="field-link">
+             ${value}
+          </a>
+        `;
+      } else {
+        td.textContent = value;
+      }
 
-	  tr.appendChild(td);
-	});
+      tr.appendChild(td);
+    });
 
     body.appendChild(tr);
+  });
+
+  // ⭐ Wire row checkboxes
+  document.querySelectorAll(".row-select").forEach(cb => {
+    cb.addEventListener("change", e => {
+      const varName = e.target.dataset.varName;
+      const label = e.target.dataset.label || "";
+      if (!varName) return;
+      if (e.target.checked) {
+        addToBasket(varName, label);
+      } else {
+        removeFromBasket(varName);
+      }
+    });
   });
 
   document.getElementById("myTable").style.tableLayout = "fixed";
@@ -377,3 +473,22 @@ function downloadFilteredCSV() {
 
 document.getElementById("downloadCsvBtn")
     .addEventListener("click", downloadFilteredCSV);
+	
+
+const BASKET_KEY = "nshd_variable_basket";
+
+function loadBasket() {
+  try {
+    return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function updateBasketCountUI() {
+  const basket = loadBasket();
+  const el = document.getElementById("basketCount");
+  if (el) el.textContent = basket.length;
+}
+
+updateBasketCountUI();
