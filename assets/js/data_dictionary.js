@@ -464,4 +464,4 @@ function downloadFilteredCSV() {
 }
 
 document.getElementById("downloadCsvBtn")
-  .addEventListener("click", 
+  .addEventListener("click", downloadFilteredCSV);
