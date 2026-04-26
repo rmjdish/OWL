@@ -7,6 +7,7 @@ let pageSize = 15;
 let sortColumn = null;
 let sortDirection = 1; // 1 = asc, -1 = desc
 
+// ---------------- BASKET HELPERS ----------------
 function loadBasket() {
   try {
     return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
@@ -42,11 +43,13 @@ function removeFromBasket(varName) {
 
 function updateBasketCountUI() {
   const basket = loadBasket();
-  const el = document.getElementById("basketCount");
-  if (el) el.textContent = basket.length;
+  const elMain = document.getElementById("basketCount");
+  const elSidebar = document.getElementById("sidebarBasketCount");
+  if (elMain) elMain.textContent = basket.length;
+  if (elSidebar) elSidebar.textContent = basket.length;
 }
 
-
+// ---------------- FILTER CONFIG ----------------
 const filterColumns = [
   "Topic",
   "Subtopic 1",
@@ -57,6 +60,7 @@ const filterColumns = [
 
 let tableColumns = [];
 
+// ---------------- DATA LOAD ----------------
 fetch("NSHD_Data_Dictionary_Public.json")
   .then(r => r.json())
   .then(data => {
@@ -64,23 +68,19 @@ fetch("NSHD_Data_Dictionary_Public.json")
     filteredData = [...rawData];
 
     tableColumns = Object.keys(rawData[0]).slice(5);
-	// ⭐ REMOVE ORDER COLUMN
-	tableColumns = tableColumns.filter(col => col !== "Order");
+    tableColumns = tableColumns.filter(col => col !== "Order");
 
     buildFilters();
     buildTableHeader();
     applyFilters();
 
-    // ⭐ NEW: hide loading screen, show UI
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.display = "block";
 
-    updateBasketCountUI(); // ⭐ NEW
+    updateBasketCountUI();
   });
 
-/* ---------------------------------------------------
-   BUILD FILTERS
---------------------------------------------------- */
+// ---------------- BUILD FILTERS ----------------
 function buildFilters() {
   const bar = document.getElementById("filter-bar");
   bar.innerHTML = "";
@@ -95,7 +95,6 @@ function buildFilters() {
       select.innerHTML += `<option value="${v}">${v}</option>`;
     });
 
-    // ⭐ NEW: cascading filters
     select.addEventListener("change", () => {
       applyFilters();
       updateAllFilters();
@@ -105,9 +104,7 @@ function buildFilters() {
   });
 }
 
-/* ---------------------------------------------------
-   APPLY FILTERS
---------------------------------------------------- */
+// ---------------- APPLY FILTERS ----------------
 function applyFilters() {
   const activeFilters = {};
   document.querySelectorAll("#filter-bar select").forEach(sel => {
@@ -121,12 +118,10 @@ function applyFilters() {
   currentPage = 1;
   renderTable();
   renderPagination();
-  updateResultsCount();   // ⭐ NEW
+  updateResultsCount();
 }
 
-/* ---------------------------------------------------
-   UPDATE FILTER OPTIONS (CASCADING)
---------------------------------------------------- */
+// ---------------- UPDATE FILTER OPTIONS ----------------
 function updateAllFilters() {
   const rows = filteredData;
 
@@ -136,7 +131,6 @@ function updateAllFilters() {
 
     const values = [...new Set(rows.map(r => r[col]).filter(v => v && v !== ""))].sort();
 
-    // Rebuild dropdown
     select.innerHTML = `<option value="">${col}</option>`;
     values.forEach(v => {
       const opt = document.createElement("option");
@@ -145,17 +139,13 @@ function updateAllFilters() {
       select.appendChild(opt);
     });
 
-    // Restore previously selected value if still valid
     if (values.includes(currentValue)) {
       select.value = currentValue;
     }
   });
 }
 
-
-/* ---------------------------------------------------
-   SORTING LOGIC
---------------------------------------------------- */
+// ---------------- SORTING ----------------
 function sortData() {
   if (!sortColumn) return;
 
@@ -163,23 +153,19 @@ function sortData() {
     const valA = a[sortColumn] ?? "";
     const valB = b[sortColumn] ?? "";
 
-    // Numeric sort
     if (!isNaN(valA) && !isNaN(valB)) {
       return (Number(valA) - Number(valB)) * sortDirection;
     }
 
-    // Text sort
     return String(valA).localeCompare(String(valB)) * sortDirection;
   });
 }
 
-/* ---------------------------------------------------
-   SORT ICONS
---------------------------------------------------- */
 function updateSortIcons() {
   document.querySelectorAll("#table-header th").forEach(th => {
-    const label = th.querySelector(".header-label").textContent;
+    const label = th.querySelector(".header-label")?.textContent;
     const icon = th.querySelector(".sort-icon");
+    if (!icon || !label) return;
 
     if (label === sortColumn) {
       icon.textContent = sortDirection === 1 ? "▲" : "▼";
@@ -191,11 +177,7 @@ function updateSortIcons() {
   });
 }
 
-
-
-/* ---------------------------------------------------
-   GLOBAL SEARCH
---------------------------------------------------- */
+// ---------------- GLOBAL SEARCH ----------------
 document.getElementById("globalSearch").addEventListener("input", e => {
   const q = e.target.value.toLowerCase();
 
@@ -206,67 +188,52 @@ document.getElementById("globalSearch").addEventListener("input", e => {
   currentPage = 1;
   renderTable();
   renderPagination();
-  updateResultsCount();   // ⭐ NEW
+  updateResultsCount();
 });
 
-/* ---------------------------------------------------
-   PAGE SIZE CHANGE
---------------------------------------------------- */
+// ---------------- PAGE SIZE ----------------
 document.getElementById("pageSize").addEventListener("change", e => {
   pageSize = Number(e.target.value);
   currentPage = 1;
   renderTable();
   renderPagination();
-  updateResultsCount();   // ⭐ NEW
+  updateResultsCount();
 });
 
-/* ---------------------------------------------------
-   RESET FILTERS BUTTON
---------------------------------------------------- */
+// ---------------- RESET FILTERS ----------------
 document.getElementById("resetFiltersBtn").addEventListener("click", resetAllFilters);
 
 function resetAllFilters() {
-  // Reset dropdowns
   document.querySelectorAll("#filter-bar select").forEach(sel => {
     sel.value = "";
   });
 
-  // Reset search
   document.getElementById("globalSearch").value = "";
 
-  // Reset data
   filteredData = [...rawData];
-
-  // Reset pagination
   currentPage = 1;
 
-  // Rebuild filters to full lists
   updateAllFilters();
-
-  // Re-render table + pagination
   renderTable();
   renderPagination();
-  updateResultsCount();   // ⭐ NEW
+  updateResultsCount();
 }
 
-/* ---------------------------------------------------
-   BUILD TABLE HEADER
---------------------------------------------------- */
+// ---------------- BUILD TABLE HEADER ----------------
 function buildTableHeader() {
   const headerRow = document.getElementById("table-header");
   headerRow.innerHTML = "";
 
   const table = document.getElementById("myTable");
-  const colgroup = document.createElement("colgroup");
+  const existingColgroup = table.querySelector("colgroup");
+  if (existingColgroup) existingColgroup.remove();
 
-  // ⭐ First column = checkbox
+  const colgroup = document.createElement("colgroup");
   colgroup.innerHTML =
     `<col class="col-select">` +
     tableColumns.map((_, i) => `<col class="col-${i + 1}">`).join("");
-
   table.prepend(colgroup);
 
-  // ⭐ Checkbox header (master toggle for current page)
   const thSelect = document.createElement("th");
   thSelect.classList.add("select-header");
   thSelect.innerHTML = `
@@ -280,6 +247,7 @@ function buildTableHeader() {
     const checked = e.target.checked;
     const start = (currentPage - 1) * pageSize;
     const end = start + pageSize;
+
     filteredData.slice(start, end).forEach(row => {
       const varName = row["NSHD Variable Name"];
       const label = (row["Variable Label"] || "").toString();
@@ -290,10 +258,10 @@ function buildTableHeader() {
         removeFromBasket(varName);
       }
     });
-    renderTable(); // re-render to sync checkboxes
+
+    renderTable();
   });
 
-  // ⭐ Existing sortable headers
   tableColumns.forEach(col => {
     const th = document.createElement("th");
     th.classList.add("sortable-header");
@@ -319,13 +287,11 @@ function buildTableHeader() {
       renderPagination();
     });
 
-  headerRow.appendChild(th);
-});
+    headerRow.appendChild(th);
+  });
 }
 
-/* ---------------------------------------------------
-   RENDER TABLE
---------------------------------------------------- */
+// ---------------- RENDER TABLE ----------------
 function renderTable() {
   sortData();
   const body = document.getElementById("table-body");
@@ -337,11 +303,10 @@ function renderTable() {
   filteredData.slice(start, end).forEach(row => {
     const tr = document.createElement("tr");
 
-    // ⭐ Checkbox cell
     const tdSelect = document.createElement("td");
     tdSelect.classList.add("select-cell");
     const varName = row["NSHD Variable Name"];
-	const label = (row["Variable Label"] || "").toString();
+    const label = (row["Variable Label"] || "").toString();
     const checked = varName && isInBasket(varName);
 
     tdSelect.innerHTML = `
@@ -352,7 +317,6 @@ function renderTable() {
     `;
     tr.appendChild(tdSelect);
 
-    // ⭐ Existing data cells
     tableColumns.forEach(col => {
       const td = document.createElement("td");
       const value = row[col] ?? "";
@@ -383,7 +347,6 @@ function renderTable() {
     body.appendChild(tr);
   });
 
-  // ⭐ Wire row checkboxes
   document.querySelectorAll(".row-select").forEach(cb => {
     cb.addEventListener("change", e => {
       const varName = e.target.dataset.varName;
@@ -400,9 +363,7 @@ function renderTable() {
   document.getElementById("myTable").style.tableLayout = "fixed";
 }
 
-/* ---------------------------------------------------
-   PAGINATION
---------------------------------------------------- */
+// ---------------- PAGINATION ----------------
 function renderPagination() {
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
 
@@ -423,12 +384,10 @@ function changePage(delta) {
   currentPage += delta;
   renderTable();
   renderPagination();
-  updateResultsCount();   // ⭐ NEW
+  updateResultsCount();
 }
 
-/* ---------------------------------------------------
-   RESULTS COUNTER
---------------------------------------------------- */
+// ---------------- RESULTS COUNTER ----------------
 function updateResultsCount() {
   const total = rawData.length;
   const filtered = filteredData.length;
@@ -437,40 +396,34 @@ function updateResultsCount() {
     `Showing ${filtered} of ${total} results`;
 }
 
-
+// ---------------- DOWNLOAD FILTERED CSV ----------------
 function downloadFilteredCSV() {
-    if (!filteredData || filteredData.length === 0) {
-        alert("No data to download");
-        return;
-    }
+  if (!filteredData || filteredData.length === 0) {
+    alert("No data to download");
+    return;
+  }
 
-    // Extract column headers from the table
-    const headers = Object.keys(filteredData[0]);
+  const headers = Object.keys(filteredData[0]);
+  let csvContent = headers.join(",") + "\n";
 
-    // Build CSV content
-    let csvContent = headers.join(",") + "\n";
+  filteredData.forEach(row => {
+    const line = headers.map(h => {
+      const value = row[h] ?? "";
+      return `"${String(value).replace(/"/g, '""')}"`;
+    }).join(",");
+    csvContent += line + "\n";
+  });
 
-    filteredData.forEach(row => {
-        const line = headers.map(h => {
-            const value = row[h] ?? "";
-            // Escape quotes
-            return `"${String(value).replace(/"/g, '""')}"`;
-        }).join(",");
-        csvContent += line + "\n";
-    });
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
 
-    // Trigger download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "NSHD_Data_Dictionary_filtered_results.csv";
+  link.click();
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "NSHD_Data_Dictionary_filtered_results.csv";
-    link.click();
-
-    URL.revokeObjectURL(url);
+  URL.revokeObjectURL(url);
 }
 
 document.getElementById("downloadCsvBtn")
-    .addEventListener("click", downloadFilteredCSV);
-	
+  .addEventListener("click", downloadFilteredCSV);
