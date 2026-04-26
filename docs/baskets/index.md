@@ -27,14 +27,10 @@ nav_order: 0
 <script>
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Use global BASKET_KEY, loadBasket(), saveBasket(), updateBasketCountUI()
-
   function renderBasket() {
     const basket = loadBasket();
     const tbody = document.querySelector("#basketTable tbody");
     const countEl = document.getElementById("basketCountPage");
-
-    if (!tbody || !countEl) return; // safety
 
     tbody.innerHTML = "";
     countEl.textContent = basket.length;
