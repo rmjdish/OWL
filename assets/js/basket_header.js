@@ -22,6 +22,26 @@ function updateBasketCountUI() {
   if (elMain) elMain.textContent = basket.length;
 }
 
+function isInBasket(varName) {
+  return loadBasket().some(item => item.varName === varName);
+}
+
+function addToBasket(varName, label) {
+  const basket = loadBasket();
+  if (!basket.some(item => item.varName === varName)) {
+    basket.push({ varName, label });
+    saveBasket(basket);
+  }
+  updateBasketCountUI();
+}
+
+function removeFromBasket(varName) {
+  let basket = loadBasket();
+  basket = basket.filter(item => item.varName !== varName);
+  saveBasket(basket);
+  updateBasketCountUI();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const basket = document.getElementById("basketTop");
   if (!basket) return;
