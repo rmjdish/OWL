@@ -3,7 +3,7 @@
 // Production‑ready, cleaned, single‑source JS
 // ============================================================
 
-// const BASKET_KEY = "nshd_variable_basket";
+// BASKET_KEY is defined globally in basket_header.js
 
 let rawData = [];
 let filteredData = [];
@@ -272,7 +272,7 @@ function buildTableHeader() {
 
     filteredData.slice(start, end).forEach(row => {
       const varName = row["NSHD Variable Name"];
-      const label = (row["Variable Label"] || "").toString();
+      const label = (row["Variable label"] || "").toString();
       if (!varName) return;
       if (checked) {
         addToBasket(varName, label);
@@ -333,7 +333,7 @@ function renderTable() {
     const tdSelect = document.createElement("td");
     tdSelect.classList.add("select-cell");
     const varName = row["NSHD Variable Name"];
-    const label = (row["Variable Label"] || "").toString();
+    const label = (row["Variable label"] || "").toString();
     const checked = varName && isInBasket(varName);
 
     tdSelect.innerHTML = `

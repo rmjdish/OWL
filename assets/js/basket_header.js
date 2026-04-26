@@ -1,3 +1,7 @@
+// ============================================================
+// GLOBAL basket logic — loads on ALL pages
+// ============================================================
+
 const BASKET_KEY = "nshd_variable_basket";
 
 function loadBasket() {
@@ -33,6 +37,6 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBasketCountUI();
 
   basket.addEventListener("click", () => {
-    window.location = "/OWL/docs/baskets/"; // correct URL
+    window.location = "/OWL/docs/baskets/";
   });
 });
