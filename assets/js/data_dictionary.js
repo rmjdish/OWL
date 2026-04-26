@@ -472,7 +472,7 @@ function waitForHeader() {
   const basket = document.getElementById("basketTop");
 
   if (searchBox && basket) {
-    basket.style.display = "flex";   // make visible
+    basket.style.display = "flex";
     searchBox.insertAdjacentElement("afterend", basket);
 
     updateBasketCountUI();
@@ -481,10 +481,9 @@ function waitForHeader() {
       window.location = "/OWL/docs/basket/";
     });
 
-    return; // done
+    return;
   }
 
-  // Try again in 50ms until header exists
   setTimeout(waitForHeader, 50);
 }
 
