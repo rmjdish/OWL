@@ -25,78 +25,84 @@ nav_order: 0
 </table>
 
 <script>
-// Use global BASKET_KEY, loadBasket(), saveBasket(), updateBasketCountUI()
+document.addEventListener("DOMContentLoaded", () => {
 
-function renderBasket() {
-  const basket = loadBasket();
-  const tbody = document.querySelector("#basketTable tbody");
-  const countEl = document.getElementById("basketCountPage");
-  tbody.innerHTML = "";
-  countEl.textContent = basket.length;
+  // Use global BASKET_KEY, loadBasket(), saveBasket(), updateBasketCountUI()
 
-  basket.forEach(item => {
-    const tr = document.createElement("tr");
+  function renderBasket() {
+    const basket = loadBasket();
+    const tbody = document.querySelector("#basketTable tbody");
+    const countEl = document.getElementById("basketCountPage");
 
-    const tdName = document.createElement("td");
-    tdName.textContent = item.varName;
-    tr.appendChild(tdName);
+    if (!tbody || !countEl) return; // safety
 
-    const tdLabel = document.createElement("td");
-    tdLabel.textContent = item.label || "";
-    tr.appendChild(tdLabel);
+    tbody.innerHTML = "";
+    countEl.textContent = basket.length;
 
-    const tdRemove = document.createElement("td");
-    const btn = document.createElement("button");
-    btn.textContent = "Remove";
-    btn.addEventListener("click", () => {
-      let b = loadBasket();
-      b = b.filter(x => x.varName !== item.varName);
-      saveBasket(b);
-      renderBasket();
-      updateBasketCountUI();
+    basket.forEach(item => {
+      const tr = document.createElement("tr");
+
+      const tdName = document.createElement("td");
+      tdName.textContent = item.varName;
+      tr.appendChild(tdName);
+
+      const tdLabel = document.createElement("td");
+      tdLabel.textContent = item.label || "";
+      tr.appendChild(tdLabel);
+
+      const tdRemove = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.textContent = "Remove";
+      btn.addEventListener("click", () => {
+        let b = loadBasket();
+        b = b.filter(x => x.varName !== item.varName);
+        saveBasket(b);
+        renderBasket();
+        updateBasketCountUI();
+      });
+      tdRemove.appendChild(btn);
+      tr.appendChild(tdRemove);
+
+      tbody.appendChild(tr);
     });
-    tdRemove.appendChild(btn);
-    tr.appendChild(tdRemove);
-
-    tbody.appendChild(tr);
-  });
-}
-
-function clearBasket() {
-  saveBasket([]);
-  renderBasket();
-  updateBasketCountUI();
-}
-
-function downloadBasketCSV() {
-  const basket = loadBasket();
-  if (!basket.length) {
-    alert("Basket is empty");
-    return;
   }
 
-  const headers = ["NSHD Variable Name", "Variable label"];
-  let csvContent = headers.join(",") + "\n";
+  function clearBasket() {
+    saveBasket([]);
+    renderBasket();
+    updateBasketCountUI();
+  }
 
-  basket.forEach(item => {
-    const row = [
-      `"${String(item.varName).replace(/"/g, '""')}"`,
-      `"${String(item.label || "").replace(/"/g, '""')}"`
-    ].join(",");
-    csvContent += row + "\n";
-  });
+  function downloadBasketCSV() {
+    const basket = loadBasket();
+    if (!basket.length) {
+      alert("Basket is empty");
+      return;
+    }
 
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "NSHD_Variable_Basket.csv";
-  link.click();
-  URL.revokeObjectURL(url);
-}
+    const headers = ["NSHD Variable Name", "Variable label"];
+    let csvContent = headers.join(",") + "\n";
 
-document.getElementById("clearBasketBtn").addEventListener("click", clearBasket);
-document.getElementById("downloadBasketCsvBtn").addEventListener("click", downloadBasketCSV);
+    basket.forEach(item => {
+      const row = [
+        `"${String(item.varName).replace(/"/g, '""')}"`,
+        `"${String(item.label || "").replace(/"/g, '""')}"`
+      ].join(",");
+      csvContent += row + "\n";
+    });
 
-renderBasket();
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "NSHD_Variable_Basket.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  document.getElementById("clearBasketBtn").addEventListener("click", clearBasket);
+  document.getElementById("downloadBasketCsvBtn").addEventListener("click", downloadBasketCSV);
+
+  renderBasket();
+});
 </script>
