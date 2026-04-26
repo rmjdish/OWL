@@ -5,8 +5,6 @@ let pageSize = 15;
 let sortColumn = null;
 let sortDirection = 1; // 1 = asc, -1 = desc
 
-const BASKET_KEY = "nshd_variable_basket";
-
 function loadBasket() {
   try {
     return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
