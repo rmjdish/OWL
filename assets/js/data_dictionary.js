@@ -466,18 +466,17 @@ function downloadFilteredCSV() {
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
   
- document.addEventListener("DOMContentLoaded", () => {
-  const header = document.querySelector(".site-header .search");
+document.addEventListener("DOMContentLoaded", () => {
+  const searchBox = document.querySelector(".site-header-container .search");
   const basket = document.getElementById("basketTop");
 
-  if (header && basket) {
-    header.insertAdjacentElement("afterend", basket);
+  if (searchBox && basket) {
+    basket.style.display = "flex";   // make visible
+    searchBox.insertAdjacentElement("afterend", basket);
   }
 
-  // Update count
   updateBasketCountUI();
 
-  // Make it clickable
   basket.addEventListener("click", () => {
     window.location = "/OWL/docs/basket/";
   });
