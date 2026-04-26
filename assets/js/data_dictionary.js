@@ -1,3 +1,8 @@
+// ============================================================
+// NSHD Data Dictionary – Search, Filters, Table, Basket
+// Production‑ready, cleaned, single‑source JS
+// ============================================================
+
 const BASKET_KEY = "nshd_variable_basket";
 
 let rawData = [];
@@ -7,7 +12,20 @@ let pageSize = 15;
 let sortColumn = null;
 let sortDirection = 1; // 1 = asc, -1 = desc
 
-// ---------------- BASKET HELPERS ----------------
+const filterColumns = [
+  "Topic",
+  "Subtopic 1",
+  "Subtopic 2",
+  "Subtopic 3",
+  "Subtopic 4"
+];
+
+let tableColumns = [];
+
+// ============================================================
+// Basket helpers
+// ============================================================
+
 function loadBasket() {
   try {
     return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
@@ -43,46 +61,40 @@ function removeFromBasket(varName) {
 
 function updateBasketCountUI() {
   const basket = loadBasket();
-
-  const el1 = document.getElementById("basketCount");          // search page
-  const el2 = document.getElementById("sidebarBasketCount");   // sidebar
-
-  if (el1) el1.textContent = basket.length;
-  if (el2) el2.textContent = basket.length;
+  const elMain = document.getElementById("basketCount");          // on search page (if present)
+  const elSidebar = document.getElementById("sidebarBasketCount"); // in sidebar (if present)
+  if (elMain) elMain.textContent = basket.length;
+  if (elSidebar) elSidebar.textContent = basket.length;
 }
 
-// ---------------- FILTER CONFIG ----------------
-const filterColumns = [
-  "Topic",
-  "Subtopic 1",
-  "Subtopic 2",
-  "Subtopic 3",
-  "Subtopic 4"
-];
+// ============================================================
+// Data load
+// ============================================================
 
-let tableColumns = [];
-
-// ---------------- DATA LOAD ----------------
 fetch("NSHD_Data_Dictionary_Public.json")
   .then(r => r.json())
   .then(data => {
     rawData = data;
     filteredData = [...rawData];
 
-    tableColumns = Object.keys(rawData[0]).slice(5);
-    tableColumns = tableColumns.filter(col => col !== "Order");
+    // Drop first 5 metadata fields, then remove Order
+    tableColumns = Object.keys(rawData[0]).slice(5).filter(col => col !== "Order");
 
     buildFilters();
     buildTableHeader();
     applyFilters();
 
+    // Hide loading, show UI
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.display = "block";
 
     updateBasketCountUI();
   });
 
-// ---------------- BUILD FILTERS ----------------
+// ============================================================
+// Filters
+// ============================================================
+
 function buildFilters() {
   const bar = document.getElementById("filter-bar");
   bar.innerHTML = "";
@@ -106,7 +118,6 @@ function buildFilters() {
   });
 }
 
-// ---------------- APPLY FILTERS ----------------
 function applyFilters() {
   const activeFilters = {};
   document.querySelectorAll("#filter-bar select").forEach(sel => {
@@ -123,7 +134,6 @@ function applyFilters() {
   updateResultsCount();
 }
 
-// ---------------- UPDATE FILTER OPTIONS ----------------
 function updateAllFilters() {
   const rows = filteredData;
 
@@ -147,7 +157,10 @@ function updateAllFilters() {
   });
 }
 
-// ---------------- SORTING ----------------
+// ============================================================
+// Sorting
+// ============================================================
+
 function sortData() {
   if (!sortColumn) return;
 
@@ -165,9 +178,11 @@ function sortData() {
 
 function updateSortIcons() {
   document.querySelectorAll("#table-header th").forEach(th => {
-    const label = th.querySelector(".header-label")?.textContent;
+    const labelEl = th.querySelector(".header-label");
     const icon = th.querySelector(".sort-icon");
-    if (!icon || !label) return;
+    if (!labelEl || !icon) return;
+
+    const label = labelEl.textContent;
 
     if (label === sortColumn) {
       icon.textContent = sortDirection === 1 ? "▲" : "▼";
@@ -179,7 +194,10 @@ function updateSortIcons() {
   });
 }
 
-// ---------------- GLOBAL SEARCH ----------------
+// ============================================================
+// Global search, page size, reset
+// ============================================================
+
 document.getElementById("globalSearch").addEventListener("input", e => {
   const q = e.target.value.toLowerCase();
 
@@ -193,7 +211,6 @@ document.getElementById("globalSearch").addEventListener("input", e => {
   updateResultsCount();
 });
 
-// ---------------- PAGE SIZE ----------------
 document.getElementById("pageSize").addEventListener("change", e => {
   pageSize = Number(e.target.value);
   currentPage = 1;
@@ -202,7 +219,6 @@ document.getElementById("pageSize").addEventListener("change", e => {
   updateResultsCount();
 });
 
-// ---------------- RESET FILTERS ----------------
 document.getElementById("resetFiltersBtn").addEventListener("click", resetAllFilters);
 
 function resetAllFilters() {
@@ -221,7 +237,10 @@ function resetAllFilters() {
   updateResultsCount();
 }
 
-// ---------------- BUILD TABLE HEADER ----------------
+// ============================================================
+// Table header (with checkbox column)
+// ============================================================
+
 function buildTableHeader() {
   const headerRow = document.getElementById("table-header");
   headerRow.innerHTML = "";
@@ -236,6 +255,7 @@ function buildTableHeader() {
     tableColumns.map((_, i) => `<col class="col-${i + 1}">`).join("");
   table.prepend(colgroup);
 
+  // Checkbox header
   const thSelect = document.createElement("th");
   thSelect.classList.add("select-header");
   thSelect.innerHTML = `
@@ -264,6 +284,7 @@ function buildTableHeader() {
     renderTable();
   });
 
+  // Sortable headers
   tableColumns.forEach(col => {
     const th = document.createElement("th");
     th.classList.add("sortable-header");
@@ -293,7 +314,10 @@ function buildTableHeader() {
   });
 }
 
-// ---------------- RENDER TABLE ----------------
+// ============================================================
+// Render table
+// ============================================================
+
 function renderTable() {
   sortData();
   const body = document.getElementById("table-body");
@@ -305,6 +329,7 @@ function renderTable() {
   filteredData.slice(start, end).forEach(row => {
     const tr = document.createElement("tr");
 
+    // Checkbox cell
     const tdSelect = document.createElement("td");
     tdSelect.classList.add("select-cell");
     const varName = row["NSHD Variable Name"];
@@ -319,6 +344,7 @@ function renderTable() {
     `;
     tr.appendChild(tdSelect);
 
+    // Data cells
     tableColumns.forEach(col => {
       const td = document.createElement("td");
       const value = row[col] ?? "";
@@ -349,6 +375,7 @@ function renderTable() {
     body.appendChild(tr);
   });
 
+  // Wire row checkboxes
   document.querySelectorAll(".row-select").forEach(cb => {
     cb.addEventListener("change", e => {
       const varName = e.target.dataset.varName;
@@ -365,7 +392,10 @@ function renderTable() {
   document.getElementById("myTable").style.tableLayout = "fixed";
 }
 
-// ---------------- PAGINATION ----------------
+// ============================================================
+// Pagination
+// ============================================================
+
 function renderPagination() {
   const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
 
@@ -389,7 +419,10 @@ function changePage(delta) {
   updateResultsCount();
 }
 
-// ---------------- RESULTS COUNTER ----------------
+// ============================================================
+// Results counter
+// ============================================================
+
 function updateResultsCount() {
   const total = rawData.length;
   const filtered = filteredData.length;
@@ -398,7 +431,10 @@ function updateResultsCount() {
     `Showing ${filtered} of ${total} results`;
 }
 
-// ---------------- DOWNLOAD FILTERED CSV ----------------
+// ============================================================
+// Download filtered CSV
+// ============================================================
+
 function downloadFilteredCSV() {
   if (!filteredData || filteredData.length === 0) {
     alert("No data to download");
@@ -428,4 +464,4 @@ function downloadFilteredCSV() {
 }
 
 document.getElementById("downloadCsvBtn")
-  .addEventListener("click", downloadFilteredCSV);
+  .addEventListener("click", 
