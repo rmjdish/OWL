@@ -5,6 +5,10 @@ nav_order: 2
 classes: page-search-data-dictionary
 ---
 
+<div id="basketTop" class="basket-top">
+  🧺 <span id="basketCount">0</span>
+</div>
+
 <div class="page-search-data-dictionary">
 
 <!-- ⭐ LOADING SCREEN (shown before data loads) -->
@@ -370,10 +374,6 @@ classes: page-search-data-dictionary
 }
 
 </style>
-
-<div id="basketTop" class="basket-top">
-  🧺 <span id="basketCount">0</span>
-</div>
 
 <script src="/OWL/assets/js/data_dictionary.js"></script>
 
