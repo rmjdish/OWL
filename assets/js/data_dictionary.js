@@ -478,6 +478,6 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBasketCountUI();
 
   basket.addEventListener("click", () => {
-    window.location = "/OWL/docs/basket/";
+    window.location = "/OWL/docs/baskets/";
   });
 });
