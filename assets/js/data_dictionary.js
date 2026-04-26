@@ -272,7 +272,7 @@ function buildTableHeader() {
 
     filteredData.slice(start, end).forEach(row => {
       const varName = row["NSHD Variable Name"];
-      const label = (row["Variable label"] || "").toString();
+      const label = (row["Variable Label"] || "").toString();
       if (!varName) return;
       if (checked) {
         addToBasket(varName, label);
@@ -333,7 +333,7 @@ function renderTable() {
     const tdSelect = document.createElement("td");
     tdSelect.classList.add("select-cell");
     const varName = row["NSHD Variable Name"];
-    const label = (row["Variable label"] || "").toString();
+    const label = (row["Variable Label"] || "").toString();
     const checked = varName && isInBasket(varName);
 
     tdSelect.innerHTML = `
