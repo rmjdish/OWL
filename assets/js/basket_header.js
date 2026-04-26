@@ -33,6 +33,6 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBasketCountUI();
 
   basket.addEventListener("click", () => {
-    window.location = "/OWL/docs/baskets/"; // ✅ matches your nav link
+    window.location = "/OWL/docs/baskets/"; // correct URL
   });
 });
