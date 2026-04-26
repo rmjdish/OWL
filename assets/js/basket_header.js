@@ -12,6 +12,10 @@ function loadBasket() {
   }
 }
 
+function saveBasket(basket) {
+  localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
+}
+
 function updateBasketCountUI() {
   const basket = loadBasket();
   const elMain = document.getElementById("basketCount");
@@ -22,7 +26,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const basket = document.getElementById("basketTop");
   if (!basket) return;
 
-  // Find the main Just‑the‑Docs search bar
   let searchBox = document.querySelector(".search");
   if (!searchBox) {
     const searchInput = document.querySelector("input[type='search']");
