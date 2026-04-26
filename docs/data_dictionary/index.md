@@ -346,8 +346,34 @@ classes: page-search-data-dictionary
   box-sizing: border-box;
 }
 
+/* ⭐ Basket icon styling for Just‑the‑Docs top bar */
+.basket-top {
+  display: flex;
+  align-items: center;
+  background: #f3e5f5;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: bold;
+  color: #4b067a;
+  cursor: pointer;
+  margin-left: 12px;
+}
+
+.basket-top:hover {
+  background: #e8d4ef;
+}
+
+/* Ensure header items align nicely */
+.site-header .site-header-container {
+  display: flex;
+  align-items: center;
+}
 
 </style>
+
+<div id="basketTop" class="basket-top">
+  🧺 <span id="basketCount">0</span>
+</div>
 
 <script src="/OWL/assets/js/data_dictionary.js"></script>
 

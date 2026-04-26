@@ -465,3 +465,20 @@ function downloadFilteredCSV() {
 
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
+  
+ document.addEventListener("DOMContentLoaded", () => {
+  const header = document.querySelector(".site-header .search");
+  const basket = document.getElementById("basketTop");
+
+  if (header && basket) {
+    header.insertAdjacentElement("afterend", basket);
+  }
+
+  // Update count
+  updateBasketCountUI();
+
+  // Make it clickable
+  basket.addEventListener("click", () => {
+    window.location = "/OWL/docs/basket/";
+  });
+});
