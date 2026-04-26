@@ -22,43 +22,6 @@ const filterColumns = [
 
 let tableColumns = [];
 
-// ============================================================
-// Basket helpers
-// ============================================================
-
-function loadBasket() {
-  try {
-    return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveBasket(basket) {
-  localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
-}
-
-function isInBasket(varName) {
-  const basket = loadBasket();
-  return basket.some(item => item.varName === varName);
-}
-
-function addToBasket(varName, label) {
-  const basket = loadBasket();
-  if (!basket.some(item => item.varName === varName)) {
-    basket.push({ varName, label });
-    saveBasket(basket);
-  }
-  updateBasketCountUI();
-}
-
-function removeFromBasket(varName) {
-  let basket = loadBasket();
-  basket = basket.filter(item => item.varName !== varName);
-  saveBasket(basket);
-  updateBasketCountUI();
-}
-
 function updateBasketCountUI() {
   const basket = loadBasket();
   const elMain = document.getElementById("basketCount");          // on search page (if present)
