@@ -466,25 +466,3 @@ function downloadFilteredCSV() {
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
   
-// ⭐ Wait until the Just‑the‑Docs header is actually rendered
-function waitForHeader() {
-  const searchBox = document.querySelector(".site-header-container .search");
-  const basket = document.getElementById("basketTop");
-
-  if (searchBox && basket) {
-    basket.style.display = "flex";
-    searchBox.insertAdjacentElement("afterend", basket);
-
-    updateBasketCountUI();
-
-    basket.addEventListener("click", () => {
-      window.location = "/OWL/docs/basket/";
-    });
-
-    return;
-  }
-
-  setTimeout(waitForHeader, 50);
-}
-
-waitForHeader();
