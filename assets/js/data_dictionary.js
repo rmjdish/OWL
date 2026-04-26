@@ -1,3 +1,5 @@
+const BASKET_KEY = "nshd_variable_basket";
+
 let rawData = [];
 let filteredData = [];
 let currentPage = 1;
