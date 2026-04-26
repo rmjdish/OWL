@@ -25,19 +25,7 @@ nav_order: 0
 </table>
 
 <script>
-const BASKET_KEY = "nshd_variable_basket";
-
-function loadBasket() {
-  try {
-    return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveBasket(basket) {
-  localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
-}
+// Use global BASKET_KEY, loadBasket(), saveBasket(), updateBasketCountUI()
 
 function renderBasket() {
   const basket = loadBasket();
@@ -65,6 +53,7 @@ function renderBasket() {
       b = b.filter(x => x.varName !== item.varName);
       saveBasket(b);
       renderBasket();
+      updateBasketCountUI();
     });
     tdRemove.appendChild(btn);
     tr.appendChild(tdRemove);
@@ -76,6 +65,7 @@ function renderBasket() {
 function clearBasket() {
   saveBasket([]);
   renderBasket();
+  updateBasketCountUI();
 }
 
 function downloadBasketCSV() {
