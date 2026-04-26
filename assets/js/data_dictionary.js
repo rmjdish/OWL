@@ -472,21 +472,3 @@ function downloadFilteredCSV() {
 document.getElementById("downloadCsvBtn")
     .addEventListener("click", downloadFilteredCSV);
 	
-
-const BASKET_KEY = "nshd_variable_basket";
-
-function loadBasket() {
-  try {
-    return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function updateBasketCountUI() {
-  const basket = loadBasket();
-  const el = document.getElementById("basketCount");
-  if (el) el.textContent = basket.length;
-}
-
-updateBasketCountUI();
