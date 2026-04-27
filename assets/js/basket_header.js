@@ -46,15 +46,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const basket = document.getElementById("basketTop");
   if (!basket) return;
 
-  let searchBox = document.querySelector(".search");
-  if (!searchBox) {
-    const searchInput = document.querySelector("input[type='search']");
-    if (searchInput) searchBox = searchInput.parentElement;
-  }
+  // ALWAYS insert after the search bar container in the top navbar
+  const nav = document.querySelector(".navbar .search-input-wrap");
 
-  if (searchBox) {
-    basket.style.display = "flex";
-    searchBox.insertAdjacentElement("afterend", basket);
+  if (nav) {
+    nav.insertAdjacentElement("afterend", basket);
+  } else {
+    // fallback: insert at end of navbar
+    const navbar = document.querySelector(".navbar");
+    if (navbar) navbar.appendChild(basket);
   }
 
   updateBasketCountUI();
