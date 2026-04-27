@@ -15,16 +15,18 @@ nav_order: 0
 
 <div id="basketPaginationTop" class="basket-pagination"></div>
 
-<label for="basketPageSize">Results per page:</label>
-<select id="basketPageSize">
-  <option value="10">10</option>
-  <option value="30">30</option>
-  <option value="50">50</option>
-  <option value="100">100</option>
-</select>
+<div style="margin-bottom: 12px;">
+  <label for="basketPageSize">Results per page:</label>
+  <select id="basketPageSize">
+    <option value="10">10</option>
+    <option value="30">30</option>
+    <option value="50">50</option>
+    <option value="100">100</option>
+  </select>
 
-<button id="clearBasketBtn">Clear Basket</button>
-<button id="downloadBasketCsvBtn">Download Basket (CSV)</button>
+  <button id="clearBasketBtn">Clear Basket</button>
+  <button id="downloadBasketCsvBtn">Download Basket (CSV)</button>
+</div>
 
 
 <table id="basketTable">
