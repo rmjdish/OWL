@@ -46,15 +46,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const basket = document.getElementById("basketTop");
   if (!basket) return;
 
-  // Always insert next to the built-in Just-the-Docs search bar
-  const searchWrap = document.querySelector(".search-input-wrap");
+  let searchBox = document.querySelector(".search");
+  if (!searchBox) {
+    const searchInput = document.querySelector("input[type='search']");
+    if (searchInput) searchBox = searchInput.parentElement;
+  }
 
-  if (searchWrap) {
-    searchWrap.insertAdjacentElement("afterend", basket);
-  } else {
-    // Fallback: append to header
-    const header = document.querySelector(".site-header");
-    if (header) header.appendChild(basket);
+  if (searchBox) {
+    basket.style.display = "flex";
+    searchBox.insertAdjacentElement("afterend", basket);
   }
 
   updateBasketCountUI();
@@ -63,19 +63,3 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location = "/OWL/docs/baskets/";
   });
 });
-
-/* Force basket icon to align with Just-the-Docs header layout */
-.site-header #basketTop {
-  display: inline-flex !important;
-  align-items: center !important;
-  background: #f3e5f5 !important;
-  padding: 6px 12px !important;
-  border-radius: 6px !important;
-  font-weight: bold !important;
-  color: #4b067a !important;
-  cursor: pointer !important;
-  font-size: 16px !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-  margin-left: 12px !important;
-}
