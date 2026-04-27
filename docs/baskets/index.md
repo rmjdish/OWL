@@ -140,8 +140,8 @@ window.addEventListener("load", function () {
     const start = (basketPage - 1) * basketPageSize;
     const end = Math.min(start + basketPageSize, total);
 
-	document.getElementById("basketResultsCount").textContent =
-	{% raw %}`Showing ${total === 0 ? 0 : start + 1}-${end} of ${total} results`{% endraw %};
+    document.getElementById("basketResultsCount").textContent =
+      `Showing ${total === 0 ? 0 : start + 1}-${end} of ${total} results`;
   }
 
   function renderBasketPagination() {
