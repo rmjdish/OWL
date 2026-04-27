@@ -13,11 +13,19 @@ nav_order: 0
 <!-- Results count box -->
 <div id="basketResultsCount" class="results-count-box"></div>
 
-<!-- Pagination (top) -->
 <div id="basketPaginationTop" class="basket-pagination"></div>
+
+<label for="basketPageSize">Results per page:</label>
+<select id="basketPageSize">
+  <option value="10">10</option>
+  <option value="30">30</option>
+  <option value="50">50</option>
+  <option value="100">100</option>
+</select>
 
 <button id="clearBasketBtn">Clear Basket</button>
 <button id="downloadBasketCsvBtn">Download Basket (CSV)</button>
+
 
 <table id="basketTable">
   <thead>
@@ -72,7 +80,20 @@ nav_order: 0
 document.addEventListener("DOMContentLoaded", () => {
 
   let basketPage = 1;
-  let basketPageSize = 15;
+  let basketPageSize = 10; // default page size
+
+  // Handle page size dropdown
+  const pageSizeSelect = document.getElementById("basketPageSize");
+  if (pageSizeSelect) {
+    pageSizeSelect.value = basketPageSize;
+    pageSizeSelect.addEventListener("change", e => {
+      basketPageSize = Number(e.target.value);
+      basketPage = 1;
+      renderBasket();
+      renderBasketPagination();
+      updateBasketResultsCount();
+    });
+  }
 
   function updateBasketResultsCount() {
     const basket = loadBasket();
