@@ -219,13 +219,14 @@ function buildTableHeader() {
   table.prepend(colgroup);
 
   // Checkbox header
-  const thSelect = document.createElement("th");
-  thSelect.classList.add("select-header");
-  thSelect.innerHTML = `
-    <div class="th-inner">
-      <input type="checkbox" id="selectAllPage">
-    </div>
-  `;
+const thSelect = document.createElement("th");
+thSelect.classList.add("select-header");
+thSelect.innerHTML = `
+  <div class="th-inner">
+    <span class="header-label">Add variable</span>
+    <input type="checkbox" id="selectAllPage">
+  </div>
+`;
   headerRow.appendChild(thSelect);
 
   document.getElementById("selectAllPage").addEventListener("change", e => {
