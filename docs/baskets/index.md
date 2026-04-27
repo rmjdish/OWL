@@ -75,11 +75,9 @@ nav_order: 0
 </style>
 
 
-{% include basket_header.html %}
 
 <script>
-window.onload = () => {
-
+window.addEventListener("load", () => {
   let basketPage = 1;
   let basketPageSize = 10; // default page size
 
@@ -216,5 +214,5 @@ window.onload = () => {
   document.getElementById("downloadBasketCsvBtn").addEventListener("click", downloadBasketCSV);
 
   renderBasket();
-};
+});
 </script>
