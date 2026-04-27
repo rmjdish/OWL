@@ -77,7 +77,7 @@ nav_order: 0
 
 
 <script>
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", () => {
 
   let basketPage = 1;
   let basketPageSize = 10; // default page size
