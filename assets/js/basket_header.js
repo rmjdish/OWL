@@ -32,7 +32,15 @@ function addToBasket(varName, label) {
     basket.push({ varName, label });
     saveBasket(basket);
   }
+
   updateBasketCountUI();
+
+  // ⭐ NEW: Badge pulse animation
+  const badge = document.getElementById("basketCount");
+  if (badge) {
+    badge.classList.add("added");
+    setTimeout(() => badge.classList.remove("added"), 400);
+  }
 }
 
 function removeFromBasket(varName) {
