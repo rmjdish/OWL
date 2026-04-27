@@ -93,8 +93,6 @@ th[data-sort].desc::after {
 </style>
 
 
-<script src="/OWL/assets/js/basket_header.js"></script>
-
 {% raw %}
 <script>
 window.addEventListener("load", function () {
