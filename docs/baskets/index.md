@@ -47,17 +47,23 @@ nav_exclude: true
 
 <style>
 
-th[data-sort] {
-  cursor: pointer;
-  user-select: none;
+/* Default sort icon before clicking */
+th[data-sort]::after {
+  content: " ⇅";   /* neutral icon */
+  opacity: 0.4;
+  margin-left: 4px;
 }
 
+/* Active ascending */
 th[data-sort].asc::after {
   content: " ▲";
+  opacity: 1;
 }
 
+/* Active descending */
 th[data-sort].desc::after {
   content: " ▼";
+  opacity: 1;
 }
 
 
