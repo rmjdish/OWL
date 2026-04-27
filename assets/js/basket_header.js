@@ -89,33 +89,32 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBasketCountUI();
 
   // ⭐ Dropdown preview on hover
-  basket.addEventListener("mouseenter", () => {
-    const items = loadBasket();
-    const lastFive = items.slice(-5).reverse(); // last 5 added
+	const wrapper = document.getElementById("basketWrapper");
+	const dropdown = document.getElementById("basketDropdown");
 
-    if (lastFive.length === 0) {
-      dropdown.style.display = "none";
-      return;
-    }
+	wrapper.addEventListener("mouseenter", () => {
+	  const items = loadBasket();
+	  const lastFive = items.slice(-5).reverse();
 
-    dropdown.innerHTML = `
-      <div class="preview-header">Last items added were:</div>
-      ${lastFive
-        .map(i => `<div class="basket-preview-item">${i.varName}</div>`)
-        .join("")}
-      <div class="view-full" onclick="window.location='/OWL/docs/baskets/'">
-        View full basket →
-      </div>
-    `;
+	  if (lastFive.length === 0) {
+		dropdown.style.display = "none";
+		return;
+	  }
 
-    dropdown.style.display = "block";
-  });
+	  dropdown.innerHTML = `
+		<div class="preview-header">Last items added were:</div>
+		${lastFive
+		  .map(i => `<div class="basket-preview-item">${i.varName}</div>`)
+		  .join("")}
+		<div class="view-full" onclick="window.location='/OWL/docs/baskets/'">
+		  View full basket →
+		</div>
+	  `;
 
-  basket.addEventListener("mouseleave", () => {
-    dropdown.style.display = "none";
-  });
+	  dropdown.style.display = "block";
+	});
 
-  basket.addEventListener("click", () => {
-    window.location = "/OWL/docs/baskets/";
-  });
+	wrapper.addEventListener("mouseleave", () => {
+	  dropdown.style.display = "none";
+	});
 });
