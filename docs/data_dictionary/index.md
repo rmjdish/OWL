@@ -5,9 +5,7 @@ nav_order: 2
 classes: page-search-data-dictionary
 ---
 
-<div id="basketTop" class="basket-top">
-  🧺 <span id="basketCount">0</span>
-</div>
+
 
 <div class="page-search-data-dictionary">
 
@@ -350,22 +348,6 @@ classes: page-search-data-dictionary
   box-sizing: border-box;
 }
 
-/* ⭐ Basket icon styling for Just‑the‑Docs top bar */
-.basket-top {
-  display: flex;
-  align-items: center;
-  background: #f3e5f5;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-weight: bold;
-  color: #4b067a;
-  cursor: pointer;
-  margin-left: 12px;
-}
-
-.basket-top:hover {
-  background: #e8d4ef;
-}
 
 /* Ensure header items align nicely */
 .site-header .site-header-container {
