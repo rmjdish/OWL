@@ -46,15 +46,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const basket = document.getElementById("basketTop");
   if (!basket) return;
 
-  // Always insert next to the built-in Just-the-Docs search bar
-  const searchWrap = document.querySelector(".search-input-wrap");
+  let searchBox = document.querySelector(".search");
+  if (!searchBox) {
+    const searchInput = document.querySelector("input[type='search']");
+    if (searchInput) searchBox = searchInput.parentElement;
+  }
 
-  if (searchWrap) {
-    searchWrap.insertAdjacentElement("afterend", basket);
-  } else {
-    // Fallback: insert at end of navbar (rare cases)
-    const navbar = document.querySelector(".navbar");
-    if (navbar) navbar.appendChild(basket);
+  if (searchBox) {
+    basket.style.display = "flex";
+    searchBox.insertAdjacentElement("afterend", basket);
   }
 
   updateBasketCountUI();
