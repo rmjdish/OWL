@@ -31,13 +31,13 @@ nav_exclude: true
 
 
 <table id="basketTable">
-  <thead>
-    <tr>
-      <th>Remove</th>
-      <th>NSHD Variable Name</th>
-      <th>Variable label</th>
-    </tr>
-  </thead>
+	<thead>
+	  <tr>
+		<th data-sort="remove">Remove</th>
+		<th data-sort="varName">NSHD Variable Name</th>
+		<th data-sort="label">Variable label</th>
+	  </tr>
+	</thead>
   <tbody></tbody>
 </table>
 
@@ -46,6 +46,21 @@ nav_exclude: true
 
 
 <style>
+
+th[data-sort] {
+  cursor: pointer;
+  user-select: none;
+}
+
+th[data-sort].asc::after {
+  content: " ▲";
+}
+
+th[data-sort].desc::after {
+  content: " ▼";
+}
+
+
 /* Basket results count box */
 #basketResultsCount {
   background: #f3f4f6;
@@ -85,6 +100,27 @@ window.addEventListener("load", function () {
 
   let basketPage = 1;
   let basketPageSize = 10;
+
+  // ⭐ Sorting state
+  let basketSortColumn = null;
+  let basketSortDirection = "asc";
+
+  // ⭐ Sorting function
+  function sortBasketData(data) {
+    if (!basketSortColumn) return data;
+
+    return data.slice().sort((a, b) => {
+      let valA = a[basketSortColumn] || "";
+      let valB = b[basketSortColumn] || "";
+
+      valA = valA.toString().toLowerCase();
+      valB = valB.toString().toLowerCase();
+
+      if (valA < valB) return basketSortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return basketSortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+  }
 
   const pageSizeSelect = document.getElementById("basketPageSize");
   if (pageSizeSelect) {
@@ -131,7 +167,11 @@ window.addEventListener("load", function () {
   };
 
   function renderBasket() {
-    const basket = loadBasket();
+    let basket = loadBasket();
+
+    // ⭐ Apply sorting
+    basket = sortBasketData(basket);
+
     const tbody = document.querySelector("#basketTable tbody");
     const countEl = document.getElementById("basketCountPage");
 
@@ -216,6 +256,29 @@ window.addEventListener("load", function () {
 
   document.getElementById("clearBasketBtn").addEventListener("click", clearBasket);
   document.getElementById("downloadBasketCsvBtn").addEventListener("click", downloadBasketCSV);
+
+  // ⭐ Add click listeners to sortable headers
+  document.querySelectorAll("th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.getAttribute("data-sort");
+
+      if (basketSortColumn === col) {
+        basketSortDirection = basketSortDirection === "asc" ? "desc" : "asc";
+      } else {
+        basketSortColumn = col;
+        basketSortDirection = "asc";
+      }
+
+      document.querySelectorAll("th[data-sort]").forEach(h => {
+        h.classList.remove("asc", "desc");
+      });
+      th.classList.add(basketSortDirection);
+
+      renderBasket();
+      renderBasketPagination();
+      updateBasketResultsCount();
+    });
+  });
 
   renderBasket();
 
