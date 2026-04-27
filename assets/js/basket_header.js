@@ -70,9 +70,11 @@ function removeFromBasket(varName) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const wrapper = document.getElementById("basketWrapper");
   const basket = document.getElementById("basketTop");
   const dropdown = document.getElementById("basketDropdown");
-  if (!basket || !dropdown) return;
+
+  if (!wrapper || !basket || !dropdown) return;
 
   // Move basket icon next to search bar
   let searchBox = document.querySelector(".search");
@@ -82,39 +84,40 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (searchBox) {
-    basket.style.display = "flex";
-    searchBox.insertAdjacentElement("afterend", basket);
+    wrapper.style.display = "inline-block";
+    searchBox.insertAdjacentElement("afterend", wrapper);
   }
 
   updateBasketCountUI();
 
-  // ⭐ Dropdown preview on hover
-	const wrapper = document.getElementById("basketWrapper");
-	const dropdown = document.getElementById("basketDropdown");
+  // ⭐ Dropdown preview on hover (wrapper, not icon)
+  wrapper.addEventListener("mouseenter", () => {
+    const items = loadBasket();
+    const lastFive = items.slice(-5).reverse(); // last 5 added
 
-	wrapper.addEventListener("mouseenter", () => {
-	  const items = loadBasket();
-	  const lastFive = items.slice(-5).reverse();
+    if (lastFive.length === 0) {
+      dropdown.style.display = "none";
+      return;
+    }
 
-	  if (lastFive.length === 0) {
-		dropdown.style.display = "none";
-		return;
-	  }
+    dropdown.innerHTML = `
+      <div class="preview-header">Last items added were:</div>
+      ${lastFive
+        .map(i => `<div class="basket-preview-item">${i.varName}</div>`)
+        .join("")}
+      <div class="view-full" onclick="window.location='/OWL/docs/baskets/'">
+        View full basket →
+      </div>
+    `;
 
-	  dropdown.innerHTML = `
-		<div class="preview-header">Last items added were:</div>
-		${lastFive
-		  .map(i => `<div class="basket-preview-item">${i.varName}</div>`)
-		  .join("")}
-		<div class="view-full" onclick="window.location='/OWL/docs/baskets/'">
-		  View full basket →
-		</div>
-	  `;
+    dropdown.style.display = "block";
+  });
 
-	  dropdown.style.display = "block";
-	});
+  wrapper.addEventListener("mouseleave", () => {
+    dropdown.style.display = "none";
+  });
 
-	wrapper.addEventListener("mouseleave", () => {
-	  dropdown.style.display = "none";
-	});
+  basket.addEventListener("click", () => {
+    window.location = "/OWL/docs/baskets/";
+  });
 });
