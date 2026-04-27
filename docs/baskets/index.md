@@ -92,6 +92,11 @@ th[data-sort].desc::after {
 
 </style>
 
+<script>
+if (typeof loadBasket === "undefined") {
+  document.write('<script src="/OWL/assets/js/basket_header.js"><\/script>');
+}
+</script>
 
 {% raw %}
 <script>
