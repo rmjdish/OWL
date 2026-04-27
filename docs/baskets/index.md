@@ -16,9 +16,9 @@ nav_order: 0
 <table id="basketTable">
   <thead>
     <tr>
+      <th>Remove</th>
       <th>NSHD Variable Name</th>
       <th>Variable label</th>
-      <th>Remove</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -38,14 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
     basket.forEach(item => {
       const tr = document.createElement("tr");
 
-      const tdName = document.createElement("td");
-      tdName.textContent = item.varName;
-      tr.appendChild(tdName);
-
-      const tdLabel = document.createElement("td");
-      tdLabel.textContent = item.label || "";
-      tr.appendChild(tdLabel);
-
       const tdRemove = document.createElement("td");
       const btn = document.createElement("button");
       btn.textContent = "Remove";
@@ -58,6 +50,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       tdRemove.appendChild(btn);
       tr.appendChild(tdRemove);
+
+      const tdName = document.createElement("td");
+      tdName.textContent = item.varName;
+      tr.appendChild(tdName);
+
+      const tdLabel = document.createElement("td");
+      tdLabel.textContent = item.label || "";
+      tr.appendChild(tdLabel);
 
       tbody.appendChild(tr);
     });
