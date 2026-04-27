@@ -77,7 +77,21 @@ nav_order: 0
 
 
 <script>
-window.addEventListener("load", () => {
+/* 
+  Wait until loadBasket(), saveBasket(), updateBasketCountUI() 
+  are available before running the Basket page logic.
+*/
+(function waitForBasketFunctions() {
+  if (typeof loadBasket !== "function" ||
+      typeof saveBasket !== "function" ||
+      typeof updateBasketCountUI !== "function") {
+    return setTimeout(waitForBasketFunctions, 20);
+  }
+  initBasketPage();
+})();
+
+function initBasketPage() {
+
   let basketPage = 1;
   let basketPageSize = 10; // default page size
 
@@ -214,5 +228,5 @@ window.addEventListener("load", () => {
   document.getElementById("downloadBasketCsvBtn").addEventListener("click", downloadBasketCSV);
 
   renderBasket();
-});
+}
 </script>
