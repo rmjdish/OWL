@@ -71,8 +71,10 @@ function removeFromBasket(varName) {
 
 document.addEventListener("DOMContentLoaded", () => {
   const basket = document.getElementById("basketTop");
-  if (!basket) return;
+  const dropdown = document.getElementById("basketDropdown");
+  if (!basket || !dropdown) return;
 
+  // Move basket icon next to search bar
   let searchBox = document.querySelector(".search");
   if (!searchBox) {
     const searchInput = document.querySelector("input[type='search']");
@@ -87,21 +89,31 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBasketCountUI();
 
   // ⭐ Dropdown preview on hover
-  const dropdown = document.getElementById("basketDropdown");
-  if (dropdown) {
-    basket.addEventListener("mouseenter", () => {
-      const items = loadBasket().slice(0, 3);
-      dropdown.innerHTML = items
-        .map(i => `<div class="basket-preview-item">${i.varName}</div>`)
-        .join("");
+  basket.addEventListener("mouseenter", () => {
+    const items = loadBasket();
+    const lastFive = items.slice(-5).reverse(); // last 5 added
 
-      dropdown.style.display = items.length ? "block" : "none";
-    });
-
-    basket.addEventListener("mouseleave", () => {
+    if (lastFive.length === 0) {
       dropdown.style.display = "none";
-    });
-  }
+      return;
+    }
+
+    dropdown.innerHTML = `
+      <div class="preview-header">Last items added were:</div>
+      ${lastFive
+        .map(i => `<div class="basket-preview-item">${i.varName}</div>`)
+        .join("")}
+      <div class="view-full" onclick="window.location='/OWL/docs/baskets/'">
+        View full basket →
+      </div>
+    `;
+
+    dropdown.style.display = "block";
+  });
+
+  basket.addEventListener("mouseleave", () => {
+    dropdown.style.display = "none";
+  });
 
   basket.addEventListener("click", () => {
     window.location = "/OWL/docs/baskets/";
