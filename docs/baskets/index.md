@@ -78,13 +78,13 @@ nav_order: 0
 
 
 
+{% raw %}
 <script>
 window.addEventListener("load", function () {
 
   let basketPage = 1;
-  let basketPageSize = 10; // default page size
+  let basketPageSize = 10;
 
-  // Handle page size dropdown
   const pageSizeSelect = document.getElementById("basketPageSize");
   if (pageSizeSelect) {
     pageSizeSelect.value = basketPageSize;
@@ -218,5 +218,6 @@ window.addEventListener("load", function () {
 
   renderBasket();
 
-}); 
+});
 </script>
+{% endraw %}
