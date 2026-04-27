@@ -98,18 +98,16 @@ if (typeof loadBasket === "undefined") {
 }
 </script>
 
-{% raw %}
 <script>
+{% raw %}
 window.addEventListener("load", function () {
 
   let basketPage = 1;
   let basketPageSize = 10;
 
-  // ⭐ Sorting state
   let basketSortColumn = null;
   let basketSortDirection = "asc";
 
-  // ⭐ Sorting function
   function sortBasketData(data) {
     if (!basketSortColumn) return data;
 
@@ -172,8 +170,6 @@ window.addEventListener("load", function () {
 
   function renderBasket() {
     let basket = loadBasket();
-
-    // ⭐ Apply sorting
     basket = sortBasketData(basket);
 
     const tbody = document.querySelector("#basketTable tbody");
@@ -261,7 +257,6 @@ window.addEventListener("load", function () {
   document.getElementById("clearBasketBtn").addEventListener("click", clearBasket);
   document.getElementById("downloadBasketCsvBtn").addEventListener("click", downloadBasketCSV);
 
-  // ⭐ Add click listeners to sortable headers
   document.querySelectorAll("th[data-sort]").forEach(th => {
     th.addEventListener("click", () => {
       const col = th.getAttribute("data-sort");
@@ -287,5 +282,5 @@ window.addEventListener("load", function () {
   renderBasket();
 
 });
-</script>
 {% endraw %}
+</script>
