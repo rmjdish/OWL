@@ -128,7 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
         b = b.filter(x => x.varName !== item.varName);
         saveBasket(b);
 
-        // Reset page if last item on page removed
         const maxPage = Math.ceil(b.length / basketPageSize) || 1;
         if (basketPage > maxPage) basketPage = maxPage;
 
