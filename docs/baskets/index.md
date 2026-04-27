@@ -77,20 +77,7 @@ nav_order: 0
 
 
 <script>
-/* 
-  Wait until loadBasket(), saveBasket(), updateBasketCountUI() 
-  are available before running the Basket page logic.
-*/
-(function waitForBasketFunctions() {
-  if (typeof loadBasket !== "function" ||
-      typeof saveBasket !== "function" ||
-      typeof updateBasketCountUI !== "function") {
-    return setTimeout(waitForBasketFunctions, 20);
-  }
-  initBasketPage();
-})();
-
-function initBasketPage() {
+window.addEventListener("load", function () {
 
   let basketPage = 1;
   let basketPageSize = 10; // default page size
@@ -99,7 +86,7 @@ function initBasketPage() {
   const pageSizeSelect = document.getElementById("basketPageSize");
   if (pageSizeSelect) {
     pageSizeSelect.value = basketPageSize;
-    pageSizeSelect.addEventListener("change", e => {
+    pageSizeSelect.addEventListener("change", function (e) {
       basketPageSize = Number(e.target.value);
       basketPage = 1;
       renderBasket();
@@ -133,7 +120,7 @@ function initBasketPage() {
     document.getElementById("basketPaginationBottom").innerHTML = html;
   }
 
-  window.changeBasketPage = function(delta) {
+  window.changeBasketPage = function (delta) {
     basketPage += delta;
     renderBasket();
     renderBasketPagination();
@@ -151,13 +138,13 @@ function initBasketPage() {
     const start = (basketPage - 1) * basketPageSize;
     const end = start + basketPageSize;
 
-    basket.slice(start, end).forEach(item => {
+    basket.slice(start, end).forEach(function (item) {
       const tr = document.createElement("tr");
 
       const tdRemove = document.createElement("td");
       const btn = document.createElement("button");
       btn.textContent = "Remove";
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", function () {
         let b = loadBasket();
         b = b.filter(x => x.varName !== item.varName);
         saveBasket(b);
@@ -207,7 +194,7 @@ function initBasketPage() {
     const headers = ["NSHD Variable Name", "Variable label"];
     let csvContent = headers.join(",") + "\n";
 
-    basket.forEach(item => {
+    basket.forEach(function (item) {
       const row = [
         `"${String(item.varName).replace(/"/g, '""')}"`,
         `"${String(item.label || "").replace(/"/g, '""')}"`
@@ -228,5 +215,6 @@ function initBasketPage() {
   document.getElementById("downloadBasketCsvBtn").addEventListener("click", downloadBasketCSV);
 
   renderBasket();
-}
+
+}); 
 </script>
