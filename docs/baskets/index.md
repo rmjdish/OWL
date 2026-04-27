@@ -33,7 +33,7 @@ nav_exclude: true
 <table id="basketTable">
 	<thead>
 	  <tr>
-		<th data-sort="remove">Remove</th>
+		<th>Remove</th>	
 		<th data-sort="varName">NSHD Variable Name</th>
 		<th data-sort="label">Variable label</th>
 	  </tr>
