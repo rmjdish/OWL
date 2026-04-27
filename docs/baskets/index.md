@@ -10,6 +10,12 @@ nav_order: 0
   You have <span id="basketCountPage">0</span> variables in your basket.
 </p>
 
+<!-- Results count box -->
+<div id="basketResultsCount" class="results-count-box"></div>
+
+<!-- Pagination (top) -->
+<div id="basketPaginationTop" class="basket-pagination"></div>
+
 <button id="clearBasketBtn">Clear Basket</button>
 <button id="downloadBasketCsvBtn">Download Basket (CSV)</button>
 
@@ -24,8 +30,81 @@ nav_order: 0
   <tbody></tbody>
 </table>
 
+<!-- Pagination (bottom) -->
+<div id="basketPaginationBottom" class="basket-pagination"></div>
+
+
+<style>
+/* Basket results count box */
+#basketResultsCount {
+  background: #f3f4f6;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  display: inline-block;
+  color: #333;
+}
+
+/* Pagination styling (same as Data Dictionary) */
+.basket-pagination {
+  margin: 10px 0;
+}
+
+.basket-pagination button {
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.basket-pagination button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+</style>
+
+
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+
+  let basketPage = 1;
+  let basketPageSize = 15;
+
+  function updateBasketResultsCount() {
+    const basket = loadBasket();
+    const total = basket.length;
+
+    const start = (basketPage - 1) * basketPageSize;
+    const end = Math.min(start + basketPageSize, total);
+
+    document.getElementById("basketResultsCount").textContent =
+      `Showing ${total === 0 ? 0 : start + 1}–${end} of ${total} results`;
+  }
+
+  function renderBasketPagination() {
+    const basket = loadBasket();
+    const totalPages = Math.ceil(basket.length / basketPageSize) || 1;
+
+    const html = `
+      <button ${basketPage === 1 ? "disabled" : ""} onclick="changeBasketPage(-1)">Prev</button>
+      <span>Page ${basketPage} of ${totalPages}</span>
+      <button ${basketPage === totalPages ? "disabled" : ""} onclick="changeBasketPage(1)">Next</button>
+    `;
+
+    document.getElementById("basketPaginationTop").innerHTML = html;
+    document.getElementById("basketPaginationBottom").innerHTML = html;
+  }
+
+  window.changeBasketPage = function(delta) {
+    basketPage += delta;
+    renderBasket();
+    renderBasketPagination();
+    updateBasketResultsCount();
+  };
 
   function renderBasket() {
     const basket = loadBasket();
@@ -35,7 +114,10 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.innerHTML = "";
     countEl.textContent = basket.length;
 
-    basket.forEach(item => {
+    const start = (basketPage - 1) * basketPageSize;
+    const end = start + basketPageSize;
+
+    basket.slice(start, end).forEach(item => {
       const tr = document.createElement("tr");
 
       const tdRemove = document.createElement("td");
@@ -45,7 +127,14 @@ document.addEventListener("DOMContentLoaded", () => {
         let b = loadBasket();
         b = b.filter(x => x.varName !== item.varName);
         saveBasket(b);
+
+        // Reset page if last item on page removed
+        const maxPage = Math.ceil(b.length / basketPageSize) || 1;
+        if (basketPage > maxPage) basketPage = maxPage;
+
         renderBasket();
+        renderBasketPagination();
+        updateBasketResultsCount();
         updateBasketCountUI();
       });
       tdRemove.appendChild(btn);
@@ -61,11 +150,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       tbody.appendChild(tr);
     });
+
+    renderBasketPagination();
+    updateBasketResultsCount();
   }
 
   function clearBasket() {
     saveBasket([]);
+    basketPage = 1;
     renderBasket();
+    renderBasketPagination();
+    updateBasketResultsCount();
     updateBasketCountUI();
   }
 
