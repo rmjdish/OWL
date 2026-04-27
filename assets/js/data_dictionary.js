@@ -224,29 +224,11 @@ thSelect.classList.add("select-header");
 thSelect.innerHTML = `
   <div class="th-inner">
     <span class="header-label">Add variable</span>
-    <input type="checkbox" id="selectAllPage">
   </div>
 `;
+headerRow.appendChild(thSelect);
   headerRow.appendChild(thSelect);
 
-  document.getElementById("selectAllPage").addEventListener("change", e => {
-    const checked = e.target.checked;
-    const start = (currentPage - 1) * pageSize;
-    const end = start + pageSize;
-
-    filteredData.slice(start, end).forEach(row => {
-      const varName = row["NSHD Variable Name"];
-      const label = (row["Variable Label"] || "").toString();
-      if (!varName) return;
-      if (checked) {
-        addToBasket(varName, label);
-      } else {
-        removeFromBasket(varName);
-      }
-    });
-
-    renderTable();
-  });
 
   // Sortable headers
   tableColumns.forEach(col => {
