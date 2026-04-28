@@ -24,8 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
       count: row.count
     }));
 
-    // ⭐ Only show variables with count > 20
-    const filtered = merged.filter(row => row.count > 20);
+    // ⭐ Only show variables with count > 15
+    const filtered = merged.filter(row => row.count > 15);
 
     initUI(filtered);
   })
