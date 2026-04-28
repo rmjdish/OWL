@@ -24,7 +24,10 @@ document.addEventListener("DOMContentLoaded", () => {
       count: row.count
     }));
 
-    initUI(merged);
+    // ⭐ Only show variables with count > 20
+    const filtered = merged.filter(row => row.count > 20);
+
+    initUI(filtered);
   })
   .catch(err => {
     console.error("Error loading JSON:", err);
