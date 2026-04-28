@@ -96,7 +96,10 @@ th[data-sort].desc::after {
   cursor: default;
 }
 
-
+#clearBasketBtn,
+#downloadBasketCsvBtn {
+  margin: 0 10px;
+}
 
 
 </style>
