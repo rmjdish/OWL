@@ -60,14 +60,12 @@ th.count-col { background: #fef9c3; }
 <script>
 console.log("Popular vars table script starting…");
 
-fetch("popular_vars_all.json")   
+fetch("popular_vars_all.json")
   .then(r => r.json())
   .then(json => {
     console.log("JSON loaded:", json);
 
-    // Limit to top 1000
-    const data = json.slice(0, 1000);
-
+    const data = json.slice(0, 1000); // top 1000 rows
     buildTable(data);
   })
   .catch(err => {
@@ -114,7 +112,6 @@ function buildTable(data) {
   function renderTable() {
     const tbody = document.querySelector("#vars-table tbody");
 
-    // Sorting
     let sorted = [...data];
     if (sortColumn) {
       sorted.sort((a, b) => {
@@ -124,7 +121,6 @@ function buildTable(data) {
       });
     }
 
-    // Pagination
     const start = (currentPage - 1) * pageSize;
     const pageRows = sorted.slice(start, start + pageSize);
 
@@ -158,7 +154,6 @@ function buildTable(data) {
     });
   }
 
-  // Sorting events
   document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
     th.onclick = () => {
       const col = th.dataset.sort;
@@ -172,24 +167,20 @@ function buildTable(data) {
     };
   });
 
-  // Page size change
   document.getElementById("page-size").onchange = e => {
     pageSize = parseInt(e.target.value);
     currentPage = 1;
     renderTable();
   };
 
-  // Basket events
   function attachBasketEvents() {
     document.querySelectorAll(".add-to-basket").forEach(cb => {
       cb.onclick = () => {
         const name = cb.dataset.name;
 
-        // Add to basket array
         window.basket = window.basket || [];
         window.basket.push(name);
 
-        // Pulse basket icon
         const icon = document.getElementById("basket-icon");
         if (icon) {
           icon.classList.add("basket-pulse");
