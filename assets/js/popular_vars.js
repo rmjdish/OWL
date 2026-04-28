@@ -40,7 +40,7 @@ Promise.all([
 function buildTable(data) {
   const container = document.getElementById("table-container");
 
-  container.innerHTML = `{% raw %}
+  container.innerHTML = `
     <table id="vars-table">
       <thead>
         <tr>
@@ -66,7 +66,7 @@ function buildTable(data) {
       </div>
       <div id="pagination-buttons"></div>
     </div>
-  {% endraw %}`;
+  `;
 
   let sortColumn = null;
   let sortAsc = true;
