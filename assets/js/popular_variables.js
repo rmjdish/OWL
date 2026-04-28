@@ -89,7 +89,15 @@ document.addEventListener("DOMContentLoaded", () => {
                      data-label="${row.label}"
                      ${checked ? "checked" : ""}>
             </td>
-            <td class="name-col">${row.name}</td>
+
+            <td class="name-col">
+              <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${row.name}"
+                 target="_blank"
+                 class="field-link">
+                 ${row.name}
+              </a>
+            </td>
+
             <td class="label-col">${row.label}</td>
             <td class="count-col">${row.count}</td>
           </tr>
