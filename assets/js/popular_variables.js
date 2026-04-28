@@ -90,10 +90,12 @@ function buildTable(data) {
 
     tbody.innerHTML = pageRows.map(row => `
       <tr>
-        <td><input type="checkbox" class="add-to-basket" data-name="${row.name}" data-label="${row.label}"></td>
-        <td>${row.name}</td>
-        <td>${row.label}</td>
-        <td>${row.count}</td>
+        <td class="check-col">
+          <input type="checkbox" class="add-to-basket" data-name="${row.name}" data-label="${row.label}">
+        </td>
+        <td class="name-col">${row.name}</td>
+        <td class="label-col">${row.label}</td>
+        <td class="count-col">${row.count}</td>
       </tr>
     `).join("");
 
