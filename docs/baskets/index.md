@@ -96,9 +96,12 @@ th[data-sort].desc::after {
   cursor: default;
 }
 
-#clearBasketBtn,
+#clearBasketBtn {
+  margin-right: 14px !important;
+}
+
 #downloadBasketCsvBtn {
-  margin: 0 10px;
+  margin-left: 14px !important;
 }
 
 
