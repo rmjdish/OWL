@@ -1,10 +1,10 @@
 ---
 layout: default
-title: Popular Variables Table
-nav_order: 6
+title: View Popular Variables
+nav_order: 11
 ---
 
-<h1>Popular Variables (Top 1000)</h1>
+<h1>Popular Variables</h1>
 
 <div id="table-container">
   <p>Loading table…</p>
@@ -12,10 +12,9 @@ nav_order: 6
 
 <style>
 /* Pastel column colours */
-th.year-col { background: #f3e8ff; }   /* pastel purple */
-th.name-col { background: #e0f2fe; }   /* pastel blue */
-th.pf-col   { background: #fef9c3; }   /* pastel yellow */
-th.check-col { background: #f1f5f9; }  /* light grey */
+th.check-col { background: #f1f5f9; }
+th.name-col  { background: #e0f2fe; }
+th.count-col { background: #fef9c3; }
 
 /* Table styling */
 #vars-table {
@@ -61,34 +60,145 @@ th.check-col { background: #f1f5f9; }  /* light grey */
 <script>
 console.log("Popular vars table script starting…");
 
-fetch("popular_vars.json")
-  .then(r => {
-    console.log("Fetch status:", r.status);
-    return r.json();
-  })
+fetch("popular_vars_all.json")   
+  .then(r => r.json())
   .then(json => {
     console.log("JSON loaded:", json);
 
-    const rows = [];
-
-    Object.keys(json).forEach(year => {
-      json[year].forEach(item => {
-        rows.push({
-          year: year,
-          name: item.varName,
-          pf: item.pf
-        });
-      });
-    });
-
-    const data = rows.slice(0, 1000);
-    console.log("Flattened rows:", data.length);
+    // Limit to top 1000
+    const data = json.slice(0, 1000);
 
     buildTable(data);
   })
   .catch(err => {
     console.error("Error loading JSON:", err);
-    const container = document.getElementById("table-container");
-    container.innerHTML = "<p>Failed to load data.</p>";
+    document.getElementById("table-container").innerHTML =
+      "<p>Failed to load data.</p>";
   });
+
+function buildTable(data) {
+  const container = document.getElementById("table-container");
+
+  container.innerHTML = `
+    <table id="vars-table">
+      <thead>
+        <tr>
+          <th class="check-col"></th>
+          <th class="name-col" data-sort="name">Variable Name</th>
+          <th class="count-col" data-sort="count">Count</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="pagination-controls">
+      <div>
+        Show 
+        <select id="page-size">
+          <option value="15">15</option>
+          <option value="30">30</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+        rows
+      </div>
+      <div id="pagination-buttons"></div>
+    </div>
+  `;
+
+  let sortColumn = null;
+  let sortAsc = true;
+  let pageSize = 15;
+  let currentPage = 1;
+
+  function renderTable() {
+    const tbody = document.querySelector("#vars-table tbody");
+
+    // Sorting
+    let sorted = [...data];
+    if (sortColumn) {
+      sorted.sort((a, b) => {
+        if (a[sortColumn] < b[sortColumn]) return sortAsc ? -1 : 1;
+        if (a[sortColumn] > b[sortColumn]) return sortAsc ? 1 : -1;
+        return 0;
+      });
+    }
+
+    // Pagination
+    const start = (currentPage - 1) * pageSize;
+    const pageRows = sorted.slice(start, start + pageSize);
+
+    tbody.innerHTML = pageRows.map(row => `
+      <tr>
+        <td><input type="checkbox" class="add-to-basket" data-name="${row.name}"></td>
+        <td>${row.name}</td>
+        <td>${row.count}</td>
+      </tr>
+    `).join("");
+
+    renderPagination(sorted.length);
+    attachBasketEvents();
+  }
+
+  function renderPagination(totalRows) {
+    const totalPages = Math.ceil(totalRows / pageSize);
+    const buttons = [];
+
+    for (let i = 1; i <= totalPages; i++) {
+      buttons.push(`<button class="page-btn" data-page="${i}">${i}</button>`);
+    }
+
+    document.getElementById("pagination-buttons").innerHTML = buttons.join("");
+
+    document.querySelectorAll(".page-btn").forEach(btn => {
+      btn.onclick = () => {
+        currentPage = parseInt(btn.dataset.page);
+        renderTable();
+      };
+    });
+  }
+
+  // Sorting events
+  document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
+    th.onclick = () => {
+      const col = th.dataset.sort;
+      if (sortColumn === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortColumn = col;
+        sortAsc = true;
+      }
+      renderTable();
+    };
+  });
+
+  // Page size change
+  document.getElementById("page-size").onchange = e => {
+    pageSize = parseInt(e.target.value);
+    currentPage = 1;
+    renderTable();
+  };
+
+  // Basket events
+  function attachBasketEvents() {
+    document.querySelectorAll(".add-to-basket").forEach(cb => {
+      cb.onclick = () => {
+        const name = cb.dataset.name;
+
+        // Add to basket array
+        window.basket = window.basket || [];
+        window.basket.push(name);
+
+        // Pulse basket icon
+        const icon = document.getElementById("basket-icon");
+        if (icon) {
+          icon.classList.add("basket-pulse");
+          setTimeout(() => icon.classList.remove("basket-pulse"), 300);
+        }
+      };
+    });
+  }
+
+  renderTable();
+}
 </script>
