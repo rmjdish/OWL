@@ -13,19 +13,26 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("popularUI").style.display = "block";
 
+    // Build label lookup
     const labelMap = {};
     labels.forEach(row => {
       labelMap[row["NSHD Variable Name"]] = row["Variable Label"];
     });
 
+    // ⭐ Build a fast lookup set of valid NSHD variable names
+    const dictionaryNames = new Set(labels.map(r => r["NSHD Variable Name"]));
+
+    // Merge popular vars with labels
     const merged = popular.map(row => ({
       name: row.name,
       label: labelMap[row.name] || "(no label found)",
       count: row.count
     }));
 
-    // ⭐ Only show variables with count > 15
-    const filtered = merged.filter(row => row.count > 15);
+    // ⭐ Only show variables with count > 15 AND that exist in the Data Dictionary
+    const filtered = merged
+      .filter(row => row.count > 15)
+      .filter(row => dictionaryNames.has(row.name));
 
     initUI(filtered);
   })
