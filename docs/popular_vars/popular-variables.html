@@ -1,0 +1,84 @@
+---
+layout: default
+title: Popular Variables by Year
+nav_order: 5
+---
+
+<h1>Popular Variables by Year</h1>
+
+<div id="popular-vars-container">
+  <p>Loading popular variables…</p>
+</div>
+
+<script>
+fetch("/assets/data/popular_vars.json")
+  .then(response => response.json())
+  .then(data => {
+    const container = document.getElementById("popular-vars-container");
+    container.innerHTML = "";
+
+    Object.keys(data).forEach(year => {
+      const section = document.createElement("section");
+      section.className = "year-section";
+
+      const header = document.createElement("h2");
+      header.textContent = year;
+      section.appendChild(header);
+
+      const grid = document.createElement("div");
+      grid.className = "card-grid";
+
+      data[year].forEach(item => {
+        const card = document.createElement("div");
+        card.className = "var-card";
+
+        card.innerHTML = `
+          <div class="var-name">${item.varName}</div>
+          <div class="var-pf">Count: ${item.pf}</div>
+        `;
+
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
+      container.appendChild(section);
+    });
+  });
+</script>
+
+<style>
+.year-section {
+  margin-bottom: 3rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.var-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s ease;
+}
+
+.var-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.var-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+}
+
+.var-pf {
+  font-size: 0.9rem;
+  color: #555;
+}
+</style>
