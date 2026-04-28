@@ -31,47 +31,14 @@ Promise.all([
 
 // ⭐ MAIN UI SETUP
 function initUI(data) {
-  const container = document.getElementById("table-container");
-
-  container.innerHTML = `
-    <div id="paginationTop" class="pagination-bar"></div>
-
-    <table id="vars-table">
-      <thead>
-        <tr>
-          <th class="check-col"></th>
-          <th class="name-col" data-sort="name">Variable Name</th>
-          <th class="label-col" data-sort="label">Variable Label</th>
-          <th class="count-col" data-sort="count">Count</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <div id="paginationBottom" class="pagination-bar"></div>
-  `;
-
   let sortColumn = null;
   let sortAsc = true;
   let pageSize = 15;
   let currentPage = 1;
 
-  const pageSizeControl = document.createElement("select");
-  pageSizeControl.id = "pageSize";
-  [15, 30, 50, 100].forEach(n => {
-    const opt = document.createElement("option");
-    opt.value = n;
-    opt.textContent = n;
-    pageSizeControl.appendChild(opt);
-  });
-
-  const resultsCount = document.createElement("div");
-  resultsCount.id = "resultsCount";
-
-  // Insert into top pagination bar
-  const paginationTop = document.getElementById("paginationTop");
-  paginationTop.appendChild(resultsCount);
-  paginationTop.appendChild(pageSizeControl);
+  const tbody = document.querySelector("#vars-table tbody");
+  const resultsCount = document.getElementById("resultsCount");
+  const pageSizeControl = document.getElementById("pageSize");
 
   pageSizeControl.onchange = () => {
     pageSize = parseInt(pageSizeControl.value);
@@ -80,9 +47,8 @@ function initUI(data) {
   };
 
   function renderTable() {
-    const tbody = document.querySelector("#vars-table tbody");
-
     let sorted = [...data];
+
     if (sortColumn) {
       sorted.sort((a, b) => {
         if (a[sortColumn] < b[sortColumn]) return sortAsc ? -1 : 1;
@@ -118,31 +84,23 @@ function initUI(data) {
     const top = document.getElementById("paginationTop");
     const bottom = document.getElementById("paginationBottom");
 
-    const html = buildPaginationButtons(totalPages);
-    top.innerHTML = resultsCount.outerHTML + pageSizeControl.outerHTML + html;
+    const html = `
+      <button ${currentPage === 1 ? "disabled" : ""} data-dir="-1">Prev</button>
+      <span>Page ${currentPage} of ${totalPages}</span>
+      <button ${currentPage === totalPages ? "disabled" : ""} data-dir="1">Next</button>
+    `;
+
+    top.innerHTML = html;
     bottom.innerHTML = html;
 
-    // Reattach event listeners
-    document.querySelectorAll(".page-btn").forEach(btn => {
-      btn.onclick = () => {
-        currentPage = parseInt(btn.dataset.page);
-        renderTable();
-      };
-    });
-  }
-
-  function buildPaginationButtons(totalPages) {
-    let buttons = "";
-
-    for (let i = 1; i <= totalPages; i++) {
-      buttons += `
-        <button class="page-btn ${i === currentPage ? "active" : ""}" data-page="${i}">
-          ${i}
-        </button>
-      `;
-    }
-
-    return `<div class="pagination-buttons">${buttons}</div>`;
+    document.querySelectorAll("#paginationTop button, #paginationBottom button")
+      .forEach(btn => {
+        btn.onclick = () => {
+          const delta = parseInt(btn.dataset.dir);
+          currentPage += delta;
+          renderTable();
+        };
+      });
   }
 
   document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
@@ -154,6 +112,7 @@ function initUI(data) {
         sortColumn = col;
         sortAsc = true;
       }
+      currentPage = 1;
       renderTable();
     };
   });
