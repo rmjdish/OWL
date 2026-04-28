@@ -97,11 +97,11 @@ th[data-sort].desc::after {
 }
 
 #clearBasketBtn {
-  margin-right: 14px !important;
+  margin-left: 14px !important;
 }
 
 #downloadBasketCsvBtn {
-  margin-left: 14px !important;
+  margin-left: 10px !important;
 }
 
 
