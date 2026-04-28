@@ -103,7 +103,15 @@ document.addEventListener("DOMContentLoaded", () => {
     dropdown.innerHTML = `
       <div class="preview-header">Last items added were:</div>
       ${lastFive
-        .map(i => `<div class="basket-preview-item">${i.varName}</div>`)
+        .map(i => `
+          <div class="basket-preview-item">
+            <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${i.varName}"
+               target="_blank"
+               class="field-link">
+               ${i.varName}
+            </a>
+          </div>
+        `)
         .join("")}
       <div class="view-full" onclick="window.location='/OWL/docs/baskets/'">
         View full basket →
