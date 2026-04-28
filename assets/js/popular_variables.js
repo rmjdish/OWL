@@ -154,23 +154,24 @@ function initUI(data) {
   }
 
   // ⭐ BASKET EVENTS
-  function attachBasketEvents() {
-    document.querySelectorAll(".add-to-basket").forEach(cb => {
-      cb.onclick = () => {
-        const name = cb.dataset.name;
-        const label = cb.dataset.label;
+function attachBasketEvents() {
+  document.querySelectorAll(".add-to-basket").forEach(cb => {
+    cb.onclick = () => {
+      const name = cb.dataset.name;
+      const label = cb.dataset.label;
 
-        window.basket = window.basket || [];
-        window.basket.push({ name, label });
+      if (!name) return;
 
-        const icon = document.getElementById("basket-icon");
-        if (icon) {
-          icon.classList.add("basket-pulse");
-          setTimeout(() => icon.classList.remove("basket-pulse"), 300);
-        }
-      };
-    });
-  }
+      if (cb.checked) {
+        addToBasket(name, label);
+      } else {
+        removeFromBasket(name);
+      }
+
+      updateBasketCountUI();
+    };
+  });
+}
 
   renderTable();
 }
