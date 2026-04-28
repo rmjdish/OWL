@@ -96,6 +96,9 @@ th[data-sort].desc::after {
   cursor: default;
 }
 
+
+
+
 </style>
 
 <script>
@@ -224,14 +227,18 @@ window.addEventListener("load", function () {
     updateBasketResultsCount();
   }
 
-  function clearBasket() {
-    saveBasket([]);
-    basketPage = 1;
-    renderBasket();
-    renderBasketPagination();
-    updateBasketResultsCount();
-    updateBasketCountUI();
-  }
+	function clearBasket() {
+	  const confirmed = confirm("Are you sure you want to clear your basket?");
+
+	  if (!confirmed) return;
+
+	  saveBasket([]);
+	  basketPage = 1;
+	  renderBasket();
+	  renderBasketPagination();
+	  updateBasketResultsCount();
+	  updateBasketCountUI();
+	}
 
   function downloadBasketCSV() {
     const basket = loadBasket();
