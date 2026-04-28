@@ -193,4 +193,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     renderTable();
-  }
+  } // end initUI
+
+}); // end DOMContentLoaded
