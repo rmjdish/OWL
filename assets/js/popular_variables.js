@@ -63,7 +63,7 @@ function initUI(data) {
     const start = (currentPage - 1) * pageSize;
     const pageRows = sorted.slice(start, start + pageSize);
 
-    resultsCount.textContent = Showing `${totalRows} results`;
+    resultsCount.textContent = `Showing ${totalRows} results`;
 
     tbody.innerHTML = pageRows.map(row => `
       <tr>
