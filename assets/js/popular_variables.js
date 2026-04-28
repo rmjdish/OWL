@@ -72,7 +72,9 @@ function initUI(data) {
     tbody.innerHTML = pageRows.map(row => `
       <tr>
         <td class="check-col">
-          <input type="checkbox" class="add-to-basket" data-name="${row.name}" data-label="${row.label}">
+          <input type="checkbox" class="add-to-basket"
+                 data-name="${row.name}"
+                 data-label="${row.label}">
         </td>
         <td class="name-col">${row.name}</td>
         <td class="label-col">${row.label}</td>
@@ -112,8 +114,10 @@ function initUI(data) {
 
   // ⭐ SORTING EVENTS
   document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
+    const label = th.textContent;
+
     th.innerHTML = `
-      <span class="header-label">${th.textContent}</span>
+      <span class="header-label">${label}</span>
       <span class="sort-icon">⇅</span>
     `;
 
