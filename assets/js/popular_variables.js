@@ -40,15 +40,18 @@ function initUI(data) {
   const resultsCount = document.getElementById("resultsCount");
   const pageSizeControl = document.getElementById("pageSize");
 
+  // Page size change
   pageSizeControl.onchange = () => {
     pageSize = parseInt(pageSizeControl.value);
     currentPage = 1;
     renderTable();
   };
 
+  // ⭐ RENDER TABLE
   function renderTable() {
     let sorted = [...data];
 
+    // Sorting
     if (sortColumn) {
       sorted.sort((a, b) => {
         if (a[sortColumn] < b[sortColumn]) return sortAsc ? -1 : 1;
@@ -65,6 +68,7 @@ function initUI(data) {
 
     resultsCount.textContent = `Showing ${totalRows} results`;
 
+    // Build rows
     tbody.innerHTML = pageRows.map(row => `
       <tr>
         <td class="check-col">
@@ -76,10 +80,12 @@ function initUI(data) {
       </tr>
     `).join("");
 
+    updateSortIcons();
     renderPagination(totalPages);
     attachBasketEvents();
   }
 
+  // ⭐ PAGINATION
   function renderPagination(totalPages) {
     const top = document.getElementById("paginationTop");
     const bottom = document.getElementById("paginationBottom");
@@ -93,6 +99,7 @@ function initUI(data) {
     top.innerHTML = html;
     bottom.innerHTML = html;
 
+    // Attach events
     document.querySelectorAll("#paginationTop button, #paginationBottom button")
       .forEach(btn => {
         btn.onclick = () => {
@@ -103,20 +110,46 @@ function initUI(data) {
       });
   }
 
+  // ⭐ SORTING EVENTS
   document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
+    th.innerHTML = `
+      <span class="header-label">${th.textContent}</span>
+      <span class="sort-icon">⇅</span>
+    `;
+
     th.onclick = () => {
       const col = th.dataset.sort;
+
       if (sortColumn === col) {
         sortAsc = !sortAsc;
       } else {
         sortColumn = col;
         sortAsc = true;
       }
+
       currentPage = 1;
       renderTable();
     };
   });
 
+  // ⭐ UPDATE SORT ICONS
+  function updateSortIcons() {
+    document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
+      const col = th.dataset.sort;
+      const icon = th.querySelector(".sort-icon");
+
+      if (col !== sortColumn) {
+        icon.textContent = "⇅";
+        icon.style.opacity = 0.4;
+        return;
+      }
+
+      icon.style.opacity = 1;
+      icon.textContent = sortAsc ? "▲" : "▼";
+    });
+  }
+
+  // ⭐ BASKET EVENTS
   function attachBasketEvents() {
     document.querySelectorAll(".add-to-basket").forEach(cb => {
       cb.onclick = () => {
