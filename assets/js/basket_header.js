@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     dropdown.innerHTML = `
-      <div class="preview-header">Last items added were:</div>
+      <div class="preview-header">Last 5 variables added were:</div>
       ${lastFive
         .map(i => `
           <div class="basket-preview-item">
