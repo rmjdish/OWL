@@ -44,20 +44,6 @@ nav_exclude: true
 <!-- Pagination (bottom) -->
 <div id="basketPaginationBottom" class="basket-pagination"></div>
 
-<!-- Clear basket message box -->
-
-<div id="clearModal" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
-    <h3>Clear Basket</h3>
-    <p>Are you sure you want to clear your basket?</p>
-
-    <div class="modal-buttons">
-      <button id="confirmClear" class="modal-confirm">Yes, clear</button>
-      <button id="cancelClear" class="modal-cancel">Cancel</button>
-    </div>
-  </div>
-</div>
-
 
 <style>
 
@@ -109,61 +95,6 @@ th[data-sort].desc::after {
   opacity: 0.5;
   cursor: default;
 }
-
-/* Clear basket message box */
-
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-.modal-box {
-  background: #fff;
-  padding: 20px 24px;
-  border-radius: 8px;
-  width: 320px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.modal-box h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 18px;
-}
-
-.modal-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.modal-confirm {
-  background: #7c3aed; /* pastel purple */
-  color: white;
-  border: none;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.modal-cancel {
-  background: #e5e7eb;
-  border: 1px solid #d1d5db;
-  padding: 6px 14px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
 
 
 
@@ -297,25 +228,16 @@ window.addEventListener("load", function () {
   }
 
 	function clearBasket() {
-	  // Show modal
-	  document.getElementById("clearModal").style.display = "flex";
+	  const confirmed = confirm("Are you sure you want to clear your basket?");
 
-	  // Confirm
-	  document.getElementById("confirmClear").onclick = function () {
-		saveBasket([]);
-		basketPage = 1;
-		renderBasket();
-		renderBasketPagination();
-		updateBasketResultsCount();
-		updateBasketCountUI();
+	  if (!confirmed) return;
 
-		document.getElementById("clearModal").style.display = "none";
-	  };
-
-	  // Cancel
-	  document.getElementById("cancelClear").onclick = function () {
-		document.getElementById("clearModal").style.display = "none";
-	  };
+	  saveBasket([]);
+	  basketPage = 1;
+	  renderBasket();
+	  renderBasketPagination();
+	  updateBasketResultsCount();
+	  updateBasketCountUI();
 	}
 
   function downloadBasketCSV() {
