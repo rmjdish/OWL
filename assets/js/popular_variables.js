@@ -4,19 +4,10 @@ console.log("Popular vars table script starting…");
 
 // Load BOTH datasets
 Promise.all([
-  fetch("popular_vars_all.json").then(r => {
-    console.log("popular_vars_all.json status:", r.status);
-    return r.json();
-  }),
-  fetch("NSHD_Data_Dictionary_Public.json").then(r => {
-    console.log("NSHD_Data_Dictionary_Public.json status:", r.status);
-    return r.json();
-  })
+  fetch("popular_vars_all.json").then(r => r.json()),
+  fetch("NSHD_Data_Dictionary_Public.json").then(r => r.json())
 ])
 .then(([popular, labels]) => {
-
-  console.log("Popular loaded:", popular);
-  console.log("Labels loaded:", labels);
 
   const labelMap = {};
   labels.forEach(row => {
@@ -29,7 +20,7 @@ Promise.all([
     count: row.count
   }));
 
-  buildTable(merged.slice(0, 1000));
+  initUI(merged);
 })
 .catch(err => {
   console.error("Error loading JSON:", err);
@@ -37,10 +28,14 @@ Promise.all([
     "<p>Failed to load data.</p>";
 });
 
-function buildTable(data) {
+
+// ⭐ MAIN UI SETUP
+function initUI(data) {
   const container = document.getElementById("table-container");
 
   container.innerHTML = `
+    <div id="paginationTop" class="pagination-bar"></div>
+
     <table id="vars-table">
       <thead>
         <tr>
@@ -53,25 +48,36 @@ function buildTable(data) {
       <tbody></tbody>
     </table>
 
-    <div class="pagination-controls">
-      <div>
-        Show 
-        <select id="page-size">
-          <option value="15">15</option>
-          <option value="30">30</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-        rows
-      </div>
-      <div id="pagination-buttons"></div>
-    </div>
+    <div id="paginationBottom" class="pagination-bar"></div>
   `;
 
   let sortColumn = null;
   let sortAsc = true;
   let pageSize = 15;
   let currentPage = 1;
+
+  const pageSizeControl = document.createElement("select");
+  pageSizeControl.id = "pageSize";
+  [15, 30, 50, 100].forEach(n => {
+    const opt = document.createElement("option");
+    opt.value = n;
+    opt.textContent = n;
+    pageSizeControl.appendChild(opt);
+  });
+
+  const resultsCount = document.createElement("div");
+  resultsCount.id = "resultsCount";
+
+  // Insert into top pagination bar
+  const paginationTop = document.getElementById("paginationTop");
+  paginationTop.appendChild(resultsCount);
+  paginationTop.appendChild(pageSizeControl);
+
+  pageSizeControl.onchange = () => {
+    pageSize = parseInt(pageSizeControl.value);
+    currentPage = 1;
+    renderTable();
+  };
 
   function renderTable() {
     const tbody = document.querySelector("#vars-table tbody");
@@ -85,8 +91,13 @@ function buildTable(data) {
       });
     }
 
+    const totalRows = sorted.length;
+    const totalPages = Math.ceil(totalRows / pageSize);
+
     const start = (currentPage - 1) * pageSize;
     const pageRows = sorted.slice(start, start + pageSize);
+
+    resultsCount.textContent = `${totalRows} results`;
 
     tbody.innerHTML = pageRows.map(row => `
       <tr>
@@ -99,26 +110,39 @@ function buildTable(data) {
       </tr>
     `).join("");
 
-    renderPagination(sorted.length);
+    renderPagination(totalPages);
     attachBasketEvents();
   }
 
-  function renderPagination(totalRows) {
-    const totalPages = Math.ceil(totalRows / pageSize);
-    const buttons = [];
+  function renderPagination(totalPages) {
+    const top = document.getElementById("paginationTop");
+    const bottom = document.getElementById("paginationBottom");
 
-    for (let i = 1; i <= totalPages; i++) {
-      buttons.push(`<button class="page-btn" data-page="${i}">${i}</button>`);
-    }
+    const html = buildPaginationButtons(totalPages);
+    top.innerHTML = resultsCount.outerHTML + pageSizeControl.outerHTML + html;
+    bottom.innerHTML = html;
 
-    document.getElementById("pagination-buttons").innerHTML = buttons.join("");
-
+    // Reattach event listeners
     document.querySelectorAll(".page-btn").forEach(btn => {
       btn.onclick = () => {
         currentPage = parseInt(btn.dataset.page);
         renderTable();
       };
     });
+  }
+
+  function buildPaginationButtons(totalPages) {
+    let buttons = "";
+
+    for (let i = 1; i <= totalPages; i++) {
+      buttons += `
+        <button class="page-btn ${i === currentPage ? "active" : ""}" data-page="${i}">
+          ${i}
+        </button>
+      `;
+    }
+
+    return `<div class="pagination-buttons">${buttons}</div>`;
   }
 
   document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
@@ -133,12 +157,6 @@ function buildTable(data) {
       renderTable();
     };
   });
-
-  document.getElementById("page-size").onchange = e => {
-    pageSize = parseInt(e.target.value);
-    currentPage = 1;
-    renderTable();
-  };
 
   function attachBasketEvents() {
     document.querySelectorAll(".add-to-basket").forEach(cb => {
