@@ -9,6 +9,10 @@ document.addEventListener("DOMContentLoaded", () => {
   ])
   .then(([popular, labels]) => {
 
+    // ⭐ HIDE LOADER + SHOW UI
+    document.getElementById("loadingScreen").style.display = "none";
+    document.getElementById("popularUI").style.display = "block";
+
     const labelMap = {};
     labels.forEach(row => {
       labelMap[row["NSHD Variable Name"]] = row["Variable Label"];
