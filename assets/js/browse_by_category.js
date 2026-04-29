@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /* ⭐ DATATABLE — inject checkbox column into 4‑column HTML */
+    /* ⭐ DATATABLE — 4-column HTML, checkbox inside Order column */
     var table = $('#myTable').DataTable({
         pageLength: 15,
         deferRender: true,
@@ -56,39 +56,34 @@ document.addEventListener("DOMContentLoaded", function () {
             headerOffset: 0
         },
 
-        /* ⭐ Tell DataTables the table has 5 columns (1 synthetic + 4 real) */
-        columns: [
-            { data: null }, // checkbox column (synthetic)
-            { data: 0 },    // Order
-            { data: 1 },    // NSHD Variable Name
-            { data: 2 },    // Showcase Field ID
-            { data: 3 }     // Variable Label
-        ],
-
         columnDefs: [
             {
-                /* ⭐ Inject checkbox column */
+                /* ⭐ Use existing Order column (0) to host checkbox + order */
                 targets: 0,
                 orderable: false,
                 searchable: false,
-                width: "20px",
+                width: "40px",
                 className: "dt-center",
                 render: function (data, type, row) {
-                    const variableName = row[2]; // NSHD Variable Name
-                    return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
+                    const order = data;          // original Order value
+                    const variableName = row[1]; // NSHD Variable Name
+                    return `
+                        <input type="checkbox" class="table-checkbox" data-id="${variableName}">
+                        <span style="margin-left:4px;">${order}</span>
+                    `;
                 }
             },
             {
-                /* ⭐ NSHD Variable Name (now column 2) */
-                targets: 2,
+                /* ⭐ NSHD Variable Name (column 1) */
+                targets: 1,
                 render: function (data) {
                     if (!data) return "";
                     return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
                 }
             },
             {
-                /* ⭐ Showcase Field ID (now column 3) */
-                targets: 3,
+                /* ⭐ Showcase Field ID (column 2) */
+                targets: 2,
                 className: "dt-center field-id-center",
                 render: function (data) {
                     if (!data) return "";
@@ -103,8 +98,8 @@ document.addEventListener("DOMContentLoaded", function () {
         table.rows().every(function () {
             const row = this.data();
 
-            const variableName = row[2]; // NSHD Variable Name
-            const variableLabel = row[4]; // Variable Label
+            const variableName = row[1]; // NSHD Variable Name
+            const variableLabel = row[3]; // Variable Label
 
             const cb = this.node().querySelector(".table-checkbox");
             cb.checked = basket.some(item => item.id === variableName);
@@ -123,9 +118,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     syncAllTables();
 
-    /* ⭐ YADCF — correct index (Variable Label = column 4) */
+    /* ⭐ YADCF — Variable Label is still column 3 */
     yadcf.init(table, [
-        { column_number: 4, filter_type: "select", cumulative_filtering: true }
+        { column_number: 3, filter_type: "select", cumulative_filtering: true }
     ]);
 
     /* ⭐ FIX HEADER ALIGNMENT */
