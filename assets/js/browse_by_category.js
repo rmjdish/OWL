@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ⭐ GLOBAL BASKET (shared across all tables) */
+    /* ⭐ GLOBAL BASKET */
     let basket = JSON.parse(localStorage.getItem("basket")) || [];
 
     function saveBasket() {
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /* ⭐ INITIALISE DATATABLE WITH CHECKBOX COLUMN */
+    /* ⭐ DATATABLE WITH CHECKBOX COLUMN DEFINED PROPERLY */
     var table = $('#myTable').DataTable({
         pageLength: 15,
         deferRender: true,
@@ -33,29 +33,41 @@ document.addEventListener("DOMContentLoaded", function () {
             headerOffset: 0
         },
 
-        /* ⭐ Add checkbox header */
-        headerCallback: function (thead) {
-            const first = thead.querySelector("th:first-child");
-            first.style.background = "white";
-            first.style.width = "20px";
-            first.textContent = "";
-        },
+        columns: [
+            {   // checkbox column
+                data: null,
+                orderable: false,
+                searchable: false,
+                width: "20px",
+                className: "dt-center",
+                render: function (data, type, row) {
+                    return `<input type="checkbox" class="table-checkbox" data-id="${row[1]}">`;
+                }
+            },
+            { data: 0 }, // Order
+            {   // NSHD Variable Name
+                data: 1,
+                render: function (data) {
+                    if (!data) return "";
+                    return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
+                }
+            },
+            {   // Showcase Field ID
+                data: 2,
+                className: "dt-center field-id-center",
+                render: function (data) {
+                    if (!data) return "";
+                    return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
+                }
+            },
+            { data: 3 } // Variable Label
+        ],
 
-        /* ⭐ Add checkbox to each row */
-        createdRow: function (row, data) {
+        rowCallback: function (row, data) {
+            const variableName = data[1];
+            const variableLabel = data[3];
 
-            const variableName = data[1]; // NSHD Variable Name
-            const variableLabel = data[3]; // Variable Label
-
-            const td = row.insertCell(0);
-            td.style.background = "white";
-            td.style.textAlign = "center";
-
-            const cb = document.createElement("input");
-            cb.type = "checkbox";
-            cb.classList.add("table-checkbox");
-            cb.dataset.id = variableName;
-
+            const cb = row.querySelector(".table-checkbox");
             cb.checked = basket.some(item => item.id === variableName);
 
             cb.addEventListener("change", () => {
@@ -67,51 +79,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 saveBasket();
                 syncAllTables();
             });
-
-            td.appendChild(cb);
-        },
-
-        /* ⭐ Fix column indexes after adding checkbox column */
-        columnDefs: [
-            {
-                targets: 2, // shifted by +1
-                render: function (data) {
-                    if (!data || data.trim() === "") return "";
-                    var base = "https://rmjdish.github.io/data_dict/docs/variable_metadata/";
-                    return '<a href="' + base + data + '.html" target="_blank">' + data + '</a>';
-                }
-            },
-            {
-                targets: 3, // shifted by +1
-                className: "dt-center field-id-center",
-                render: function (data) {
-                    if (!data || data.trim() === "") return "";
-                    var base = "https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=";
-                    return '<a href="' + base + data + '" target="_blank">' + data + '</a>';
-                }
-            }
-        ]
+        }
     });
 
-    /* ⭐ Sync checkboxes after table loads */
+    /* ⭐ YADCF — correct index (Variable Label = column 4) */
+    yadcf.init(table, [
+        { column_number: 4, filter_type: "select", cumulative_filtering: true }
+    ]);
+
     syncAllTables();
 
-    /* ⭐ FIX HEADER MISALIGNMENT ON RESIZE */
+    /* ⭐ FIX HEADER ALIGNMENT */
     $(window).on('resize', function () {
         table.columns.adjust();
         if (table.fixedHeader) table.fixedHeader.adjust();
     });
 
-    /* ⭐ YADCF — FIXED COLUMN INDEX */
-    yadcf.init(table, [
-        { column_number: 3, filter_type: "select", cumulative_filtering: true }
-    ]);
-
-    /* Initial adjust */
-    table.columns.adjust().draw(false);
-    if (table.fixedHeader) table.fixedHeader.adjust();
-
-    /* ⭐ HIDE LOADING + SHOW UI */
+    /* ⭐ SHOW UI */
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.visibility = "visible";
 
