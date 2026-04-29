@@ -79,26 +79,24 @@ document.addEventListener("DOMContentLoaded", function () {
             /* ⭐ Inject checkbox into Order column */
 	columnDefs: [
 		{
-			targets: 0,
+			targets: 0,   // ⭐ checkbox column
 			orderable: false,
 			searchable: false,
 			width: "120px",
 			className: "dt-center",
 			render: function (data, type, row) {
 				const variableName = row[1];
-				return `
-					<input type="checkbox" class="table-checkbox" data-id="${variableName}">
-				`;
+				return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
 			}
 		},
 		{
-			targets: 2,
+			targets: 2,   // NSHD Variable Name
 			render: function (data) {
 				return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
 			}
 		},
 		{
-			targets: 3,
+			targets: 3,   // Showcase Field ID
 			className: "dt-center",
 			render: function (data) {
 				return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
