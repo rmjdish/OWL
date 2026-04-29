@@ -68,32 +68,32 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     /* ⭐ INSERT CHECKBOXES AFTER DATATABLE RENDERS */
-    table.rows().every(function () {
-        const row = this.node();
-        const cells = row.querySelectorAll("td");
+	table.rows().every(function () {
+		const row = this.node();
+		const cells = row.querySelectorAll("td");
 
-        const variableName = cells[2].textContent.trim();
-        const variableLabel = cells[4].textContent.trim();
+		const variableName = cells[2].textContent.trim();  // NSHD Variable Name
+		const variableLabel = cells[3].textContent.trim(); // Variable Label (correct index)
 
-        const cb = document.createElement("input");
-        cb.type = "checkbox";
-        cb.classList.add("table-checkbox");
-        cb.dataset.id = variableName;
+		const cb = document.createElement("input");
+		cb.type = "checkbox";
+		cb.classList.add("table-checkbox");
+		cb.dataset.id = variableName;
 
-        cb.checked = basket.some(item => item.id === variableName);
+		cb.checked = basket.some(item => item.id === variableName);
 
-        cb.addEventListener("change", () => {
-            if (cb.checked) {
-                basket.push({ id: variableName, label: variableLabel });
-            } else {
-                basket = basket.filter(item => item.id !== variableName);
-            }
-            saveBasket();
-            syncAllTables();
-        });
+		cb.addEventListener("change", () => {
+			if (cb.checked) {
+				basket.push({ id: variableName, label: variableLabel });
+			} else {
+				basket = basket.filter(item => item.id !== variableName);
+			}
+			saveBasket();
+			syncAllTables();
+		});
 
-        cells[0].appendChild(cb);
-    });
+		cells[0].appendChild(cb);
+	})
 
     syncAllTables();
 
