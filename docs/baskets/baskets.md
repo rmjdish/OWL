@@ -3,7 +3,6 @@ layout: default
 title: Basket
 nav_order: 0
 nav_exclude: true
-classes: page-baskets
 ---
 
 <h1>Variable Basket</h1>
@@ -45,6 +44,68 @@ classes: page-baskets
 <!-- Pagination (bottom) -->
 <div id="basketPaginationBottom" class="basket-pagination"></div>
 
+
+<style>
+
+/* Default sort icon before clicking */
+th[data-sort]::after {
+  content: " ⇅";   /* neutral icon */
+  opacity: 0.4;
+  margin-left: 4px;
+}
+
+/* Active ascending */
+th[data-sort].asc::after {
+  content: " ▲";
+  opacity: 1;
+}
+
+/* Active descending */
+th[data-sort].desc::after {
+  content: " ▼";
+  opacity: 1;
+}
+
+
+/* Basket results count box */
+#basketResultsCount {
+  background: #f3f4f6;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  display: inline-block;
+  color: #333;
+}
+
+/* Pagination styling (same as Data Dictionary) */
+.basket-pagination {
+  margin: 10px 0;
+}
+
+.basket-pagination button {
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.basket-pagination button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+#clearBasketBtn {
+  margin-left: 14px !important;
+}
+
+#downloadBasketCsvBtn {
+  margin-left: 10px !important;
+}
+
+
+</style>
 
 <script>
 if (typeof loadBasket === "undefined") {
