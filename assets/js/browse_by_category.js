@@ -18,8 +18,9 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(r => r.json())
         .then(data => {
             console.log("Loaded JSON:", data);
+
             buildTable(data);   // insert rows
-            initDataTable();    // NOW start DataTables
+            initDataTable();    // ⭐ initialise AFTER rows exist
         })
         .catch(err => console.error("JSON load error:", err));
 
