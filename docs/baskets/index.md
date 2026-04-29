@@ -3,7 +3,11 @@ layout: default
 title: Basket
 nav_order: 0
 nav_exclude: true
+classes: page-baskets
 ---
+
+<div class="page-baskets">
+
 
 <h1>Variable Basket</h1>
 
@@ -303,3 +307,5 @@ window.addEventListener("load", function () {
 });
 {% endraw %}
 </script>
+
+</div>
