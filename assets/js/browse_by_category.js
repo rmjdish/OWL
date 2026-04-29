@@ -50,15 +50,16 @@ document.addEventListener("DOMContentLoaded", function () {
     function buildTable(data) {
         const tbody = document.querySelector("#myTable tbody");
 
-        tbody.innerHTML = data.map(row => `
-            <tr>
-                <td>${row["Order"]}</td>
-                <td>${row["NSHD Variable Name"]}</td>
-                <td>${row["Showcase Field ID"]}</td>
-                <td>${row["Variable Label"]}</td>
-            </tr>
-        `).join("");
-    }
+	tbody.innerHTML = data.map(row => `
+		<tr>
+			<td></td> <!-- ⭐ placeholder for checkbox column -->
+			<td>${row["Order"]}</td>
+			<td>${row["NSHD Variable Name"]}</td>
+			<td>${row["Showcase Field ID"]}</td>
+			<td>${row["Variable Label"]}</td>
+		</tr>
+	`).join("");
+		}
 
 
     /* ⭐ Initialise DataTables AFTER rows exist */
