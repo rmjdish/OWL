@@ -115,3 +115,5 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ⭐ HIDE LOADING + SHOW UI */
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.visibility = "visible";
+
+});
