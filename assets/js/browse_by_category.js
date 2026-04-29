@@ -20,6 +20,21 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    /* ⭐ ADD CHECKBOX COLUMN BEFORE DATATABLE INITIALISES */
+    const tableEl = document.querySelector("#myTable thead tr");
+    const th = document.createElement("th");
+    th.textContent = "";
+    th.style.background = "white";
+    th.style.width = "20px";
+    tableEl.prepend(th);
+
+    document.querySelectorAll("#myTable tbody tr").forEach(row => {
+        const td = document.createElement("td");
+        td.style.background = "white";
+        td.style.textAlign = "center";
+        row.prepend(td);
+    });
+
     /* ⭐ INITIALISE DATATABLE */
     var table = $('#myTable').DataTable({
         pageLength: 15,
@@ -33,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
         },
         columnDefs: [
             {
-                targets: 1,
+                targets: 2, // shifted by +1 because checkbox column was added
                 render: function (data) {
                     if (!data || data.trim() === "") return "";
                     var base = "https://rmjdish.github.io/data_dict/docs/variable_metadata/";
@@ -41,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             },
             {
-                targets: 2,
+                targets: 3, // shifted by +1
                 className: "dt-center field-id-center",
                 render: function (data) {
                     if (!data || data.trim() === "") return "";
@@ -52,51 +67,34 @@ document.addEventListener("DOMContentLoaded", function () {
         ]
     });
 
-    /* ⭐ ADD CHECKBOX COLUMN (NO HTML CHANGES) */
-    function injectCheckboxColumn() {
+    /* ⭐ INSERT CHECKBOXES AFTER DATATABLE RENDERS */
+    table.rows().every(function () {
+        const row = this.node();
+        const cells = row.querySelectorAll("td");
 
-        /* 1. Add header cell */
-        const headerRow = document.querySelector("#myTable thead tr");
-        const th = document.createElement("th");
-        th.style.width = "20px";
-        th.style.background = "white";
-        th.textContent = "";
-        headerRow.prepend(th);
+        const variableName = cells[2].textContent.trim();
+        const variableLabel = cells[4].textContent.trim();
 
-        /* 2. Add checkbox to each row */
-        const rows = document.querySelectorAll("#myTable tbody tr");
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.classList.add("table-checkbox");
+        cb.dataset.id = variableName;
 
-        rows.forEach(row => {
-            const variableName = row.children[2].textContent.trim(); // NSHD Variable Name
-            const variableLabel = row.children[4].textContent.trim(); // Variable Label
+        cb.checked = basket.some(item => item.id === variableName);
 
-            const td = document.createElement("td");
-            td.style.textAlign = "center";
-            td.style.background = "white";
-
-            const cb = document.createElement("input");
-            cb.type = "checkbox";
-            cb.classList.add("table-checkbox");
-            cb.dataset.id = variableName;
-
-            cb.checked = basket.some(item => item.id === variableName);
-
-            cb.addEventListener("change", () => {
-                if (cb.checked) {
-                    basket.push({ id: variableName, label: variableLabel });
-                } else {
-                    basket = basket.filter(item => item.id !== variableName);
-                }
-                saveBasket();
-                syncAllTables();
-            });
-
-            td.appendChild(cb);
-            row.prepend(td);
+        cb.addEventListener("change", () => {
+            if (cb.checked) {
+                basket.push({ id: variableName, label: variableLabel });
+            } else {
+                basket = basket.filter(item => item.id !== variableName);
+            }
+            saveBasket();
+            syncAllTables();
         });
-    }
 
-    injectCheckboxColumn();
+        cells[0].appendChild(cb);
+    });
+
     syncAllTables();
 
     /* ⭐ FIX HEADER MISALIGNMENT ON RESIZE */
@@ -107,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /* YADCF */
     yadcf.init(table, [
-        { column_number: 3, filter_type: "select", cumulative_filtering: true }
+        { column_number: 4, filter_type: "select", cumulative_filtering: true }
     ]);
 
     /* Initial adjust */
@@ -117,5 +115,3 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ⭐ HIDE LOADING + SHOW UI */
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.visibility = "visible";
-
-});
