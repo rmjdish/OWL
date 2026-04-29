@@ -20,22 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /* ⭐ ADD CHECKBOX COLUMN BEFORE DATATABLE INITIALISES */
-    const tableEl = document.querySelector("#myTable thead tr");
-    const th = document.createElement("th");
-    th.textContent = "";
-    th.style.background = "white";
-    th.style.width = "20px";
-    tableEl.prepend(th);
-
-    document.querySelectorAll("#myTable tbody tr").forEach(row => {
-        const td = document.createElement("td");
-        td.style.background = "white";
-        td.style.textAlign = "center";
-        row.prepend(td);
-    });
-
-    /* ⭐ INITIALISE DATATABLE */
+    /* ⭐ INITIALISE DATATABLE WITH CHECKBOX COLUMN */
     var table = $('#myTable').DataTable({
         pageLength: 15,
         deferRender: true,
@@ -46,9 +31,48 @@ document.addEventListener("DOMContentLoaded", function () {
             header: true,
             headerOffset: 0
         },
+
+        /* ⭐ Add checkbox header */
+        headerCallback: function (thead) {
+            const first = thead.querySelector("th:first-child");
+            first.style.background = "white";
+            first.style.width = "20px";
+            first.textContent = "";
+        },
+
+        /* ⭐ Add checkbox to each row */
+        createdRow: function (row, data) {
+
+            const variableName = data[1]; // NSHD Variable Name
+            const variableLabel = data[3]; // Variable Label
+
+            const td = row.insertCell(0);
+            td.style.background = "white";
+            td.style.textAlign = "center";
+
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.classList.add("table-checkbox");
+            cb.dataset.id = variableName;
+
+            cb.checked = basket.some(item => item.id === variableName);
+
+            cb.addEventListener("change", () => {
+                if (cb.checked) {
+                    basket.push({ id: variableName, label: variableLabel });
+                } else {
+                    basket = basket.filter(item => item.id !== variableName);
+                }
+                saveBasket();
+                syncAllTables();
+            });
+
+            td.appendChild(cb);
+        },
+
         columnDefs: [
             {
-                targets: 2, // shifted by +1 because checkbox column was added
+                targets: 2, // shifted by +1
                 render: function (data) {
                     if (!data || data.trim() === "") return "";
                     var base = "https://rmjdish.github.io/data_dict/docs/variable_metadata/";
@@ -66,34 +90,6 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         ]
     });
-
-    /* ⭐ INSERT CHECKBOXES AFTER DATATABLE RENDERS */
-	table.rows().every(function () {
-		const row = this.node();
-		const cells = row.querySelectorAll("td");
-
-		const variableName = cells[2].textContent.trim();  // NSHD Variable Name
-		const variableLabel = cells[3].textContent.trim(); // Variable Label (correct index)
-
-		const cb = document.createElement("input");
-		cb.type = "checkbox";
-		cb.classList.add("table-checkbox");
-		cb.dataset.id = variableName;
-
-		cb.checked = basket.some(item => item.id === variableName);
-
-		cb.addEventListener("change", () => {
-			if (cb.checked) {
-				basket.push({ id: variableName, label: variableLabel });
-			} else {
-				basket = basket.filter(item => item.id !== variableName);
-			}
-			saveBasket();
-			syncAllTables();
-		});
-
-		cells[0].appendChild(cb);
-	})
 
     syncAllTables();
 
