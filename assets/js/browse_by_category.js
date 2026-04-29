@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /* ⭐ DATATABLE WITH CHECKBOX COLUMN DEFINED PROPERLY */
+    /* ⭐ DATATABLE — MATCHES YOUR 4-COLUMN HTML */
     var table = $('#myTable').DataTable({
         pageLength: 15,
         deferRender: true,
@@ -33,41 +33,45 @@ document.addEventListener("DOMContentLoaded", function () {
             headerOffset: 0
         },
 
-        columns: [
-            {   // checkbox column
-                data: null,
+        /* ⭐ Add checkbox column using columnDefs */
+        columnDefs: [
+            {
+                targets: 0,
                 orderable: false,
                 searchable: false,
                 width: "20px",
                 className: "dt-center",
                 render: function (data, type, row) {
-                    return `<input type="checkbox" class="table-checkbox" data-id="${row[1]}">`;
+                    const variableName = row[1];
+                    return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
                 }
             },
-            { data: 0 }, // Order
-            {   // NSHD Variable Name
-                data: 1,
+            {
+                targets: 2,
                 render: function (data) {
                     if (!data) return "";
                     return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
                 }
             },
-            {   // Showcase Field ID
-                data: 2,
+            {
+                targets: 3,
                 className: "dt-center field-id-center",
                 render: function (data) {
                     if (!data) return "";
                     return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
                 }
-            },
-            { data: 3 } // Variable Label
-        ],
+            }
+        ]
+    });
 
-        rowCallback: function (row, data) {
-            const variableName = data[1];
-            const variableLabel = data[3];
+    /* ⭐ Attach checkbox events */
+    table.on("draw", function () {
+        table.rows().every(function () {
+            const row = this.data();
+            const variableName = row[1];
+            const variableLabel = row[3];
 
-            const cb = row.querySelector(".table-checkbox");
+            const cb = this.node().querySelector(".table-checkbox");
             cb.checked = basket.some(item => item.id === variableName);
 
             cb.addEventListener("change", () => {
@@ -79,15 +83,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 saveBasket();
                 syncAllTables();
             });
-        }
+        });
     });
 
-    /* ⭐ YADCF — correct index (Variable Label = column 4) */
-    yadcf.init(table, [
-        { column_number: 4, filter_type: "select", cumulative_filtering: true }
-    ]);
-
     syncAllTables();
+
+    /* ⭐ YADCF — correct index (Variable Label = column 3) */
+    yadcf.init(table, [
+        { column_number: 3, filter_type: "select", cumulative_filtering: true }
+    ]);
 
     /* ⭐ FIX HEADER ALIGNMENT */
     $(window).on('resize', function () {
