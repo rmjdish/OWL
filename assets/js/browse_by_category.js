@@ -7,8 +7,19 @@ document.addEventListener("DOMContentLoaded", function () {
     if (loading) loading.style.display = "none";
     if (ui) ui.style.visibility = "visible";
 
-    /* ⭐ Only run the Basket table logic on the Basket page */
-    if (!document.body.classList.contains("page-baskets")) {
+    /* ⭐ Only run on pages that contain a selectable table */
+    const validPages = [
+        "page-baskets",
+        "page-search-data-dictionary",
+        "page-popular-variables",
+        "page-browse-by-category"
+    ];
+
+    const isValidPage = validPages.some(cls =>
+        document.body.classList.contains(cls)
+    );
+
+    if (!isValidPage) {
         return;
     }
 
