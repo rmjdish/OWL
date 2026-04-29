@@ -18,7 +18,8 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(r => r.json())
         .then(data => {
             console.log("Loaded JSON:", data);
-            buildTable(data);
+            buildTable(data);   // insert rows
+            initDataTable();    // NOW start DataTables
         })
         .catch(err => console.error("JSON load error:", err));
 
@@ -47,6 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ⭐ Build table rows from JSON */
     function buildTable(data) {
         const tbody = document.querySelector("#myTable tbody");
+
         tbody.innerHTML = data.map(row => `
             <tr>
                 <td>${row["Order"]}</td>
@@ -55,12 +57,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 <td>${row["Variable Label"]}</td>
             </tr>
         `).join("");
-
-        initDataTable();
     }
 
 
-    /* ⭐ Initialize DataTables + checkbox injection */
+    /* ⭐ Initialise DataTables AFTER rows exist */
     function initDataTable() {
 
         var table = $('#myTable').DataTable({
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 headerOffset: 0
             },
 
-            /* ⭐ Add checkbox column as FIRST column */
+            /* ⭐ Inject checkbox into Order column */
             columnDefs: [
                 {
                     targets: 0,
