@@ -1,5 +1,10 @@
 document.addEventListener("DOMContentLoaded", function () {
 
+    /* ⭐ Only run this script on the Basket page */
+    if (!document.body.classList.contains("page-baskets")) {
+        return;
+    }
+
     /* ⭐ GLOBAL BASKET */
     let basket = JSON.parse(localStorage.getItem("basket")) || [];
 
