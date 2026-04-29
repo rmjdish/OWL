@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /* ⭐ DATATABLE — MATCHES YOUR 4-COLUMN HTML */
+    /* ⭐ DATATABLE — inject checkbox column into 4‑column HTML */
     var table = $('#myTable').DataTable({
         pageLength: 15,
         deferRender: true,
@@ -58,17 +58,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
         columnDefs: [
             {
+                /* ⭐ Inject checkbox column */
                 targets: 0,
                 orderable: false,
                 searchable: false,
                 width: "20px",
                 className: "dt-center",
                 render: function (data, type, row) {
-                    const variableName = row[1];
+                    const variableName = row[2]; // NSHD Variable Name
                     return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
                 }
             },
             {
+                /* ⭐ NSHD Variable Name (now column 2) */
                 targets: 2,
                 render: function (data) {
                     if (!data) return "";
@@ -76,6 +78,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             },
             {
+                /* ⭐ Showcase Field ID (now column 3) */
                 targets: 3,
                 className: "dt-center field-id-center",
                 render: function (data) {
@@ -90,8 +93,9 @@ document.addEventListener("DOMContentLoaded", function () {
     table.on("draw", function () {
         table.rows().every(function () {
             const row = this.data();
-            const variableName = row[1];
-            const variableLabel = row[3];
+
+            const variableName = row[2]; // NSHD Variable Name
+            const variableLabel = row[4]; // Variable Label
 
             const cb = this.node().querySelector(".table-checkbox");
             cb.checked = basket.some(item => item.id === variableName);
@@ -110,9 +114,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     syncAllTables();
 
-    /* ⭐ YADCF — correct index (Variable Label = column 3) */
+    /* ⭐ YADCF — correct index (Variable Label = column 4) */
     yadcf.init(table, [
-        { column_number: 3, filter_type: "select", cumulative_filtering: true }
+        { column_number: 4, filter_type: "select", cumulative_filtering: true }
     ]);
 
     /* ⭐ FIX HEADER ALIGNMENT */
