@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", function () {
         scrollX: true,
         autoWidth: false,
         dom: "<'top'fB>iprt",
+
         fixedHeader: {
             header: true,
             headerOffset: 0
@@ -70,6 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
             td.appendChild(cb);
         },
 
+        /* ⭐ Fix column indexes after adding checkbox column */
         columnDefs: [
             {
                 targets: 2, // shifted by +1
@@ -91,6 +93,7 @@ document.addEventListener("DOMContentLoaded", function () {
         ]
     });
 
+    /* ⭐ Sync checkboxes after table loads */
     syncAllTables();
 
     /* ⭐ FIX HEADER MISALIGNMENT ON RESIZE */
@@ -99,9 +102,9 @@ document.addEventListener("DOMContentLoaded", function () {
         if (table.fixedHeader) table.fixedHeader.adjust();
     });
 
-    /* YADCF */
+    /* ⭐ YADCF — FIXED COLUMN INDEX */
     yadcf.init(table, [
-        { column_number: 4, filter_type: "select", cumulative_filtering: true }
+        { column_number: 3, filter_type: "select", cumulative_filtering: true }
     ]);
 
     /* Initial adjust */
