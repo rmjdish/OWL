@@ -80,13 +80,13 @@ document.addEventListener("DOMContentLoaded", function () {
             /* ⭐ Inject checkbox into Order column */
 	columnDefs: [
 		{
-			targets: 0,   // ⭐ checkbox column
+			targets: 0,
 			orderable: false,
 			searchable: false,
 			width: "120px",
 			className: "dt-center",
 			render: function (data, type, row) {
-				const variableName = row[1];
+				const variableName = row[2];   // ⭐ FIXED
 				return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
 			}
 		},
