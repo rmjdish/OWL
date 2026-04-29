@@ -1,27 +1,27 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ⭐ ALWAYS hide loading screen when page is ready */
+    /* ⭐ Hide loader, show UI */
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("dataUI");
-
     if (loading) loading.style.display = "none";
     if (ui) ui.style.visibility = "visible";
 
-    /* ⭐ Only run on pages that contain a selectable table */
-    const validPages = [
-        "page-baskets",
-        "page-search-data-dictionary",
-        "page-popular-variables",
-        "page-browse-by-category"
-    ];
+    /* ⭐ Determine JSON filename from HTML filename */
+    const htmlFile = window.location.pathname.split("/").pop();
+    const baseName = htmlFile.replace(/\.html$/, "");
+    const jsonFile = `${baseName}.json`;
 
-    const isValidPage = validPages.some(cls =>
-        document.body.classList.contains(cls)
-    );
+    console.log("Loading JSON:", jsonFile);
 
-    if (!isValidPage) {
-        return;
-    }
+    /* ⭐ Load JSON */
+    fetch(jsonFile)
+        .then(r => r.json())
+        .then(data => {
+            console.log("Loaded JSON:", data);
+            buildTable(data);
+        })
+        .catch(err => console.error("JSON load error:", err));
+
 
     /* ⭐ GLOBAL BASKET */
     let basket = JSON.parse(localStorage.getItem("basket")) || [];
@@ -43,90 +43,104 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /* ⭐ DATATABLE — 4-column HTML, checkbox inside Order column */
-    var table = $('#myTable').DataTable({
-        pageLength: 15,
-        deferRender: true,
-        scrollX: true,
-        autoWidth: false,
-        dom: "<'top'fB>iprt",
 
-        fixedHeader: {
-            header: true,
-            headerOffset: 0
-        },
+    /* ⭐ Build table rows from JSON */
+    function buildTable(data) {
+        const tbody = document.querySelector("#myTable tbody");
+        tbody.innerHTML = data.map(row => `
+            <tr>
+                <td>${row["Order"]}</td>
+                <td>${row["NSHD Variable Name"]}</td>
+                <td>${row["Showcase Field ID"]}</td>
+                <td>${row["Variable Label"]}</td>
+            </tr>
+        `).join("");
 
-        columnDefs: [
-            {
-                /* ⭐ Use existing Order column (0) to host checkbox + order */
-                targets: 0,
-                orderable: false,
-                searchable: false,
-                width: "40px",
-                className: "dt-center",
-                render: function (data, type, row) {
-                    const order = data;          // original Order value
-                    const variableName = row[1]; // NSHD Variable Name
-                    return `
-                        <input type="checkbox" class="table-checkbox" data-id="${variableName}">
-                        <span style="margin-left:4px;">${order}</span>
-                    `;
-                }
+        initDataTable();
+    }
+
+
+    /* ⭐ Initialize DataTables + checkbox injection */
+    function initDataTable() {
+
+        var table = $('#myTable').DataTable({
+            pageLength: 15,
+            deferRender: true,
+            scrollX: true,
+            autoWidth: false,
+            dom: "<'top'fB>iprt",
+
+            fixedHeader: {
+                header: true,
+                headerOffset: 0
             },
-            {
-                /* ⭐ NSHD Variable Name (column 1) */
-                targets: 1,
-                render: function (data) {
-                    if (!data) return "";
-                    return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
+
+            /* ⭐ Add checkbox column as FIRST column */
+            columnDefs: [
+                {
+                    targets: 0,
+                    orderable: false,
+                    searchable: false,
+                    width: "40px",
+                    className: "dt-center",
+                    render: function (data, type, row) {
+                        const variableName = row[1];
+                        return `
+                            <input type="checkbox" class="table-checkbox" data-id="${variableName}">
+                            <span style="margin-left:4px;">${data}</span>
+                        `;
+                    }
+                },
+                {
+                    targets: 1,
+                    render: function (data) {
+                        return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
+                    }
+                },
+                {
+                    targets: 2,
+                    className: "dt-center",
+                    render: function (data) {
+                        return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
+                    }
                 }
-            },
-            {
-                /* ⭐ Showcase Field ID (column 2) */
-                targets: 2,
-                className: "dt-center field-id-center",
-                render: function (data) {
-                    if (!data) return "";
-                    return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
-                }
-            }
-        ]
-    });
+            ]
+        });
 
-    /* ⭐ Attach checkbox events */
-    table.on("draw", function () {
-        table.rows().every(function () {
-            const row = this.data();
 
-            const variableName = row[1]; // NSHD Variable Name
-            const variableLabel = row[3]; // Variable Label
+        /* ⭐ Checkbox events */
+        table.on("draw", function () {
+            table.rows().every(function () {
+                const row = this.data();
+                const variableName = row[1];
+                const variableLabel = row[3];
 
-            const cb = this.node().querySelector(".table-checkbox");
-            cb.checked = basket.some(item => item.id === variableName);
+                const cb = this.node().querySelector(".table-checkbox");
+                cb.checked = basket.some(item => item.id === variableName);
 
-            cb.addEventListener("change", () => {
-                if (cb.checked) {
-                    basket.push({ id: variableName, label: variableLabel });
-                } else {
-                    basket = basket.filter(item => item.id !== variableName);
-                }
-                saveBasket();
-                syncAllTables();
+                cb.addEventListener("change", () => {
+                    if (cb.checked) {
+                        basket.push({ id: variableName, label: variableLabel });
+                    } else {
+                        basket = basket.filter(item => item.id !== variableName);
+                    }
+                    saveBasket();
+                    syncAllTables();
+                });
             });
         });
-    });
 
-    syncAllTables();
+        syncAllTables();
 
-    /* ⭐ YADCF — Variable Label is still column 3 */
-    yadcf.init(table, [
-        { column_number: 3, filter_type: "select", cumulative_filtering: true }
-    ]);
+        /* ⭐ YADCF filter on Variable Label (column 3) */
+        yadcf.init(table, [
+            { column_number: 3, filter_type: "select", cumulative_filtering: true }
+        ]);
 
-    /* ⭐ FIX HEADER ALIGNMENT */
-    $(window).on('resize', function () {
-        table.columns.adjust();
-        if (table.fixedHeader) table.fixedHeader.adjust();
-    });
+        $(window).on('resize', function () {
+            table.columns.adjust();
+            if (table.fixedHeader) table.fixedHeader.adjust();
+        });
+    }
 
 });
