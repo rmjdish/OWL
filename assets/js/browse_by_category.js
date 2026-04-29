@@ -56,6 +56,15 @@ document.addEventListener("DOMContentLoaded", function () {
             headerOffset: 0
         },
 
+        /* ⭐ Tell DataTables the table has 5 columns (1 synthetic + 4 real) */
+        columns: [
+            { data: null }, // checkbox column (synthetic)
+            { data: 0 },    // Order
+            { data: 1 },    // NSHD Variable Name
+            { data: 2 },    // Showcase Field ID
+            { data: 3 }     // Variable Label
+        ],
+
         columnDefs: [
             {
                 /* ⭐ Inject checkbox column */
