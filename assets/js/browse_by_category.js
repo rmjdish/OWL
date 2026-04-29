@@ -50,16 +50,16 @@ document.addEventListener("DOMContentLoaded", function () {
     function buildTable(data) {
         const tbody = document.querySelector("#myTable tbody");
 
-	tbody.innerHTML = data.map(row => `
-		<tr>
-			<td></td> <!-- ⭐ placeholder for checkbox column -->
-			<td>${row["Order"]}</td>
-			<td>${row["NSHD Variable Name"]}</td>
-			<td>${row["Showcase Field ID"]}</td>
-			<td>${row["Variable Label"]}</td>
-		</tr>
-	`).join("");
-		}
+        tbody.innerHTML = data.map(row => `
+            <tr>
+                <td></td> <!-- ⭐ placeholder for checkbox column -->
+                <td>${row["Order"]}</td>
+                <td>${row["NSHD Variable Name"]}</td>
+                <td>${row["Showcase Field ID"]}</td>
+                <td>${row["Variable Label"]}</td>
+            </tr>
+        `).join("");
+    }
 
 
     /* ⭐ Initialise DataTables AFTER rows exist */
@@ -77,33 +77,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 headerOffset: 0
             },
 
-            /* ⭐ Inject checkbox into Order column */
-	columnDefs: [
-		{
-			targets: 0,
-			orderable: false,
-			searchable: false,
-			width: "120px",
-			className: "dt-center",
-			render: function (data, type, row) {
-				const variableName = row[2];   // ⭐ FIXED
-				return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
-			}
-		},
-		{
-			targets: 2,   // NSHD Variable Name
-			render: function (data) {
-				return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
-			}
-		},
-		{
-			targets: 3,   // Showcase Field ID
-			className: "dt-center",
-			render: function (data) {
-				return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
-			}
-		}
-	]
+            /* ⭐ Inject checkbox into column 0 */
+            columnDefs: [
+                {
+                    targets: 0,
+                    orderable: false,
+                    searchable: false,
+                    width: "80px",
+                    className: "dt-center",
+                    render: function (data, type, row) {
+                        const variableName = row[2];   // ⭐ correct index
+                        return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
+                    }
+                },
+                {
+                    targets: 2,   // NSHD Variable Name
+                    render: function (data) {
+                        return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
+                    }
+                },
+                {
+                    targets: 3,   // Showcase Field ID
+                    className: "dt-center",
+                    render: function (data) {
+                        return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
+                    }
+                }
+            ]
         });
 
 
@@ -111,8 +111,9 @@ document.addEventListener("DOMContentLoaded", function () {
         table.on("draw", function () {
             table.rows().every(function () {
                 const row = this.data();
-                const variableName = row[1];
-                const variableLabel = row[3];
+
+                const variableName = row[2];   // ⭐ FIXED
+                const variableLabel = row[4];  // ⭐ FIXED
 
                 const cb = this.node().querySelector(".table-checkbox");
                 cb.checked = basket.some(item => item.id === variableName);
@@ -131,9 +132,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         syncAllTables();
 
-        /* ⭐ YADCF filter on Variable Label (column 3) */
+        /* ⭐ YADCF filter on Variable Label (column 4) */
         yadcf.init(table, [
-            { column_number: 3, filter_type: "select", cumulative_filtering: true }
+            { column_number: 4, filter_type: "select", cumulative_filtering: true }
         ]);
 
         $(window).on('resize', function () {
