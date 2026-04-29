@@ -1,6 +1,13 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ⭐ Only run this script on the Basket page */
+    /* ⭐ ALWAYS hide loading screen when page is ready */
+    const loading = document.getElementById("loadingScreen");
+    const ui = document.getElementById("dataUI");
+
+    if (loading) loading.style.display = "none";
+    if (ui) ui.style.visibility = "visible";
+
+    /* ⭐ Only run the Basket table logic on the Basket page */
     if (!document.body.classList.contains("page-baskets")) {
         return;
     }
@@ -38,7 +45,6 @@ document.addEventListener("DOMContentLoaded", function () {
             headerOffset: 0
         },
 
-        /* ⭐ Add checkbox column using columnDefs */
         columnDefs: [
             {
                 targets: 0,
@@ -103,9 +109,5 @@ document.addEventListener("DOMContentLoaded", function () {
         table.columns.adjust();
         if (table.fixedHeader) table.fixedHeader.adjust();
     });
-
-    /* ⭐ SHOW UI */
-    document.getElementById("loadingScreen").style.display = "none";
-    document.getElementById("dataUI").style.visibility = "visible";
 
 });
