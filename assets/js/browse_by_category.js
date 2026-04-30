@@ -49,49 +49,61 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ⭐ Initialise DataTables AFTER rows exist */
     function initDataTable() {
 
-		var table = $('#myTable2').DataTable({
-			pageLength: 15,
-			deferRender: true,
-			autoWidth: false,   // ⭐ let CSS control widths
-			dom: "<'top'f>iprt",
+        var table = $('#myTable2').DataTable({
+            pageLength: 15,
+            lengthMenu: [15, 30, 50, 100],
+            deferRender: true,
+            autoWidth: false,
+            dom: "iprt",
 
-			fixedHeader: {
-				header: true,
-				headerOffset: 0
-			},
+            fixedHeader: {
+                header: true,
+                headerOffset: 0
+            },
 
-			columnDefs: [
-				{
-					targets: 0,
-					orderable: false,
-					searchable: false,
-					className: "dt-center",
-					render: function (data, type, row) {
-						const variableName = row[2];
-						return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
-					}
-				},
-				{
-					targets: 2,
-					render: function (data) {
-						return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
-					}
-				},
-				{
-					targets: 3,
-					className: "dt-center",
-					render: function (data) {
-						return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
-					}
-				}
-			],
+            columnDefs: [
+                {
+                    targets: 0,
+                    orderable: false,
+                    searchable: false,
+                    className: "dt-center",
+                    render: function (data, type, row) {
+                        const variableName = row[2];
+                        return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
+                    }
+                },
+                {
+                    targets: 2,
+                    render: function (data) {
+                        return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
+                    }
+                },
+                {
+                    targets: 3,
+                    className: "dt-center",
+                    render: function (data) {
+                        return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
+                    }
+                }
+            ],
 
-			initComplete: function () {
-				console.log("DataTables fully initialised — showing UI");
-				loading.style.display = "none";
-				ui.style.visibility = "visible";
-			}
-		});
+            initComplete: function () {
+                console.log("DataTables fully initialised — showing UI");
+
+                // ⭐ Wire up manual search box
+                document.getElementById("manualSearch").addEventListener("keyup", function () {
+                    table.search(this.value).draw();
+                });
+
+                // ⭐ Wire up manual page size dropdown
+                document.getElementById("manualPageSize").addEventListener("change", function () {
+                    table.page.len(parseInt(this.value)).draw();
+                });
+
+                loading.style.display = "none";
+                ui.style.visibility = "visible";
+            }
+        });
 
         /* ⭐ Checkbox events */
         table.on("draw", function () {
