@@ -6,10 +6,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function isInBasket(id) {
         try {
-            const basket = loadBasket();   // global function
-            return basket.some(item => item.id === id);
-        } catch (e) {
-            console.warn("loadBasket() not ready yet");
+            return loadBasket().some(item => item.id === id);
+        } catch {
             return false;
         }
     }
@@ -21,8 +19,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("browseUI");
 
-    if (ui) ui.style.visibility = "hidden";
-    if (loading) loading.style.display = "flex";
+    ui.style.visibility = "hidden";
+    loading.style.display = "flex";
 
     /* ============================================================
        Determine JSON file
@@ -32,19 +30,20 @@ document.addEventListener("DOMContentLoaded", function () {
     const baseName = htmlFile.replace(/\.html$/, "");
     const jsonFile = `${baseName}.json`;
 
-    console.log("Loading JSON:", jsonFile);
-
     /* ============================================================
        Build table rows
        ============================================================ */
 
     function buildTable(data) {
         const tbody = document.querySelector("#myTable2 tbody");
-        if (!tbody) return;
 
         tbody.innerHTML = data.map(row => `
             <tr>
-                <td></td>
+                <td>
+                    <input type="checkbox" class="table-checkbox"
+                        data-id="${row["NSHD Variable Name"]}"
+                        data-label="${(row["Variable Label"] || "").replace(/"/g, "&quot;")}">
+                </td>
                 <td>${row["Order"]}</td>
                 <td>${row["NSHD Variable Name"]}</td>
                 <td>${row["Showcase Field ID"]}</td>
@@ -72,16 +71,6 @@ document.addEventListener("DOMContentLoaded", function () {
             },
 
             columnDefs: [
-                {
-                    targets: 0,
-                    orderable: false,
-                    searchable: false,
-                    className: "dt-center",
-                    render: function (data, type, row) {
-                        const variableName = row[2];
-                        return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
-                    }
-                },
                 {
                     targets: 2,
                     render: function (data) {
@@ -116,46 +105,34 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
 
                 /* ⭐ Show UI */
-                if (loading) loading.style.display = "none";
-                if (ui) ui.style.visibility = "visible";
+                loading.style.display = "none";
+                ui.style.visibility = "visible";
 
-                /* ⭐ Sync checkboxes with global basket */
+                /* ⭐ Sync checkboxes */
                 syncAllCheckboxes();
             }
         });
 
         /* ============================================================
-           Checkbox → global basket
+           ⭐ Delegated checkbox handler (popular_variables style)
            ============================================================ */
 
-        table.on("draw", function () {
+        $('#myTable2 tbody').on('change', '.table-checkbox', function () {
+            const id = this.dataset.id;
+            const label = this.dataset.label || "";
 
-            table.rows().every(function () {
-                const row = this.data();
-                const variableName = row[2];
-                const variableLabel = row[4];
-
-                const cb = this.node().querySelector(".table-checkbox");
-                if (!cb) return;
-
-                // ⭐ Sync with global basket
-                cb.checked = isInBasket(variableName);
-
-                // ⭐ Add/remove using global basket functions
-                cb.addEventListener("change", () => {
-                    if (!variableName) return;
-
-                    if (cb.checked) {
-                        addToBasket(variableName, variableLabel || "");
-                    } else {
-                        removeFromBasket(variableName);
-                    }
-                });
-            });
+            if (this.checked) {
+                addToBasket(id, label);
+            } else {
+                removeFromBasket(id);
+            }
         });
 
-        // ⭐ Initial sync after first draw
-        table.on("init", syncAllCheckboxes);
+        /* ============================================================
+           Sync checkboxes on every redraw
+           ============================================================ */
+
+        table.on("draw", syncAllCheckboxes);
 
         /* ⭐ YADCF filter */
         if (typeof yadcf !== "undefined") {
@@ -172,9 +149,11 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function syncAllCheckboxes() {
-        document.querySelectorAll("input.table-checkbox").forEach(cb => {
+        const basket = loadBasket();
+
+        document.querySelectorAll(".table-checkbox").forEach(cb => {
             const id = cb.dataset.id;
-            cb.checked = isInBasket(id);
+            cb.checked = basket.some(item => item.id === id);
         });
     }
 
@@ -185,14 +164,13 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch(jsonFile)
         .then(r => r.json())
         .then(data => {
-            console.log("Loaded JSON:", data);
             buildTable(data);
             initDataTable();
         })
         .catch(err => {
             console.error("JSON load error:", err);
-            if (loading) loading.style.display = "none";
-            if (ui) ui.style.visibility = "visible";
+            loading.style.display = "none";
+            ui.style.visibility = "visible";
         });
 
 });
