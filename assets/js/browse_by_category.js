@@ -1,10 +1,49 @@
 document.addEventListener("DOMContentLoaded", function () {
 
+    /* ============================================================
+       GLOBAL BASKET (same system as Data Dictionary)
+       ============================================================ */
+
+    const BASKET_KEY = "nshd_variable_basket";
+
+    function loadBasket() {
+        return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
+    }
+
+    function saveBasket(basket) {
+        localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
+        updateBasketIcon();
+    }
+
+    function updateBasketIcon() {
+        const basket = loadBasket();
+
+        const el1 = document.getElementById("basketCountIcon");      // this page
+        const el2 = document.getElementById("basketCount");          // global header
+        const el3 = document.getElementById("sidebarBasketCount");   // sidebar
+
+        if (el1) el1.textContent = basket.length;
+        if (el2) el2.textContent = basket.length;
+        if (el3) el3.textContent = basket.length;
+    }
+
+    function isInBasket(id) {
+        return loadBasket().some(item => item.id === id);
+    }
+
+    /* ============================================================
+       LOADING + UI
+       ============================================================ */
+
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("browseUI");
 
     ui.style.visibility = "hidden";
     loading.style.display = "flex";
+
+    /* ============================================================
+       Determine JSON file
+       ============================================================ */
 
     const htmlFile = window.location.pathname.split("/").pop();
     const baseName = htmlFile.replace(/\.html$/, "");
@@ -12,29 +51,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log("Loading JSON:", jsonFile);
 
-    /* ⭐ GLOBAL BASKET */
-    let basket = JSON.parse(localStorage.getItem("basket")) || [];
+    /* ============================================================
+       Build table rows
+       ============================================================ */
 
-    function saveBasket() {
-        localStorage.setItem("basket", JSON.stringify(basket));
-        updateBasketIcon();
-    }
-
-    function updateBasketIcon() {
-        const icon = document.getElementById("basketCountIcon");
-        if (icon) icon.textContent = basket.length;
-    }
-
-    function syncAllTables() {
-        document.querySelectorAll("input.table-checkbox").forEach(cb => {
-            const id = cb.dataset.id;
-            cb.checked = basket.some(item => item.id === id);
-        });
-    }
-
-    /* ⭐ Build table rows from JSON */
     function buildTable(data) {
         const tbody = document.querySelector("#myTable2 tbody");
+
         tbody.innerHTML = data.map(row => `
             <tr>
                 <td></td>
@@ -46,15 +69,18 @@ document.addEventListener("DOMContentLoaded", function () {
         `).join("");
     }
 
-    /* ⭐ Initialise DataTables AFTER rows exist */
+    /* ============================================================
+       Initialise DataTables
+       ============================================================ */
+
     function initDataTable() {
 
-        var table = $('#myTable2').DataTable({
+        const table = $('#myTable2').DataTable({
             pageLength: 15,
             lengthMenu: [15, 30, 50, 100],
             deferRender: true,
             autoWidth: false,
-            dom: "iprt",
+            dom: "iprt",   // no DataTables search box
 
             fixedHeader: {
                 header: true,
@@ -88,48 +114,67 @@ document.addEventListener("DOMContentLoaded", function () {
             ],
 
             initComplete: function () {
-                console.log("DataTables fully initialised — showing UI");
 
-                // ⭐ Wire up manual search box
-                document.getElementById("manualSearch").addEventListener("keyup", function () {
-                    table.search(this.value).draw();
-                });
+                /* ⭐ Manual search box */
+                const searchBox = document.getElementById("manualSearch");
+                if (searchBox) {
+                    searchBox.addEventListener("keyup", function () {
+                        table.search(this.value).draw();
+                    });
+                }
 
-                // ⭐ Wire up manual page size dropdown
-                document.getElementById("manualPageSize").addEventListener("change", function () {
-                    table.page.len(parseInt(this.value)).draw();
-                });
+                /* ⭐ Manual page size dropdown */
+                const pageSize = document.getElementById("manualPageSize");
+                if (pageSize) {
+                    pageSize.addEventListener("change", function () {
+                        table.page.len(parseInt(this.value)).draw();
+                    });
+                }
 
+                /* ⭐ Show UI */
                 loading.style.display = "none";
                 ui.style.visibility = "visible";
+
+                /* ⭐ Sync basket icon */
+                updateBasketIcon();
             }
         });
 
-        /* ⭐ Checkbox events */
+        /* ============================================================
+           Checkbox → Basket
+           ============================================================ */
+
         table.on("draw", function () {
+            const basket = loadBasket();
+
             table.rows().every(function () {
                 const row = this.data();
                 const variableName = row[2];
                 const variableLabel = row[4];
 
                 const cb = this.node().querySelector(".table-checkbox");
+                if (!cb) return;
+
                 cb.checked = basket.some(item => item.id === variableName);
 
                 cb.addEventListener("change", () => {
+                    let basket = loadBasket();
+
                     if (cb.checked) {
                         basket.push({ id: variableName, label: variableLabel });
                     } else {
                         basket = basket.filter(item => item.id !== variableName);
                     }
-                    saveBasket();
-                    syncAllTables();
+
+                    saveBasket(basket);
                 });
             });
         });
 
-        syncAllTables();
+        /* ⭐ Sync checkboxes on first load */
+        table.on("init", syncAllTables);
 
-        /* ⭐ YADCF filter on Variable Label (column 4) */
+        /* ⭐ YADCF filter */
         yadcf.init(table, [
             { column_number: 4, filter_type: "select", cumulative_filtering: true }
         ]);
@@ -141,17 +186,28 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    /* ⭐ Load JSON */
+    function syncAllTables() {
+        const basket = loadBasket();
+        document.querySelectorAll("input.table-checkbox").forEach(cb => {
+            const id = cb.dataset.id;
+            cb.checked = basket.some(item => item.id === id);
+        });
+    }
+
+    /* ============================================================
+       Load JSON + start
+       ============================================================ */
+
     fetch(jsonFile)
         .then(r => r.json())
         .then(data => {
             console.log("Loaded JSON:", data);
             buildTable(data);
             initDataTable();
+            updateBasketIcon();
         })
         .catch(err => {
             console.error("JSON load error:", err);
-            /* ⭐ Always unhide UI even on failure so spinner doesn't get stuck */
             loading.style.display = "none";
             ui.style.visibility = "visible";
         });
