@@ -1,32 +1,16 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ⭐ Spinner visible, UI hidden until DataTables finishes */
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("browseUI");
 
-    ui.style.visibility = "hidden";     // hide UI
-    loading.style.display = "flex";     // show spinner
+    ui.style.visibility = "hidden";
+    loading.style.display = "flex";
 
-
-    /* ⭐ Determine JSON filename from HTML filename */
     const htmlFile = window.location.pathname.split("/").pop();
     const baseName = htmlFile.replace(/\.html$/, "");
     const jsonFile = `${baseName}.json`;
 
     console.log("Loading JSON:", jsonFile);
-
-
-    /* ⭐ Load JSON */
-    fetch(jsonFile)
-        .then(r => r.json())
-        .then(data => {
-            console.log("Loaded JSON:", data);
-
-            buildTable(data);   // insert rows
-            initDataTable();    // ⭐ initialise AFTER rows exist
-        })
-        .catch(err => console.error("JSON load error:", err));
-
 
     /* ⭐ GLOBAL BASKET */
     let basket = JSON.parse(localStorage.getItem("basket")) || [];
@@ -48,14 +32,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-
     /* ⭐ Build table rows from JSON */
     function buildTable(data) {
         const tbody = document.querySelector("#myTable2 tbody");
-
         tbody.innerHTML = data.map(row => `
             <tr>
-                <td></td> <!-- ⭐ placeholder for checkbox column -->
+                <td></td>
                 <td>${row["Order"]}</td>
                 <td>${row["NSHD Variable Name"]}</td>
                 <td>${row["Showcase Field ID"]}</td>
@@ -64,7 +46,6 @@ document.addEventListener("DOMContentLoaded", function () {
         `).join("");
     }
 
-
     /* ⭐ Initialise DataTables AFTER rows exist */
     function initDataTable() {
 
@@ -72,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
             pageLength: 15,
             deferRender: true,
             scrollX: true,
-            autoWidth: true,   // ⭐ required for header alignment
+            autoWidth: true,
             dom: "<'top'f>iprt",
 
             fixedHeader: {
@@ -80,7 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 headerOffset: 0
             },
 
-            /* ⭐ Inject checkbox into column 0 */
             columnDefs: [
                 {
                     targets: 0,
@@ -106,15 +86,20 @@ document.addEventListener("DOMContentLoaded", function () {
                         return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
                     }
                 }
-            ]
-        });
+            ],
 
+            /* ⭐ Use initComplete instead of table.on("init") */
+            initComplete: function () {
+                console.log("DataTables fully initialised — showing UI");
+                loading.style.display = "none";
+                ui.style.visibility = "visible";
+            }
+        });
 
         /* ⭐ Checkbox events */
         table.on("draw", function () {
             table.rows().every(function () {
                 const row = this.data();
-
                 const variableName = row[2];
                 const variableLabel = row[4];
 
@@ -135,27 +120,31 @@ document.addEventListener("DOMContentLoaded", function () {
 
         syncAllTables();
 
-
         /* ⭐ YADCF filter on Variable Label (column 4) */
         yadcf.init(table, [
             { column_number: 4, filter_type: "select", cumulative_filtering: true }
         ]);
-
 
         /* ⭐ Resize handler */
         $(window).on('resize', function () {
             table.columns.adjust();
             if (table.fixedHeader) table.fixedHeader.adjust();
         });
-
-
-        /* ⭐ THE IMPORTANT PART — WAIT FOR FULL RENDER */
-        table.on("init", function () {
-            console.log("DataTables fully initialised — showing UI");
-
-            loading.style.display = "none";   // hide spinner
-            ui.style.visibility = "visible";  // show UI
-        });
     }
+
+    /* ⭐ Load JSON */
+    fetch(jsonFile)
+        .then(r => r.json())
+        .then(data => {
+            console.log("Loaded JSON:", data);
+            buildTable(data);
+            initDataTable();
+        })
+        .catch(err => {
+            console.error("JSON load error:", err);
+            /* ⭐ Always unhide UI even on failure so spinner doesn't get stuck */
+            loading.style.display = "none";
+            ui.style.visibility = "visible";
+        });
 
 });
