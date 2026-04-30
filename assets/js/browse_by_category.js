@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 deferRender: true,
                 scrollX: true,
                 autoWidth: false,
-                dom: "<'top'fB>iprt",
+                dom: "<'top'f>iprt",
 
                 fixedHeader: {
                     header: true,
