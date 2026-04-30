@@ -310,6 +310,7 @@ classes: page-search-data-dictionary
 }
 
 /* ⭐ Adjust pastel column mapping (shift by 1 because of checkbox column) */
+#myTable th:nth-child(1), #myTable tbody td:nth-child(2) { background: #f1f5f9 !important; }
 #myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #F3E5F5 !important; }
 #myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E8F5E9 !important; }
 #myTable th:nth-child(4), #myTable tbody td:nth-child(4) { background: #E3F2FD !important; }
@@ -325,6 +326,7 @@ classes: page-search-data-dictionary
 }
 
 /* Alignment (shifted by 1) */
+#myTable th:nth-child(2), #myTable td:nth-child(2),
 #myTable th:nth-child(2), #myTable td:nth-child(2),
 #myTable th:nth-child(4), #myTable td:nth-child(4),
 #myTable th:nth-child(5), #myTable td:nth-child(5),
