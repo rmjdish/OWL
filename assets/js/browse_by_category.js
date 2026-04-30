@@ -124,38 +124,35 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        /* ============================================================
-           Checkbox → global basket
-           ============================================================ */
+	/* ============================================================
+	   Checkbox → global basket
+	   ============================================================ */
 
-        table.on("draw", function () {
-            const basket = (typeof loadBasket === "function") ? loadBasket() : [];
+	table.on("draw", function () {
 
-            table.rows().every(function () {
-                const row = this.data();
-                const variableName = row[2];
-                const variableLabel = row[4];
+		table.rows().every(function () {
+			const row = this.data();
+			const variableName = row[2];
+			const variableLabel = row[4];
 
-                const cb = this.node().querySelector(".table-checkbox");
-                if (!cb) return;
+			const cb = this.node().querySelector(".table-checkbox");
+			if (!cb) return;
 
-                cb.checked = basket.some(item => item.id === variableName);
+			// ⭐ Sync checkbox with global basket
+			cb.checked = isInBasket(variableName);
 
-                cb.addEventListener("change", () => {
-                    if (!variableName) return;
+			// ⭐ Add/remove using global basket functions
+			cb.addEventListener("change", () => {
+				if (!variableName) return;
 
-                    if (cb.checked) {
-                        if (typeof addToBasket === "function") {
-                            addToBasket(variableName, variableLabel || "");
-                        }
-                    } else {
-                        if (typeof removeFromBasket === "function") {
-                            removeFromBasket(variableName);
-                        }
-                    }
-                });
-            });
-        });
+				if (cb.checked) {
+					addToBasket(variableName, variableLabel || "");
+				} else {
+					removeFromBasket(variableName);
+				}
+			});
+		});
+	});
 
         // ⭐ Initial sync after first draw
         table.on("init", syncAllCheckboxes);
