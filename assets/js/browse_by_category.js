@@ -20,7 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log("Loading JSON:", jsonFile);
 
-v 
 
     /* ============================================================
        ⭐ 3. LOAD JSON → BUILD TABLE → INITIALISE DATATABLES
