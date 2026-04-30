@@ -10,11 +10,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log("DOM loaded. loading =", !!loading, "ui =", !!ui);
 
-    if (ui) {
-        ui.style.display = "none";          // hide UI
-        ui.style.visibility = "visible";    // default
-    }
-    if (loading) loading.style.display = "flex"; // show spinner
+    // ⭐ UI hidden from user but measurable later
+    ui.style.display = "none";
+    ui.style.visibility = "hidden";
+
+    // ⭐ Spinner visible
+    loading.style.display = "flex";
 
 
 
