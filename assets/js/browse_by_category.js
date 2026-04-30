@@ -1,10 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ⭐ Hide loader, show UI */
+    /* ⭐ Spinner visible, UI hidden until DataTables finishes */
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("browseUI");
-    if (loading) loading.style.display = "none";
-    if (ui) ui.style.visibility = "visible";
+
+    ui.style.visibility = "hidden";     // hide UI
+    loading.style.display = "flex";     // show spinner
+
 
     /* ⭐ Determine JSON filename from HTML filename */
     const htmlFile = window.location.pathname.split("/").pop();
@@ -12,6 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const jsonFile = `${baseName}.json`;
 
     console.log("Loading JSON:", jsonFile);
+
 
     /* ⭐ Load JSON */
     fetch(jsonFile)
@@ -69,8 +72,8 @@ document.addEventListener("DOMContentLoaded", function () {
             pageLength: 15,
             deferRender: true,
             scrollX: true,
-            autoWidth: false,
-            dom: "<'top'fB>iprt",
+            autoWidth: true,   // ⭐ required for header alignment
+            dom: "<'top'f>iprt",
 
             fixedHeader: {
                 header: true,
@@ -86,18 +89,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     width: "80px",
                     className: "dt-center",
                     render: function (data, type, row) {
-                        const variableName = row[2];   // ⭐ correct index
+                        const variableName = row[2];
                         return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
                     }
                 },
                 {
-                    targets: 2,   // NSHD Variable Name
+                    targets: 2,
                     render: function (data) {
                         return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
                     }
                 },
                 {
-                    targets: 3,   // Showcase Field ID
+                    targets: 3,
                     className: "dt-center",
                     render: function (data) {
                         return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
@@ -112,8 +115,8 @@ document.addEventListener("DOMContentLoaded", function () {
             table.rows().every(function () {
                 const row = this.data();
 
-                const variableName = row[2];   // ⭐ FIXED
-                const variableLabel = row[4];  // ⭐ FIXED
+                const variableName = row[2];
+                const variableLabel = row[4];
 
                 const cb = this.node().querySelector(".table-checkbox");
                 cb.checked = basket.some(item => item.id === variableName);
@@ -132,14 +135,26 @@ document.addEventListener("DOMContentLoaded", function () {
 
         syncAllTables();
 
+
         /* ⭐ YADCF filter on Variable Label (column 4) */
         yadcf.init(table, [
             { column_number: 4, filter_type: "select", cumulative_filtering: true }
         ]);
 
+
+        /* ⭐ Resize handler */
         $(window).on('resize', function () {
             table.columns.adjust();
             if (table.fixedHeader) table.fixedHeader.adjust();
+        });
+
+
+        /* ⭐ THE IMPORTANT PART — WAIT FOR FULL RENDER */
+        table.on("init", function () {
+            console.log("DataTables fully initialised — showing UI");
+
+            loading.style.display = "none";   // hide spinner
+            ui.style.visibility = "visible";  // show UI
         });
     }
 
