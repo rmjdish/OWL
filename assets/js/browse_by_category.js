@@ -175,8 +175,8 @@ document.addEventListener("DOMContentLoaded", function () {
                ============================================================ */
             try {
                 console.log("Initialising YADCF…");
-                yadcf.init(table, [
-                    { column_number: 4, filter_type: "select", cumulative_filtering: true }
+             /*   yadcf.init(table, [
+                    { column_number: 4, filter_type: "select", cumulative_filtering: true }  */
                 ]);
             } catch (e) {
                 console.error("YADCF init error:", e);
