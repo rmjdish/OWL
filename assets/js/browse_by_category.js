@@ -4,11 +4,11 @@ document.addEventListener("DOMContentLoaded", function () {
        ⭐ 1. INITIAL PAGE SETUP — show spinner, hide UI
        ============================================================ */
     const loading = document.getElementById("loadingScreen");
-    const ui = document.getElementById("dataUI");
+    const ui = document.getElementById("popularUI");   // ⭐ FIXED
 
-    // UI stays hidden until DataTables is fully ready
-    if (ui) ui.style.visibility = "hidden";
-    if (loading) loading.style.display = "block";
+    if (ui) ui.style.display = "none";                 // hide UI
+    if (loading) loading.style.display = "flex";       // show spinner
+
 
 
     /* ============================================================
@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Loading JSON:", jsonFile);
 
 
+
     /* ============================================================
        ⭐ 3. LOAD JSON → BUILD TABLE → INITIALISE DATATABLES
        ============================================================ */
@@ -29,8 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(data => {
             console.log("Loaded JSON:", data);
 
-            buildTable(data);     // Insert table rows
-            initDataTable();      // Initialise DataTables AFTER rows exist
+            buildTable(data);
+            initDataTable();
         })
         .catch(err => console.error("JSON load error:", err));
 
@@ -44,7 +45,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         tbody.innerHTML = data.map(row => `
             <tr>
-                <td></td> <!-- Checkbox column -->
+                <td></td>
                 <td>${row["Order"]}</td>
                 <td>${row["NSHD Variable Name"]}</td>
                 <td>${row["Showcase Field ID"]}</td>
@@ -72,7 +73,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 headerOffset: 0
             },
 
-            /* ⭐ Inject checkbox into column 0 */
             columnDefs: [
                 {
                     targets: 0,
@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         /* ============================================================
-           ⭐ 6. CHECKBOX EVENTS — USE EVENT DELEGATION
+           ⭐ 6. CHECKBOX EVENTS
            ============================================================ */
         $('#myTable2 tbody').on('change', '.table-checkbox', function () {
             const id = this.dataset.id;
@@ -143,13 +143,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         /* ============================================================
-           ⭐ 9. WHEN DATATABLES IS FULLY READY → SHOW UI, HIDE SPINNER
+           ⭐ 9. WHEN DATATABLES IS READY → SHOW UI, HIDE SPINNER
            ============================================================ */
         table.on('init', function () {
             console.log("DataTables fully initialised — showing UI");
 
-            if (loading) loading.style.display = "none";
-            if (ui) ui.style.visibility = "visible";
+            if (loading) loading.style.display = "none";   // hide spinner
+            if (ui) ui.style.display = "block";            // show UI
 
             updateBasketCountUI();
         });
