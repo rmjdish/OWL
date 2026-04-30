@@ -3,15 +3,15 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ============================================================
        Use GLOBAL basket helpers from basket_header.js
        ============================================================ */
-    // Assumes these exist globally, same as Data Dictionary page:
-    // - BASKET_KEY
-    // - loadBasket()
-    // - addToBasket(id, label)
-    // - removeFromBasket(id)
 
     function isInBasket(id) {
-        const basket = (typeof loadBasket === "function") ? loadBasket() : [];
-        return basket.some(item => item.id === id);
+        try {
+            const basket = loadBasket();   // global function
+            return basket.some(item => item.id === id);
+        } catch (e) {
+            console.warn("loadBasket() not ready yet");
+            return false;
+        }
     }
 
     /* ============================================================
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Loading JSON:", jsonFile);
 
     /* ============================================================
-       Build table rows from JSON
+       Build table rows
        ============================================================ */
 
     function buildTable(data) {
@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
             lengthMenu: [15, 30, 50, 100],
             deferRender: true,
             autoWidth: false,
-            dom: "iprt",   // no built‑in search box
+            dom: "iprt",
 
             fixedHeader: {
                 header: true,
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             initComplete: function () {
 
-                // ⭐ Manual search box (like Data Dictionary)
+                /* ⭐ Manual search */
                 const searchBox = document.getElementById("manualSearch");
                 if (searchBox) {
                     searchBox.addEventListener("keyup", function () {
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
 
-                // ⭐ Manual page size dropdown
+                /* ⭐ Manual page size */
                 const pageSize = document.getElementById("manualPageSize");
                 if (pageSize) {
                     pageSize.addEventListener("change", function () {
@@ -115,49 +115,49 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
 
-                // ⭐ Show UI (spinner off)
+                /* ⭐ Show UI */
                 if (loading) loading.style.display = "none";
                 if (ui) ui.style.visibility = "visible";
 
-                // ⭐ Sync checkboxes with existing basket
+                /* ⭐ Sync checkboxes with global basket */
                 syncAllCheckboxes();
             }
         });
 
-	/* ============================================================
-	   Checkbox → global basket
-	   ============================================================ */
+        /* ============================================================
+           Checkbox → global basket
+           ============================================================ */
 
-	table.on("draw", function () {
+        table.on("draw", function () {
 
-		table.rows().every(function () {
-			const row = this.data();
-			const variableName = row[2];
-			const variableLabel = row[4];
+            table.rows().every(function () {
+                const row = this.data();
+                const variableName = row[2];
+                const variableLabel = row[4];
 
-			const cb = this.node().querySelector(".table-checkbox");
-			if (!cb) return;
+                const cb = this.node().querySelector(".table-checkbox");
+                if (!cb) return;
 
-			// ⭐ Sync checkbox with global basket
-			cb.checked = isInBasket(variableName);
+                // ⭐ Sync with global basket
+                cb.checked = isInBasket(variableName);
 
-			// ⭐ Add/remove using global basket functions
-			cb.addEventListener("change", () => {
-				if (!variableName) return;
+                // ⭐ Add/remove using global basket functions
+                cb.addEventListener("change", () => {
+                    if (!variableName) return;
 
-				if (cb.checked) {
-					addToBasket(variableName, variableLabel || "");
-				} else {
-					removeFromBasket(variableName);
-				}
-			});
-		});
-	});
+                    if (cb.checked) {
+                        addToBasket(variableName, variableLabel || "");
+                    } else {
+                        removeFromBasket(variableName);
+                    }
+                });
+            });
+        });
 
         // ⭐ Initial sync after first draw
         table.on("init", syncAllCheckboxes);
 
-        /* ⭐ YADCF filter on Variable Label (column 4) */
+        /* ⭐ YADCF filter */
         if (typeof yadcf !== "undefined") {
             yadcf.init(table, [
                 { column_number: 4, filter_type: "select", cumulative_filtering: true }
@@ -172,10 +172,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function syncAllCheckboxes() {
-        const basket = (typeof loadBasket === "function") ? loadBasket() : [];
         document.querySelectorAll("input.table-checkbox").forEach(cb => {
             const id = cb.dataset.id;
-            cb.checked = basket.some(item => item.id === id);
+            cb.checked = isInBasket(id);
         });
     }
 
@@ -189,7 +188,6 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("Loaded JSON:", data);
             buildTable(data);
             initDataTable();
-            // ⭐ Do NOT touch basket icon here — global header script already did
         })
         .catch(err => {
             console.error("JSON load error:", err);
