@@ -6,10 +6,10 @@ document.addEventListener("DOMContentLoaded", function () {
        ⭐ 1. INITIAL PAGE SETUP — show spinner, hide UI
        ============================================================ */
     const loading = document.getElementById("loadingScreen");
-    const ui = document.getElementById("browseUI");   // ⭐ FIXED
+    const ui = document.getElementById("browseUI");
 
-    if (ui) ui.style.display = "none";                 // hide UI
-    if (loading) loading.style.display = "flex";       // show spinner
+    ui.style.display = "none";          // hide UI
+    loading.style.display = "flex";     // show spinner
 
 
 
@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const jsonFile = `${baseName}.json`;
 
     console.log("Loading JSON:", jsonFile);
+
 
 
     /* ============================================================
@@ -81,28 +82,45 @@ document.addEventListener("DOMContentLoaded", function () {
                     searchable: false,
                     width: "80px",
                     className: "dt-center",
-					render: function (data, type, row) {
-						const variableName = row?.[2] ?? "";
 
-						let checked = false;
-						try { 
-							if (variableName) checked = isInBasket(variableName); 
-						} catch(e) {}
+                    /* ⭐ SAFE CHECKBOX RENDERER — prevents silent crashes */
+                    render: function (data, type, row) {
 
-						return `<input type="checkbox" class="table-checkbox" data-id="${variableName}" ${checked ? "checked" : ""}>`;
-					}
+                        // DataTables sometimes passes undefined rows
+                        if (!row || !row[2]) {
+                            return `<input type="checkbox" disabled>`;
+                        }
+
+                        const variableName = row[2];
+
+                        let checked = false;
+                        try {
+                            checked = isInBasket(variableName);
+                        } catch (e) {}
+
+                        return `
+                            <input type="checkbox"
+                                   class="table-checkbox"
+                                   data-id="${variableName}"
+                                   ${checked ? "checked" : ""}>
+                        `;
+                    }
                 },
+
                 {
                     targets: 2,
                     render: function (data) {
-                        return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
+                        return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html"
+                                   target="_blank">${data}</a>`;
                     }
                 },
+
                 {
                     targets: 3,
                     className: "dt-center",
                     render: function (data) {
-                        return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
+                        return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}"
+                                   target="_blank">${data}</a>`;
                     }
                 }
             ]
@@ -154,8 +172,8 @@ document.addEventListener("DOMContentLoaded", function () {
         table.on('init', function () {
             console.log("DataTables fully initialised — showing UI");
 
-            if (loading) loading.style.display = "none";   // hide spinner
-            if (ui) ui.style.display = "block";            // show UI
+            loading.style.display = "none";   // hide spinner
+            ui.style.display = "block";       // show UI
 
             updateBasketCountUI();
         });
