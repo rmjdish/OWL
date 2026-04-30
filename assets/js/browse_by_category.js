@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     /* ⭐ Build table rows from JSON */
     function buildTable(data) {
-        const tbody = document.querySelector("#myTable tbody");
+        const tbody = document.querySelector("#myTable2 tbody");
 
         tbody.innerHTML = data.map(row => `
             <tr>
@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
     /* ⭐ Initialise DataTables AFTER rows exist */
     function initDataTable() {
 
-        var table = $('#myTable').DataTable({
+        var table = $('#myTable2').DataTable({
             pageLength: 15,
             deferRender: true,
             scrollX: true,
