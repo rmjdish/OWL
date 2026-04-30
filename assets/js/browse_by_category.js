@@ -19,32 +19,10 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(data => {
             console.log("Loaded JSON:", data);
 
-            buildTable(data);   // insert rows
-            initDataTable();    // ⭐ initialise AFTER rows exist
+            buildTable(data);
+            initDataTable();
         })
         .catch(err => console.error("JSON load error:", err));
-
-
-    /* ⭐ GLOBAL BASKET */
-    let basket = JSON.parse(localStorage.getItem("basket")) || [];
-
-    function saveBasket() {
-        localStorage.setItem("basket", JSON.stringify(basket));
-        updateBasketIcon();
-    }
-
-    function updateBasketIcon() {
-        const icon = document.getElementById("basketCountIcon");
-        if (icon) icon.textContent = basket.length;
-    }
-
-    function syncAllTables() {
-        document.querySelectorAll("input.table-checkbox").forEach(cb => {
-            const id = cb.dataset.id;
-            cb.checked = basket.some(item => item.id === id);
-        });
-    }
-
 
     /* ⭐ Build table rows from JSON */
     function buildTable(data) {
@@ -52,7 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         tbody.innerHTML = data.map(row => `
             <tr>
-                <td></td> <!-- ⭐ placeholder for checkbox column -->
+                <td></td>
                 <td>${row["Order"]}</td>
                 <td>${row["NSHD Variable Name"]}</td>
                 <td>${row["Showcase Field ID"]}</td>
@@ -60,7 +38,6 @@ document.addEventListener("DOMContentLoaded", function () {
             </tr>
         `).join("");
     }
-
 
     /* ⭐ Initialise DataTables AFTER rows exist */
     function initDataTable() {
@@ -86,18 +63,19 @@ document.addEventListener("DOMContentLoaded", function () {
                     width: "80px",
                     className: "dt-center",
                     render: function (data, type, row) {
-                        const variableName = row[2];   // ⭐ correct index
-                        return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
+                        const variableName = row[2];
+                        const checked = isInBasket(variableName);
+                        return `<input type="checkbox" class="table-checkbox" data-id="${variableName}" ${checked ? "checked" : ""}>`;
                     }
                 },
                 {
-                    targets: 2,   // NSHD Variable Name
+                    targets: 2,
                     render: function (data) {
                         return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
                     }
                 },
                 {
-                    targets: 3,   // Showcase Field ID
+                    targets: 3,
                     className: "dt-center",
                     render: function (data) {
                         return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
@@ -106,33 +84,31 @@ document.addEventListener("DOMContentLoaded", function () {
             ]
         });
 
-
         /* ⭐ Checkbox events */
         table.on("draw", function () {
             table.rows().every(function () {
                 const row = this.data();
-
-                const variableName = row[2];   // ⭐ FIXED
-                const variableLabel = row[4];  // ⭐ FIXED
+                const variableName = row[2];
+                const variableLabel = row[4];
 
                 const cb = this.node().querySelector(".table-checkbox");
-                cb.checked = basket.some(item => item.id === variableName);
+                cb.checked = isInBasket(variableName);
 
                 cb.addEventListener("change", () => {
                     if (cb.checked) {
-                        basket.push({ id: variableName, label: variableLabel });
+                        addToBasket(variableName, variableLabel);
                     } else {
-                        basket = basket.filter(item => item.id !== variableName);
+                        removeFromBasket(variableName);
                     }
-                    saveBasket();
-                    syncAllTables();
+                    updateBasketCountUI();
                 });
             });
         });
 
-        syncAllTables();
+        /* ⭐ Initial sync */
+        updateBasketCountUI();
 
-        /* ⭐ YADCF filter on Variable Label (column 4) */
+        /* ⭐ YADCF filter */
         yadcf.init(table, [
             { column_number: 4, filter_type: "select", cumulative_filtering: true }
         ]);

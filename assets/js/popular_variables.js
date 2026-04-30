@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Build rows (respect basket state)
       tbody.innerHTML = pageRows.map(row => {
-        const checked = typeof isInBasket === "function" && isInBasket(row.name);
+        const checked = isInBasket(row.name);
         return `
           <tr>
             <td class="check-col">
@@ -192,18 +192,12 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!name) return;
 
           if (cb.checked) {
-            if (typeof addToBasket === "function") {
-              addToBasket(name, label);
-            }
+            addToBasket(name, label);
           } else {
-            if (typeof removeFromBasket === "function") {
-              removeFromBasket(name);
-            }
+            removeFromBasket(name);
           }
 
-          if (typeof updateBasketCountUI === "function") {
-            updateBasketCountUI();
-          }
+          updateBasketCountUI();
 
           const icon = document.getElementById("basket-icon");
           if (icon) {
