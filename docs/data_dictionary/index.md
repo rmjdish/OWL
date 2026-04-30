@@ -357,6 +357,7 @@ classes: page-search-data-dictionary
 
 </style>
 
+<script src="/OWL/assets/js/basket_header.js"></script>
 <script src="/OWL/assets/js/data_dictionary.js"></script>
 
 </div>
