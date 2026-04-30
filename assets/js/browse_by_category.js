@@ -1,74 +1,58 @@
-console.log("JS loaded");
-
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ============================================================
-       ⭐ 1. INITIAL PAGE SETUP — show spinner, hide UI
-       ============================================================ */
+    /* ⭐ Hide loader, show UI */
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("browseUI");
+    if (loading) loading.style.display = "none";
+    if (ui) ui.style.visibility = "visible";
 
-    console.log("DOM loaded. loading =", !!loading, "ui =", !!ui);
-
-    // ⭐ UI hidden from user but measurable later
-    ui.style.display = "none";
-    ui.style.visibility = "hidden";
-
-    // ⭐ Spinner visible
-    loading.style.display = "flex";
-
-
-
-    /* ============================================================
-       ⭐ 2. DETERMINE JSON FILE BASED ON PAGE NAME
-       ============================================================ */
+    /* ⭐ Determine JSON filename from HTML filename */
     const htmlFile = window.location.pathname.split("/").pop();
     const baseName = htmlFile.replace(/\.html$/, "");
     const jsonFile = `${baseName}.json`;
 
     console.log("Loading JSON:", jsonFile);
 
-
-
-    /* ============================================================
-       ⭐ 3. LOAD JSON → BUILD TABLE → INITIALISE DATATABLES
-       ============================================================ */
+    /* ⭐ Load JSON */
     fetch(jsonFile)
         .then(r => r.json())
         .then(data => {
             console.log("Loaded JSON:", data);
 
-            buildTable(data);
-
-            // ⭐ Make UI measurable for DataTables, but invisible to user
-            if (ui) {
-                ui.style.display = "block";
-                ui.style.visibility = "hidden";
-            }
-
-            initDataTable();
+            buildTable(data);   // insert rows
+            initDataTable();    // ⭐ initialise AFTER rows exist
         })
-        .catch(err => {
-            console.error("JSON load error:", err);
-            if (loading) loading.style.display = "none";
+        .catch(err => console.error("JSON load error:", err));
+
+
+    /* ⭐ GLOBAL BASKET */
+    let basket = JSON.parse(localStorage.getItem("basket")) || [];
+
+    function saveBasket() {
+        localStorage.setItem("basket", JSON.stringify(basket));
+        updateBasketIcon();
+    }
+
+    function updateBasketIcon() {
+        const icon = document.getElementById("basketCountIcon");
+        if (icon) icon.textContent = basket.length;
+    }
+
+    function syncAllTables() {
+        document.querySelectorAll("input.table-checkbox").forEach(cb => {
+            const id = cb.dataset.id;
+            cb.checked = basket.some(item => item.id === id);
         });
+    }
 
 
-
-    /* ============================================================
-       ⭐ 4. BUILD TABLE BODY FROM JSON
-       ============================================================ */
+    /* ⭐ Build table rows from JSON */
     function buildTable(data) {
-        console.log("buildTable() called with", Array.isArray(data) ? data.length : "non-array", "rows");
-
         const tbody = document.querySelector("#myTable2 tbody");
-        console.log("tbody found:", !!tbody);
-
-        if (!tbody || !Array.isArray(data)) return;
 
         tbody.innerHTML = data.map(row => `
             <tr>
-                <td></td>
+                <td></td> <!-- ⭐ placeholder for checkbox column -->
                 <td>${row["Order"]}</td>
                 <td>${row["NSHD Variable Name"]}</td>
                 <td>${row["Showcase Field ID"]}</td>
@@ -78,133 +62,85 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 
-
-    /* ============================================================
-       ⭐ 5. INITIALISE DATATABLES (AFTER ROWS EXIST)
-       ============================================================ */
+    /* ⭐ Initialise DataTables AFTER rows exist */
     function initDataTable() {
-        console.log("initDataTable() starting…");
 
-        try {
-            if (!$.fn.DataTable) {
-                console.error("DataTables plugin is NOT loaded");
-                if (loading) loading.style.display = "none";
-                return;
-            }
+        var table = $('#myTable2').DataTable({
+            pageLength: 15,
+            deferRender: true,
+            scrollX: true,
+            autoWidth: false,
+            dom: "<'top'fB>iprt",
 
-            const rowCount = document.querySelectorAll("#myTable2 tbody tr").length;
-            console.log("Rows in #myTable2 before DataTables:", rowCount);
+            fixedHeader: {
+                header: true,
+                headerOffset: 0
+            },
 
-            var table = $('#myTable2').DataTable({
-                pageLength: 15,
-                deferRender: true,
-                scrollX: true,
-                autoWidth: false,
-                dom: "<'top'f>iprt",
-
-                columnDefs: [
-                    {
-                        targets: 0,
-                        orderable: false,
-                        searchable: false,
-                        width: "80px",
-                        className: "dt-center",
-
-                        /* ⭐ SAFE CHECKBOX RENDERER — prevents silent crashes */
-                        render: function (data, type, row) {
-
-                            if (!row || !row[2]) {
-                                console.warn("Checkbox render with empty row:", row);
-                                return `<input type="checkbox" disabled>`;
-                            }
-
-                            const variableName = row[2];
-
-                            let checked = false;
-                            try {
-                                checked = isInBasket(variableName);
-                            } catch (e) {
-                                console.error("isInBasket error:", e);
-                            }
-
-                            return `
-                                <input type="checkbox"
-                                       class="table-checkbox"
-                                       data-id="${variableName}"
-                                       ${checked ? "checked" : ""}>
-                            `;
-                        }
-                    },
-
-                    {
-                        targets: 2,
-                        render: function (data) {
-                            return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html"
-                                       target="_blank">${data}</a>`;
-                        }
-                    },
-
-                    {
-                        targets: 3,
-                        className: "dt-center",
-                        render: function (data) {
-                            return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}"
-                                       target="_blank">${data}</a>`;
-                        }
+            /* ⭐ Inject checkbox into column 0 */
+            columnDefs: [
+                {
+                    targets: 0,
+                    orderable: false,
+                    searchable: false,
+                    width: "80px",
+                    className: "dt-center",
+                    render: function (data, type, row) {
+                        const variableName = row[2];   // ⭐ correct index
+                        return `<input type="checkbox" class="table-checkbox" data-id="${variableName}">`;
                     }
-                ]
-            });
-
-            console.log("DataTable created, attaching init handler…");
-
-            /* ============================================================
-               ⭐ 6. CHECKBOX EVENTS
-               ============================================================ */
-            $('#myTable2 tbody').on('change', '.table-checkbox', function () {
-                const id = this.dataset.id;
-                const row = $(this).closest('tr');
-                const label = row.find('td').eq(4).text();
-
-                if (this.checked) {
-                    addToBasket(id, label);
-                } else {
-                    removeFromBasket(id);
+                },
+                {
+                    targets: 2,   // NSHD Variable Name
+                    render: function (data) {
+                        return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
+                    }
+                },
+                {
+                    targets: 3,   // Showcase Field ID
+                    className: "dt-center",
+                    render: function (data) {
+                        return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
+                    }
                 }
+            ]
+        });
 
-                updateBasketCountUI();
+
+        /* ⭐ Checkbox events */
+        table.on("draw", function () {
+            table.rows().every(function () {
+                const row = this.data();
+
+                const variableName = row[2];   // ⭐ FIXED
+                const variableLabel = row[4];  // ⭐ FIXED
+
+                const cb = this.node().querySelector(".table-checkbox");
+                cb.checked = basket.some(item => item.id === variableName);
+
+                cb.addEventListener("change", () => {
+                    if (cb.checked) {
+                        basket.push({ id: variableName, label: variableLabel });
+                    } else {
+                        basket = basket.filter(item => item.id !== variableName);
+                    }
+                    saveBasket();
+                    syncAllTables();
+                });
             });
+        });
 
+        syncAllTables();
 
+        /* ⭐ YADCF filter on Variable Label (column 4) */
+        yadcf.init(table, [
+            { column_number: 4, filter_type: "select", cumulative_filtering: true }
+        ]);
 
-            /* ============================================================
-               ⭐ 7. HANDLE RESIZE EVENTS
-               ============================================================ */
-            $(window).on('resize', function () {
-                table.columns.adjust();
-                if (table.fixedHeader) table.fixedHeader.adjust();
-            });
-
-
-
-            /* ============================================================
-               ⭐ 8. WHEN DATATABLES IS READY → SHOW UI, HIDE SPINNER
-               ============================================================ */
-            table.on('init', function () {
-                console.log("DataTables fully initialised — showing UI");
-
-                if (loading) loading.style.display = "none";   // hide spinner
-                if (ui) {
-                    ui.style.visibility = "visible";          // reveal UI
-                    ui.style.display = "block";
-                }
-
-                updateBasketCountUI();
-            });
-
-        } catch (e) {
-            console.error("initDataTable() error:", e);
-            if (loading) loading.style.display = "none";
-        }
+        $(window).on('resize', function () {
+            table.columns.adjust();
+            if (table.fixedHeader) table.fixedHeader.adjust();
+        });
     }
 
 });
