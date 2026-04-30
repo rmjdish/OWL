@@ -108,8 +108,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 loading.style.display = "none";
                 ui.style.visibility = "visible";
 
-                /* ⭐ Sync checkboxes */
-                syncAllCheckboxes();
+				// ⭐ Wait for DataTables to finish rendering rows
+				setTimeout(() => {
+					syncAllCheckboxes();
+				}, 0);
             }
         });
 
