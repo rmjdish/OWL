@@ -82,10 +82,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     width: "80px",
                     className: "dt-center",
 					render: function (data, type, row) {
-						const variableName = row[2];
+						const variableName = row?.[2] ?? "";
 
 						let checked = false;
-						try { checked = isInBasket(variableName); } catch(e) {}
+						try { 
+							if (variableName) checked = isInBasket(variableName); 
+						} catch(e) {}
 
 						return `<input type="checkbox" class="table-checkbox" data-id="${variableName}" ${checked ? "checked" : ""}>`;
 					}
