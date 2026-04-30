@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
        ⭐ 1. INITIAL PAGE SETUP — show spinner, hide UI
        ============================================================ */
     const loading = document.getElementById("loadingScreen");
-    const ui = document.getElementById("popularUI");   // ⭐ FIXED
+    const ui = document.getElementById("browseUI");   // ⭐ FIXED
 
     if (ui) ui.style.display = "none";                 // hide UI
     if (loading) loading.style.display = "flex";       // show spinner
@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log("Loading JSON:", jsonFile);
 
-
+v 
 
     /* ============================================================
        ⭐ 3. LOAD JSON → BUILD TABLE → INITIALISE DATATABLES
@@ -80,11 +80,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     searchable: false,
                     width: "80px",
                     className: "dt-center",
-                    render: function (data, type, row) {
-                        const variableName = row[2];
-                        const checked = isInBasket(variableName);
-                        return `<input type="checkbox" class="table-checkbox" data-id="${variableName}" ${checked ? "checked" : ""}>`;
-                    }
+					render: function (data, type, row) {
+						const variableName = row[2];
+
+						let checked = false;
+						try { checked = isInBasket(variableName); } catch(e) {}
+
+						return `<input type="checkbox" class="table-checkbox" data-id="${variableName}" ${checked ? "checked" : ""}>`;
+					}
                 },
                 {
                     targets: 2,
