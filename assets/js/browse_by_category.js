@@ -1,11 +1,11 @@
 document.addEventListener("DOMContentLoaded", function () {
 
-    /* ⭐ Spinner visible, UI hidden initially */
+    /* ⭐ Spinner visible, UI hidden until DataTables finishes */
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("browseUI");
 
-    if (ui) ui.style.visibility = "hidden";
-    if (loading) loading.style.display = "flex";
+    ui.style.visibility = "hidden";     // hide UI
+    loading.style.display = "flex";     // show spinner
 
 
     /* ⭐ Determine JSON filename from HTML filename */
@@ -25,10 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
             buildTable(data);   // insert rows
             initDataTable();    // ⭐ initialise AFTER rows exist
         })
-        .catch(err => {
-            console.error("JSON load error:", err);
-            if (loading) loading.style.display = "none";
-        });
+        .catch(err => console.error("JSON load error:", err));
 
 
     /* ⭐ GLOBAL BASKET */
@@ -56,8 +53,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function buildTable(data) {
         const tbody = document.querySelector("#myTable2 tbody");
 
-        if (!tbody || !Array.isArray(data)) return;
-
         tbody.innerHTML = data.map(row => `
             <tr>
                 <td></td> <!-- ⭐ placeholder for checkbox column -->
@@ -77,7 +72,7 @@ document.addEventListener("DOMContentLoaded", function () {
             pageLength: 15,
             deferRender: true,
             scrollX: true,
-            autoWidth: true,
+            autoWidth: true,   // ⭐ required for header alignment
             dom: "<'top'f>iprt",
 
             fixedHeader: {
@@ -124,8 +119,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 const variableLabel = row[4];
 
                 const cb = this.node().querySelector(".table-checkbox");
-                if (!cb) return;
-
                 cb.checked = basket.some(item => item.id === variableName);
 
                 cb.addEventListener("change", () => {
@@ -144,13 +137,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
         /* ⭐ YADCF filter on Variable Label (column 4) */
-        try {
-            yadcf.init(table, [
-                { column_number: 4, filter_type: "select", cumulative_filtering: true }
-            ]);
-        } catch (e) {
-            console.error("YADCF init error:", e);
-        }
+        yadcf.init(table, [
+            { column_number: 4, filter_type: "select", cumulative_filtering: true }
+        ]);
 
 
         /* ⭐ Resize handler */
@@ -160,9 +149,13 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
 
-        /* ⭐ At this point, DataTables is configured → hide spinner, show UI */
-        if (loading) loading.style.display = "none";
-        if (ui) ui.style.visibility = "visible";
+        /* ⭐ THE IMPORTANT PART — WAIT FOR FULL RENDER */
+        table.on("init", function () {
+            console.log("DataTables fully initialised — showing UI");
+
+            loading.style.display = "none";   // hide spinner
+            ui.style.visibility = "visible";  // show UI
+        });
     }
 
 });
