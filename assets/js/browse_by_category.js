@@ -10,8 +10,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     console.log("DOM loaded. loading =", !!loading, "ui =", !!ui);
 
-    if (ui) ui.style.display = "none";          // hide UI
-    if (loading) loading.style.display = "flex";     // show spinner
+    if (ui) {
+        ui.style.display = "none";          // hide UI
+        ui.style.visibility = "visible";    // default
+    }
+    if (loading) loading.style.display = "flex"; // show spinner
 
 
 
@@ -35,6 +38,13 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("Loaded JSON:", data);
 
             buildTable(data);
+
+            // ⭐ Make UI measurable for DataTables, but invisible to user
+            if (ui) {
+                ui.style.display = "block";
+                ui.style.visibility = "hidden";
+            }
+
             initDataTable();
         })
         .catch(err => {
@@ -166,22 +176,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             /* ============================================================
-               ⭐ 7. YADCF FILTERS
-               ============================================================ 
-            try {
-                console.log("Initialising YADCF…");
-                yadcf.init(table, [
-                    { column_number: 4, filter_type: "select", cumulative_filtering: true }  
-                ] 
-				);
-            } catch (e) {
-                console.error("YADCF init error:", e);
-            } */
-
-
-
-            /* ============================================================
-               ⭐ 8. HANDLE RESIZE EVENTS
+               ⭐ 7. HANDLE RESIZE EVENTS
                ============================================================ */
             $(window).on('resize', function () {
                 table.columns.adjust();
@@ -191,13 +186,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
             /* ============================================================
-               ⭐ 9. WHEN DATATABLES IS READY → SHOW UI, HIDE SPINNER
+               ⭐ 8. WHEN DATATABLES IS READY → SHOW UI, HIDE SPINNER
                ============================================================ */
             table.on('init', function () {
                 console.log("DataTables fully initialised — showing UI");
 
                 if (loading) loading.style.display = "none";   // hide spinner
-                if (ui) ui.style.display = "block";            // show UI
+                if (ui) {
+                    ui.style.visibility = "visible";          // reveal UI
+                    ui.style.display = "block";
+                }
 
                 updateBasketCountUI();
             });
