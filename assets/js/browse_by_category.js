@@ -84,26 +84,20 @@ document.addEventListener("DOMContentLoaded", function () {
             ]
         });
 
-        /* ⭐ Checkbox events */
-        table.on("draw", function () {
-            table.rows().every(function () {
-                const row = this.data();
-                const variableName = row[2];
-                const variableLabel = row[4];
+		/* ⭐ Checkbox events — use event delegation */
+		$('#myTable2 tbody').on('change', '.table-checkbox', function () {
+			const id = this.dataset.id;
+			const row = $(this).closest('tr');
+			const label = row.find('td').eq(4).text();
 
-                const cb = this.node().querySelector(".table-checkbox");
-                cb.checked = isInBasket(variableName);
+			if (this.checked) {
+				addToBasket(id, label);
+			} else {
+				removeFromBasket(id);
+			}
 
-                cb.addEventListener("change", () => {
-                    if (cb.checked) {
-                        addToBasket(variableName, variableLabel);
-                    } else {
-                        removeFromBasket(variableName);
-                    }
-                    updateBasketCountUI();
-                });
-            });
-        });
+			updateBasketCountUI();
+		});
 
         /* ⭐ Initial sync */
         updateBasketCountUI();
