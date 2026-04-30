@@ -91,10 +91,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 autoWidth: false,
                 dom: "<'top'f>iprt",
 
-                fixedHeader: {
-                    header: true,
-                    headerOffset: 0
-                },
+                fixedHeader: false,
 
                 columnDefs: [
                     {
