@@ -1,34 +1,17 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     /* ============================================================
-       GLOBAL BASKET (same system as Data Dictionary)
+       Use GLOBAL basket helpers from basket_header.js
        ============================================================ */
-
-    const BASKET_KEY = "nshd_variable_basket";
-
-    function loadBasket() {
-        return JSON.parse(localStorage.getItem(BASKET_KEY)) || [];
-    }
-
-    function saveBasket(basket) {
-        localStorage.setItem(BASKET_KEY, JSON.stringify(basket));
-        updateBasketIcon();
-    }
-
-    function updateBasketIcon() {
-        const basket = loadBasket();
-
-        const el1 = document.getElementById("basketCountIcon");      // this page
-        const el2 = document.getElementById("basketCount");          // global header
-        const el3 = document.getElementById("sidebarBasketCount");   // sidebar
-
-        if (el1) el1.textContent = basket.length;
-        if (el2) el2.textContent = basket.length;
-        if (el3) el3.textContent = basket.length;
-    }
+    // Assumes these exist globally, same as Data Dictionary page:
+    // - BASKET_KEY
+    // - loadBasket()
+    // - addToBasket(id, label)
+    // - removeFromBasket(id)
 
     function isInBasket(id) {
-        return loadBasket().some(item => item.id === id);
+        const basket = (typeof loadBasket === "function") ? loadBasket() : [];
+        return basket.some(item => item.id === id);
     }
 
     /* ============================================================
@@ -38,8 +21,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const loading = document.getElementById("loadingScreen");
     const ui = document.getElementById("browseUI");
 
-    ui.style.visibility = "hidden";
-    loading.style.display = "flex";
+    if (ui) ui.style.visibility = "hidden";
+    if (loading) loading.style.display = "flex";
 
     /* ============================================================
        Determine JSON file
@@ -52,11 +35,12 @@ document.addEventListener("DOMContentLoaded", function () {
     console.log("Loading JSON:", jsonFile);
 
     /* ============================================================
-       Build table rows
+       Build table rows from JSON
        ============================================================ */
 
     function buildTable(data) {
         const tbody = document.querySelector("#myTable2 tbody");
+        if (!tbody) return;
 
         tbody.innerHTML = data.map(row => `
             <tr>
@@ -80,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
             lengthMenu: [15, 30, 50, 100],
             deferRender: true,
             autoWidth: false,
-            dom: "iprt",   // no DataTables search box
+            dom: "iprt",   // no built‑in search box
 
             fixedHeader: {
                 header: true,
@@ -115,7 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             initComplete: function () {
 
-                /* ⭐ Manual search box */
+                // ⭐ Manual search box (like Data Dictionary)
                 const searchBox = document.getElementById("manualSearch");
                 if (searchBox) {
                     searchBox.addEventListener("keyup", function () {
@@ -123,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
 
-                /* ⭐ Manual page size dropdown */
+                // ⭐ Manual page size dropdown
                 const pageSize = document.getElementById("manualPageSize");
                 if (pageSize) {
                     pageSize.addEventListener("change", function () {
@@ -131,21 +115,21 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
 
-                /* ⭐ Show UI */
-                loading.style.display = "none";
-                ui.style.visibility = "visible";
+                // ⭐ Show UI (spinner off)
+                if (loading) loading.style.display = "none";
+                if (ui) ui.style.visibility = "visible";
 
-                /* ⭐ Sync basket icon */
-                updateBasketIcon();
+                // ⭐ Sync checkboxes with existing basket
+                syncAllCheckboxes();
             }
         });
 
         /* ============================================================
-           Checkbox → Basket
+           Checkbox → global basket
            ============================================================ */
 
         table.on("draw", function () {
-            const basket = loadBasket();
+            const basket = (typeof loadBasket === "function") ? loadBasket() : [];
 
             table.rows().every(function () {
                 const row = this.data();
@@ -158,26 +142,30 @@ document.addEventListener("DOMContentLoaded", function () {
                 cb.checked = basket.some(item => item.id === variableName);
 
                 cb.addEventListener("change", () => {
-                    let basket = loadBasket();
+                    if (!variableName) return;
 
                     if (cb.checked) {
-                        basket.push({ id: variableName, label: variableLabel });
+                        if (typeof addToBasket === "function") {
+                            addToBasket(variableName, variableLabel || "");
+                        }
                     } else {
-                        basket = basket.filter(item => item.id !== variableName);
+                        if (typeof removeFromBasket === "function") {
+                            removeFromBasket(variableName);
+                        }
                     }
-
-                    saveBasket(basket);
                 });
             });
         });
 
-        /* ⭐ Sync checkboxes on first load */
-        table.on("init", syncAllTables);
+        // ⭐ Initial sync after first draw
+        table.on("init", syncAllCheckboxes);
 
-        /* ⭐ YADCF filter */
-        yadcf.init(table, [
-            { column_number: 4, filter_type: "select", cumulative_filtering: true }
-        ]);
+        /* ⭐ YADCF filter on Variable Label (column 4) */
+        if (typeof yadcf !== "undefined") {
+            yadcf.init(table, [
+                { column_number: 4, filter_type: "select", cumulative_filtering: true }
+            ]);
+        }
 
         /* ⭐ Resize handler */
         $(window).on('resize', function () {
@@ -186,8 +174,8 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    function syncAllTables() {
-        const basket = loadBasket();
+    function syncAllCheckboxes() {
+        const basket = (typeof loadBasket === "function") ? loadBasket() : [];
         document.querySelectorAll("input.table-checkbox").forEach(cb => {
             const id = cb.dataset.id;
             cb.checked = basket.some(item => item.id === id);
@@ -204,12 +192,12 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("Loaded JSON:", data);
             buildTable(data);
             initDataTable();
-            updateBasketIcon();
+            // ⭐ Do NOT touch basket icon here — global header script already did
         })
         .catch(err => {
             console.error("JSON load error:", err);
-            loading.style.display = "none";
-            ui.style.visibility = "visible";
+            if (loading) loading.style.display = "none";
+            if (ui) ui.style.visibility = "visible";
         });
 
 });
