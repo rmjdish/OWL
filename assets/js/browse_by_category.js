@@ -19,18 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let sortColumn = "Order";
   let sortAsc = true;
 
-  /* ============================================================
-     FORCE COLUMN WIDTHS IN HEADER (⭐ NEW ⭐)
-     ============================================================ */
-  const headerCells = document.querySelectorAll("#myTable2 thead th");
-
-  if (headerCells.length >= 5) {
-    headerCells[0].style.width = "50px";   // checkbox
-    headerCells[1].style.width = "40px";   // Order
-    headerCells[2].style.width = "145px";  // Variable Name
-    headerCells[3].style.width = "70px";   // Field ID
-    headerCells[4].style.width = "280px";  // Variable Label
-  }
 
   /* ============================================================
      RENDER TABLE
