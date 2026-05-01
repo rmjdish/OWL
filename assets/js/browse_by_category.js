@@ -8,8 +8,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#myTable2 tbody");
   const searchBox = document.getElementById("manualSearch");
   const pageSizeControl = document.getElementById("manualPageSize");
-
-  // ⭐ Header filter element (inside the table)
   const labelFilter = document.getElementById("labelFilterHeader");
 
   let allData = [];
@@ -85,31 +83,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ============================================================
-     SORT ICONS
+     SORT ICONS (no header overwrite)
      ============================================================ */
-	function updateSortIcons() {
-	  document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
-		const col = th.dataset.sort;
-		const icon = th.querySelector(".sort-icon");
+  function updateSortIcons() {
+    document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
+      const col = th.dataset.sort;
+      const icon = th.querySelector(".sort-icon");
+      if (!icon) return;
 
-		if (!icon) return; // safety
-
-		if (col !== sortColumn) {
-		  icon.textContent = "⇅";
-		  icon.style.opacity = 0.4;
-		  return;
-		}
-
-		icon.style.opacity = 1;
-		icon.textContent = sortAsc ? "▲" : "▼";
-	  });
-	}
+      if (col !== sortColumn) {
+        icon.textContent = "⇅";
+        icon.style.opacity = 0.4;
+      } else {
+        icon.textContent = sortAsc ? "▲" : "▼";
+        icon.style.opacity = 1;
+      }
+    });
+  }
 
   /* ============================================================
-     CLICK TO SORT
+     CLICK TO SORT (but NOT when clicking dropdown)
      ============================================================ */
   document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
-    th.addEventListener("click", () => {
+    th.addEventListener("click", (e) => {
+
+      // Ignore clicks inside the dropdown
+      if (e.target.closest("select")) return;
+
       const col = th.dataset.sort;
 
       if (sortColumn === col) {
@@ -123,6 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTable();
     });
   });
+
+  // Prevent dropdown click from triggering sort
+  labelFilter.addEventListener("click", (e) => e.stopPropagation());
 
   /* ============================================================
      BASKET EVENTS
@@ -144,9 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ============================================================
      SEARCH
      ============================================================ */
-  searchBox.onkeyup = () => {
-    applyFilters();
-  };
+  searchBox.onkeyup = () => applyFilters();
 
   /* ============================================================
      PAGE SIZE
@@ -158,11 +159,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   /* ============================================================
-     LABEL FILTER (header dropdown)
+     LABEL FILTER
      ============================================================ */
-  labelFilter.onchange = () => {
-    applyFilters();
-  };
+  labelFilter.onchange = () => applyFilters();
 
   /* ============================================================
      APPLY ALL FILTERS
@@ -200,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allData = data;
       filteredData = data;
 
-      // ⭐ Build label dropdown inside the table header
+      // ⭐ Build label dropdown
       const labels = [...new Set(data.map(r => r["Variable Label"] || ""))]
         .filter(x => x.trim() !== "")
         .sort();
