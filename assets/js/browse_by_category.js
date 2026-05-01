@@ -213,6 +213,12 @@ document.addEventListener("DOMContentLoaded", () => {
         opt.textContent = l;
         labelFilter.appendChild(opt);
       });
+    const rect = labelFilter.getBoundingClientRect();
+    if (rect.right > window.innerWidth - 20) {
+      labelFilter.style.position = "absolute";
+      labelFilter.style.right = "0";
+      labelFilter.style.left = "auto";
+    }
 
       loading.style.display = "none";
       ui.style.visibility = "visible";
