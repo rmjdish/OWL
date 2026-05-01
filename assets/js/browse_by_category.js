@@ -87,29 +87,23 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ============================================================
      SORT ICONS
      ============================================================ */
-  function updateSortIcons() {
-    document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
-      const col = th.dataset.sort;
+	function updateSortIcons() {
+	  document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
+		const col = th.dataset.sort;
+		const icon = th.querySelector(".sort-icon");
 
-      if (!th.querySelector(".sort-icon")) {
-        th.innerHTML = `
-          <span class="header-label">${th.textContent}</span>
-          <span class="sort-icon">⇅</span>
-        `;
-      }
+		if (!icon) return; // safety
 
-      const icon = th.querySelector(".sort-icon");
+		if (col !== sortColumn) {
+		  icon.textContent = "⇅";
+		  icon.style.opacity = 0.4;
+		  return;
+		}
 
-      if (col !== sortColumn) {
-        icon.textContent = "⇅";
-        icon.style.opacity = 0.4;
-        return;
-      }
-
-      icon.style.opacity = 1;
-      icon.textContent = sortAsc ? "▲" : "▼";
-    });
-  }
+		icon.style.opacity = 1;
+		icon.textContent = sortAsc ? "▲" : "▼";
+	  });
+	}
 
   /* ============================================================
      CLICK TO SORT
