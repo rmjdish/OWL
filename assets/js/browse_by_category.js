@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#myTable2 tbody");
   const searchBox = document.getElementById("manualSearch");
   const pageSizeControl = document.getElementById("manualPageSize");
+  const labelFilter = document.getElementById("labelFilter");
 
   let allData = [];
   let filteredData = [];
@@ -18,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let sortColumn = "Order";
   let sortAsc = true;
 
+  /* ============================================================
+     RENDER TABLE
+     ============================================================ */
   function renderTable() {
     let data = [...filteredData];
 
@@ -80,7 +84,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSortIcons();
   }
 
-  /* ⭐ SORT ICONS (same behaviour as popular page) */
+  /* ============================================================
+     SORT ICONS
+     ============================================================ */
   function updateSortIcons() {
     document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
       const col = th.dataset.sort;
@@ -105,7 +111,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ⭐ CLICK TO SORT */
+  /* ============================================================
+     CLICK TO SORT
+     ============================================================ */
   document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
     th.addEventListener("click", () => {
       const col = th.dataset.sort;
@@ -122,7 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  /* ⭐ BASKET EVENTS */
+  /* ============================================================
+     BASKET EVENTS
+     ============================================================ */
   function attachBasketEvents() {
     document.querySelectorAll(".add-to-basket").forEach(cb => {
       cb.onclick = () => {
@@ -137,26 +147,55 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  /* ⭐ SEARCH */
+  /* ============================================================
+     SEARCH
+     ============================================================ */
   searchBox.onkeyup = () => {
-    const q = searchBox.value.toLowerCase();
-    filteredData = allData.filter(row =>
-      row["NSHD Variable Name"].toLowerCase().includes(q) ||
-      (row["Variable Label"] || "").toLowerCase().includes(q) ||
-      String(row["Showcase Field ID"]).toLowerCase().includes(q)
-    );
-    currentPage = 1;
-    renderTable();
+    applyFilters();
   };
 
-  /* ⭐ PAGE SIZE */
+  /* ============================================================
+     PAGE SIZE
+     ============================================================ */
   pageSizeControl.onchange = () => {
     pageSize = parseInt(pageSizeControl.value);
     currentPage = 1;
     renderTable();
   };
 
-  /* ⭐ LOAD JSON */
+  /* ============================================================
+     LABEL FILTER
+     ============================================================ */
+  labelFilter.onchange = () => {
+    applyFilters();
+  };
+
+  /* ============================================================
+     APPLY ALL FILTERS (search + label)
+     ============================================================ */
+  function applyFilters() {
+    const q = searchBox.value.toLowerCase();
+    const selectedLabel = labelFilter.value;
+
+    filteredData = allData.filter(row => {
+      const matchesLabel =
+        selectedLabel === "" || row["Variable Label"] === selectedLabel;
+
+      const matchesSearch =
+        row["NSHD Variable Name"].toLowerCase().includes(q) ||
+        (row["Variable Label"] || "").toLowerCase().includes(q) ||
+        String(row["Showcase Field ID"]).toLowerCase().includes(q);
+
+      return matchesLabel && matchesSearch;
+    });
+
+    currentPage = 1;
+    renderTable();
+  }
+
+  /* ============================================================
+     LOAD JSON + BUILD LABEL FILTER
+     ============================================================ */
   const htmlFile = window.location.pathname.split("/").pop();
   const baseName = htmlFile.replace(/\.html$/, "");
   const jsonFile = `${baseName}.json`;
@@ -166,6 +205,18 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(data => {
       allData = data;
       filteredData = data;
+
+      // ⭐ Build label dropdown
+      const labels = [...new Set(data.map(r => r["Variable Label"] || ""))]
+        .filter(x => x.trim() !== "")
+        .sort();
+
+      labels.forEach(l => {
+        const opt = document.createElement("option");
+        opt.value = l;
+        opt.textContent = l;
+        labelFilter.appendChild(opt);
+      });
 
       loading.style.display = "none";
       ui.style.visibility = "visible";
