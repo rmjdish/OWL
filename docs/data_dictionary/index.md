@@ -300,7 +300,7 @@ classes: page-search-data-dictionary
 }
 
 /* ⭐ PASTEL COLUMN COLORS */
-.page-search-data-dictionary #myTable th:nth-child(1), .page-search-data-dictionary #myTable tbody td:nth-child(2) { background: #f1f5f9 !important; }
+.page-search-data-dictionary #myTable th:nth-child(1), .page-search-data-dictionary #myTable tbody td:nth-child(1) { background: #ffffff !important; }
 .page-search-data-dictionary #myTable th:nth-child(2), .page-search-data-dictionary #myTable tbody td:nth-child(2) { background: #F3E5F5 !important; }
 .page-search-data-dictionary #myTable th:nth-child(3), .page-search-data-dictionary #myTable tbody td:nth-child(3) { background: #E8F5E9 !important; }
 .page-search-data-dictionary #myTable th:nth-child(4), .page-search-data-dictionary #myTable tbody td:nth-child(4) { background: #E3F2FD !important; }
