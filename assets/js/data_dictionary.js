@@ -22,13 +22,8 @@ const filterColumns = [
 
 let tableColumns = [];
 
-function updateBasketCountUI() {
-  const basket = loadBasket();
-  const elMain = document.getElementById("basketCount");          // on search page (if present)
-  const elSidebar = document.getElementById("sidebarBasketCount"); // in sidebar (if present)
-  if (elMain) elMain.textContent = basket.length;
-  if (elSidebar) elSidebar.textContent = basket.length;
-}
+// ⭐ REMOVED local updateBasketCountUI()
+//    We now use the global version from basket_header.js
 
 // ============================================================
 // Data load
@@ -51,7 +46,7 @@ fetch("NSHD_Data_Dictionary_Public.json")
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.display = "block";
 
-    updateBasketCountUI();
+    updateBasketCountUI(); // ⭐ global glow logic now runs
   });
 
 // ============================================================
@@ -219,16 +214,14 @@ function buildTableHeader() {
   table.prepend(colgroup);
 
   // Checkbox header
-const thSelect = document.createElement("th");
-thSelect.classList.add("select-header");
-thSelect.innerHTML = `
-  <div class="th-inner">
-    <span class="header-label">Add variable</span>
-  </div>
-`;
-headerRow.appendChild(thSelect);
-  headerRow.appendChild(thSelect);
-
+  const thSelect = document.createElement("th");
+  thSelect.classList.add("select-header");
+  thSelect.innerHTML = `
+    <div class="th-inner">
+      <span class="header-label">Add variable</span>
+    </div>
+  `;
+  headerRow.appendChild(thSelect); // ⭐ FIXED duplicate append
 
   // Sortable headers
   tableColumns.forEach(col => {
@@ -321,17 +314,20 @@ function renderTable() {
     body.appendChild(tr);
   });
 
-  // Wire row checkboxes
+  // ⭐ FIXED: ensure glow updates after add/remove
   document.querySelectorAll(".row-select").forEach(cb => {
     cb.addEventListener("change", e => {
       const varName = e.target.dataset.varName;
       const label = e.target.dataset.label || "";
       if (!varName) return;
+
       if (e.target.checked) {
         addToBasket(varName, label);
       } else {
         removeFromBasket(varName);
       }
+
+      updateBasketCountUI(); // ⭐ global glow logic
     });
   });
 
