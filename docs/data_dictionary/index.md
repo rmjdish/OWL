@@ -324,7 +324,6 @@ classes: page-search-data-dictionary
 	.page-search-data-dictionary #myTable th:nth-child(7), .page-search-data-dictionary #myTable td:nth-child(7) {
 	  text-align: center !important;
 	}
-
   </style>
 
   <script src="/OWL/assets/js/basket_header.js"></script>
