@@ -324,7 +324,19 @@ classes: page-search-data-dictionary
 	.page-search-data-dictionary #myTable th:nth-child(7), .page-search-data-dictionary #myTable td:nth-child(7) {
 	  text-align: center !important;
 	}
-  </style>
+
+	/* Allow glow to extend outside the header */
+	.site-header,
+	#basketWrapper,
+	#basketTop {
+	  overflow: visible !important;
+	}
+
+	/* Ensure header_custom glow wins */
+	#basketTop.basket-glow {
+	  box-shadow: 0 0 10px 4px rgba(128, 0, 255, 0.6) !important;
+	}  
+</style>
 
   <script src="/OWL/assets/js/basket_header.js"></script>
   <script src="/OWL/assets/js/data_dictionary.js"></script>
