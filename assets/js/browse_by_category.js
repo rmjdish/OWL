@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const totalRows = data.length;
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+	resultsCount.textContent = `Showing ${totalRows} results`;
     if (currentPage > totalPages) currentPage = totalPages;
 
     const start = (currentPage - 1) * pageSize;
