@@ -20,6 +20,19 @@ document.addEventListener("DOMContentLoaded", () => {
   let sortAsc = true;
 
   /* ============================================================
+     FORCE COLUMN WIDTHS IN HEADER (⭐ NEW ⭐)
+     ============================================================ */
+  const headerCells = document.querySelectorAll("#myTable2 thead th");
+
+  if (headerCells.length >= 5) {
+    headerCells[0].style.width = "50px";   // checkbox
+    headerCells[1].style.width = "40px";   // Order
+    headerCells[2].style.width = "145px";  // Variable Name
+    headerCells[3].style.width = "70px";   // Field ID
+    headerCells[4].style.width = "280px";  // Variable Label
+  }
+
+  /* ============================================================
      RENDER TABLE
      ============================================================ */
   function renderTable() {
@@ -53,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       return `
         <tr>
-          <td class="check-col">
+          <td class="check-col" style="width:50px;">
             <input type="checkbox"
                    class="add-to-basket"
                    data-name="${name}"
@@ -61,19 +74,21 @@ document.addEventListener("DOMContentLoaded", () => {
                    ${checked ? "checked" : ""}>
           </td>
 
-          <td>${row["Order"]}</td>
+          <td style="width:40px;">${row["Order"]}</td>
 
-          <td>
+          <td style="width:145px;">
             <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${name}.html"
                target="_blank">${name}</a>
           </td>
 
-          <td class="dt-center">
+          <td class="dt-center" style="width:70px;">
             <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row["Showcase Field ID"]}"
                target="_blank">${row["Showcase Field ID"]}</a>
           </td>
 
-          <td>${label}</td>
+          <td style="width:280px; overflow:hidden; text-overflow:ellipsis;">
+            ${label}
+          </td>
         </tr>
       `;
     }).join("");
