@@ -19,7 +19,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let sortColumn = "Order";
   let sortAsc = true;
 
-
   /* ============================================================
      RENDER TABLE
      ============================================================ */
@@ -54,27 +53,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
       return `
         <tr>
-          <td class="check-col" style="width:50px;">
+          <td class="check-col" style="width:40px;">
             <input type="checkbox"
                    class="add-to-basket"
                    data-name="${name}"
                    data-label="${label.replace(/"/g, "&quot;")}"
                    ${checked ? "checked" : ""}>
           </td>
-
           <td style="width:40px;">${row["Order"]}</td>
-
-          <td style="width:145px;">
+          <td style="width:95px;">
             <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${name}.html"
                target="_blank">${name}</a>
           </td>
-
-          <td class="dt-center" style="width:70px;">
+          <td class="dt-center" style="width:55px;">
             <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row["Showcase Field ID"]}"
                target="_blank">${row["Showcase Field ID"]}</a>
           </td>
-
-          <td style="width:280px; overflow:hidden; text-overflow:ellipsis;">
+          <td style="width:400px; overflow:hidden; text-overflow:ellipsis;">
             ${label}
           </td>
         </tr>
@@ -83,14 +78,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     attachBasketEvents();
     updateSortIcons();
+    renderPagination(totalPages);
   }
 
   /* ============================================================
-     SORT ICONS (no header overwrite)
+     PAGINATION
+     ============================================================ */
+  function renderPagination(totalPages) {
+    const top    = document.getElementById("paginationTop");
+    const bottom = document.getElementById("paginationBottom");
+
+    if (!top || !bottom) return;
+
+    const html = `
+      <button ${currentPage === 1 ? "disabled" : ""} data-dir="-1">Prev</button>
+      <span>Page ${currentPage} of ${totalPages}</span>
+      <button ${currentPage === totalPages ? "disabled" : ""} data-dir="1">Next</button>
+    `;
+
+    top.innerHTML    = html;
+    bottom.innerHTML = html;
+
+    document.querySelectorAll("#paginationTop button, #paginationBottom button")
+      .forEach(btn => {
+        btn.onclick = () => {
+          currentPage += parseInt(btn.dataset.dir);
+          renderTable();
+        };
+      });
+  }
+
+  /* ============================================================
+     SORT ICONS
      ============================================================ */
   function updateSortIcons() {
     document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
-      const col = th.dataset.sort;
+      const col  = th.dataset.sort;
       const icon = th.querySelector(".sort-icon");
       if (!icon) return;
 
@@ -105,12 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ============================================================
-     CLICK TO SORT (but NOT when clicking dropdown)
+     CLICK TO SORT
      ============================================================ */
   document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
     th.addEventListener("click", (e) => {
-
-      // Ignore clicks inside the dropdown
       if (e.target.closest("select")) return;
 
       const col = th.dataset.sort;
@@ -127,7 +148,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Prevent dropdown click from triggering sort
   labelFilter.addEventListener("click", (e) => e.stopPropagation());
 
   /* ============================================================
@@ -136,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function attachBasketEvents() {
     document.querySelectorAll(".add-to-basket").forEach(cb => {
       cb.onclick = () => {
-        const name = cb.dataset.name;
+        const name  = cb.dataset.name;
         const label = cb.dataset.label;
 
         if (cb.checked) addToBasket(name, label);
@@ -148,29 +168,23 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /* ============================================================
-     SEARCH
+     SEARCH + PAGE SIZE + LABEL FILTER
      ============================================================ */
   searchBox.onkeyup = () => applyFilters();
 
-  /* ============================================================
-     PAGE SIZE
-     ============================================================ */
   pageSizeControl.onchange = () => {
     pageSize = parseInt(pageSizeControl.value);
     currentPage = 1;
     renderTable();
   };
 
-  /* ============================================================
-     LABEL FILTER
-     ============================================================ */
   labelFilter.onchange = () => applyFilters();
 
   /* ============================================================
      APPLY ALL FILTERS
      ============================================================ */
   function applyFilters() {
-    const q = searchBox.value.toLowerCase();
+    const q             = searchBox.value.toLowerCase();
     const selectedLabel = labelFilter.value;
 
     filteredData = allData.filter(row => {
@@ -199,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch(jsonFile)
     .then(r => r.json())
     .then(data => {
-      allData = data;
+      allData      = data;
       filteredData = data;
 
       // ⭐ Build label dropdown
@@ -209,19 +223,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       labels.forEach(l => {
         const opt = document.createElement("option");
-        opt.value = l;
+        opt.value       = l;
         opt.textContent = l;
         labelFilter.appendChild(opt);
       });
-    const rect = labelFilter.getBoundingClientRect();
-    if (rect.right > window.innerWidth - 20) {
-      labelFilter.style.position = "absolute";
-      labelFilter.style.right = "0";
-      labelFilter.style.left = "auto";
-    }
 
-      loading.style.display = "none";
-      ui.style.visibility = "visible";
+      // ⭐ Reposition select if it would overflow right edge
+      const rect = labelFilter.getBoundingClientRect();
+      if (rect.right > window.innerWidth - 20) {
+        labelFilter.style.position = "absolute";
+        labelFilter.style.right    = "0";
+        labelFilter.style.left     = "auto";
+      }
+
+      loading.style.display  = "none";
+      ui.style.visibility    = "visible";
 
       renderTable();
     });
