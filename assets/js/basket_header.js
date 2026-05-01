@@ -46,11 +46,18 @@ function addToBasket(varName, label) {
 
   updateBasketCountUI();
 
-  // ⭐ Pulse animation
+  // ⭐ Pulse animation on count
   const badge = document.getElementById("basketCount");
   if (badge) {
     badge.classList.add("added");
     setTimeout(() => badge.classList.remove("added"), 400);
+  }
+
+  // ⭐ Glow pulse on basket icon
+  const basketTop = document.getElementById("basketTop");
+  if (basketTop) {
+    basketTop.classList.add("basket-glow-pulse");
+    setTimeout(() => basketTop.classList.remove("basket-glow-pulse"), 600);
   }
 }
 
@@ -61,7 +68,7 @@ function removeFromBasket(varName) {
 
   updateBasketCountUI();
 
-  // ⭐ Shake animation
+  // ⭐ Shake animation on removal
   const basketTop = document.getElementById("basketTop");
   if (basketTop) {
     basketTop.classList.add("shake");
