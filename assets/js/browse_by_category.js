@@ -8,7 +8,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const tbody = document.querySelector("#myTable2 tbody");
   const searchBox = document.getElementById("manualSearch");
   const pageSizeControl = document.getElementById("manualPageSize");
-  const labelFilter = document.getElementById("labelFilter");
+
+  // ⭐ Header filter element (inside the table)
+  const labelFilter = document.getElementById("labelFilterHeader");
 
   let allData = [];
   let filteredData = [];
@@ -30,12 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const A = a[sortColumn];
       const B = b[sortColumn];
 
-      // Numeric sort for Order + Showcase Field ID
       if (!isNaN(A) && !isNaN(B)) {
         return sortAsc ? A - B : B - A;
       }
 
-      // String sort
       return sortAsc
         ? String(A).localeCompare(String(B))
         : String(B).localeCompare(String(A));
@@ -164,14 +164,14 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   /* ============================================================
-     LABEL FILTER
+     LABEL FILTER (header dropdown)
      ============================================================ */
   labelFilter.onchange = () => {
     applyFilters();
   };
 
   /* ============================================================
-     APPLY ALL FILTERS (search + label)
+     APPLY ALL FILTERS
      ============================================================ */
   function applyFilters() {
     const q = searchBox.value.toLowerCase();
@@ -206,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allData = data;
       filteredData = data;
 
-      // ⭐ Build label dropdown
+      // ⭐ Build label dropdown inside the table header
       const labels = [...new Set(data.map(r => r["Variable Label"] || ""))]
         .filter(x => x.trim() !== "")
         .sort();
