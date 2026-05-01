@@ -61,7 +61,6 @@ classes: page-search-data-dictionary
   </div> <!-- end dataUI -->
 
   <style>
-
   /* ⭐ PAGE CONTAINER ANCHOR FOR OVERLAY */
   .page-search-data-dictionary {
     position: relative;
@@ -74,7 +73,7 @@ classes: page-search-data-dictionary
     box-sizing: border-box;
   }
 
-  /* 🔧 FIXED — SCOPED LOADING SCREEN */
+  /* ⭐ LOADING SCREEN (scoped, covers only DD content) */
   .page-search-data-dictionary .loading-screen {
     position: absolute;
     top: 0;
@@ -91,7 +90,6 @@ classes: page-search-data-dictionary
     color: #4b067a;
   }
 
-  /* 🔧 FIXED — SCOPED SPINNER */
   .page-search-data-dictionary .spinner {
     width: 40px;
     height: 40px;
@@ -116,6 +114,7 @@ classes: page-search-data-dictionary
     font-size: 14px;
   }
 
+  /* This allows the table to compress even further on small screens. */
   @media (max-width: 700px) {
     #myTable col {
       width: auto !important;
@@ -231,7 +230,7 @@ classes: page-search-data-dictionary
     border-bottom: 2px solid #4b067a;
   }
 
-  /* ⭐ HEADER INNER WRAPPER */
+  /* ⭐ HEADER INNER WRAPPER — TRANSPARENT (so pastel shows fully) */
   #myTable thead th .th-inner {
     width: 100%;
     height: 100%;
@@ -304,7 +303,7 @@ classes: page-search-data-dictionary
     height: 14px;
   }
 
-  /* ⭐ Adjust pastel column mapping */
+  /* ⭐ Adjust pastel column mapping (shift by 1 because of checkbox column) */
   #myTable th:nth-child(1), #myTable tbody td:nth-child(2) { background: #f1f5f9 !important; }
   #myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #F3E5F5 !important; }
   #myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E8F5E9 !important; }
@@ -319,7 +318,7 @@ classes: page-search-data-dictionary
     color: black !important;
   }
 
-  /* Alignment */
+  /* Alignment (shifted by 1) */
   #myTable th:nth-child(2), #myTable td:nth-child(2),
   #myTable th:nth-child(4), #myTable td:nth-child(4),
   #myTable th:nth-child(5), #myTable td:nth-child(5),
@@ -337,10 +336,7 @@ classes: page-search-data-dictionary
     display: flex;
     align-items: center;
   }
-
   </style>
 
   <script src="/OWL/assets/js/basket_header.js"></script>
   <script src="/OWL/assets/js/data_dictionary.js"></script>
-
-</div>

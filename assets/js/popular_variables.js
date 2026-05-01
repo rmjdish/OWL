@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load BOTH datasets
   Promise.all([
     fetch("popular_vars_all.json").then(r => r.json()),
-    fetch("NSHD_Data_Dictionary_Public.json").then(r => r.json())
+    fetch("/OWL/docs/data_dictionary/NSHD_Data_Dictionary_Public.json").then(r => r.json())
   ])
   .then(([popular, labels]) => {
 
