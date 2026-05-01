@@ -1,6 +1,6 @@
 ---
-title: Home
 layout: default
+title: Home
 nav_order: 1
 classes: home-page
 ---
@@ -73,3 +73,4 @@ classes: home-page
 }
 </style>
 
+<script src="/OWL/assets/js/basket_header.js"></script>
