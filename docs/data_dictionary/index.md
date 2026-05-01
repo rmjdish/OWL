@@ -115,7 +115,7 @@ classes: page-search-data-dictionary
   }
 
   /* This allows the table to compress even further on small screens. */
-  @media (max-width: 700px) {
+  .page-search-data-dictionary @media (max-width: 700px) {
     #myTable col {
       width: auto !important;
     }
@@ -169,7 +169,7 @@ classes: page-search-data-dictionary
   }
 
   /* RESET BUTTON */
-  #resetFiltersBtn {
+  .page-search-data-dictionary #resetFiltersBtn {
     margin-left: 30px;
     padding: 6px 12px;
     font-size: 14px;
@@ -180,7 +180,7 @@ classes: page-search-data-dictionary
     cursor: pointer;
   }
 
-  #resetFiltersBtn:hover {
+  .page-search-data-dictionary #resetFiltersBtn:hover {
     background: #36045a;
   }
 
@@ -231,7 +231,7 @@ classes: page-search-data-dictionary
   }
 
   /* ⭐ HEADER INNER WRAPPER — TRANSPARENT (so pastel shows fully) */
-  #myTable thead th .th-inner {
+  .page-search-data-dictionary #myTable thead th .th-inner {
     width: 100%;
     height: 100%;
     padding: 8px;
@@ -243,14 +243,14 @@ classes: page-search-data-dictionary
   }
 
   /* SORT ICONS */
-  .sort-icon {
+  .page-search-data-dictionary .sort-icon {
     font-size: 12px;
     margin-left: 6px;
     opacity: 0.4;
     transition: opacity 0.2s ease;
   }
 
-  .sortable-header:hover .sort-icon {
+  .page-search-data-dictionary .sortable-header:hover .sort-icon {
     opacity: 0.9;
   }
 
@@ -280,62 +280,62 @@ classes: page-search-data-dictionary
   }
 
   /* ⭐ RESPONSIVE COLUMN WIDTHS */
-  #myTable col.col-1 { width: 11%; }
-  #myTable col.col-2 { width: 9%; }
-  #myTable col.col-3 { width: 10%; }
-  #myTable col.col-4 { width: 50%; }
-  #myTable col.col-5 { width: 10%; }
-  #myTable col.col-6 { width: 10%; }
+  .page-search-data-dictionary #myTable col.col-1 { width: 11%; }
+  .page-search-data-dictionary #myTable col.col-2 { width: 9%; }
+  .page-search-data-dictionary #myTable col.col-3 { width: 10%; }
+  .page-search-data-dictionary #myTable col.col-4 { width: 50%; }
+  .page-search-data-dictionary #myTable col.col-5 { width: 10%; }
+  .page-search-data-dictionary #myTable col.col-6 { width: 10%; }
 
   /* ⭐ Checkbox column */
-  #myTable col.col-select {
+  .page-search-data-dictionary #myTable col.col-select {
     width: 20px;
   }
 
-  #myTable th.select-header,
-  #myTable td.select-cell {
+  .page-search-data-dictionary #myTable th.select-header,
+  .page-search-data-dictionary #myTable td.select-cell {
     background: #ffffff !important;
     text-align: center;
   }
 
-  #myTable td.select-cell input[type="checkbox"] {
+  .page-search-data-dictionary #myTable td.select-cell input[type="checkbox"] {
     width: 14px;
     height: 14px;
   }
 
   /* ⭐ Adjust pastel column mapping (shift by 1 because of checkbox column) */
-  #myTable th:nth-child(1), #myTable tbody td:nth-child(2) { background: #f1f5f9 !important; }
-  #myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #F3E5F5 !important; }
-  #myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E8F5E9 !important; }
-  #myTable th:nth-child(4), #myTable tbody td:nth-child(4) { background: #E3F2FD !important; }
-  #myTable th:nth-child(5), #myTable tbody td:nth-child(5) { background: #FFF3E0 !important; }
-  #myTable th:nth-child(6), #myTable tbody td:nth-child(6) { background: #FCE4EC !important; }
-  #myTable th:nth-child(7), #myTable tbody td:nth-child(7) { background: #EDE7F6 !important; }
+  .page-search-data-dictionary #myTable th:nth-child(1), #myTable tbody td:nth-child(2) { background: #f1f5f9 !important; }
+  .page-search-data-dictionary #myTable th:nth-child(2), #myTable tbody td:nth-child(2) { background: #F3E5F5 !important; }
+  .page-search-data-dictionary #myTable th:nth-child(3), #myTable tbody td:nth-child(3) { background: #E8F5E9 !important; }
+  .page-search-data-dictionary #myTable th:nth-child(4), #myTable tbody td:nth-child(4) { background: #E3F2FD !important; }
+  .page-search-data-dictionary #myTable th:nth-child(5), #myTable tbody td:nth-child(5) { background: #FFF3E0 !important; }
+  .page-search-data-dictionary #myTable th:nth-child(6), #myTable tbody td:nth-child(6) { background: #FCE4EC !important; }
+  .page-search-data-dictionary #myTable th:nth-child(7), #myTable tbody td:nth-child(7) { background: #EDE7F6 !important; }
 
   /* ⭐ HEADER TEXT + ICONS = BLACK */
-  #myTable thead th .header-label,
-  #myTable thead th .sort-icon {
+  .page-search-data-dictionary #myTable thead th .header-label,
+  .page-search-data-dictionary #myTable thead th .sort-icon {
     color: black !important;
   }
 
   /* Alignment (shifted by 1) */
-  #myTable th:nth-child(2), #myTable td:nth-child(2),
-  #myTable th:nth-child(4), #myTable td:nth-child(4),
-  #myTable th:nth-child(5), #myTable td:nth-child(5),
-  #myTable th:nth-child(6), #myTable td:nth-child(6) {
+  .page-search-data-dictionary #myTable th:nth-child(2), #myTable td:nth-child(2),
+  .page-search-data-dictionary #myTable th:nth-child(4), #myTable td:nth-child(4),
+  .page-search-data-dictionary #myTable th:nth-child(5), #myTable td:nth-child(5),
+  .page-search-data-dictionary #myTable th:nth-child(6), #myTable td:nth-child(6) {
     text-align: left !important;
   }
 
-  #myTable th:nth-child(3), #myTable td:nth-child(3),
-  #myTable th:nth-child(7), #myTable td:nth-child(7) {
+  .page-search-data-dictionary #myTable th:nth-child(3), #myTable td:nth-child(3),
+  .page-search-data-dictionary #myTable th:nth-child(7), #myTable td:nth-child(7) {
     text-align: center !important;
   }
 
-  /* Ensure header items align nicely */
-  .site-header .site-header-container {
-    display: flex;
-    align-items: center;
-  }
+	.page-search-data-dictionary .site-header-inner {
+	  display: flex !important;
+	  align-items: center !important;
+	}
+ 
   </style>
 
   <script src="/OWL/assets/js/basket_header.js"></script>
