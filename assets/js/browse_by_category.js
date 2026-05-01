@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", function () {
 
     /* ============================================================
-       Use GLOBAL basket helpers from basket_header.js
+       GLOBAL basket helpers (from basket_header.js)
        ============================================================ */
 
     function isInBasket(id) {
@@ -53,6 +53,19 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ============================================================
+       Sync checkboxes with basket
+       ============================================================ */
+
+    function syncAllCheckboxes() {
+        const basket = loadBasket();
+
+        document.querySelectorAll(".table-checkbox").forEach(cb => {
+            const id = cb.dataset.id;
+            cb.checked = basket.some(item => item.id === id);
+        });
+    }
+
+    /* ============================================================
        Initialise DataTables
        ============================================================ */
 
@@ -86,9 +99,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             ],
 
+            /* ⭐ The FIX — runs after every draw, including the first */
+            drawCallback: function () {
+                syncAllCheckboxes();
+            },
+
             initComplete: function () {
 
-                /* ⭐ Manual search */
+                /* Manual search */
                 const searchBox = document.getElementById("manualSearch");
                 if (searchBox) {
                     searchBox.addEventListener("keyup", function () {
@@ -96,7 +114,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
 
-                /* ⭐ Manual page size */
+                /* Manual page size */
                 const pageSize = document.getElementById("manualPageSize");
                 if (pageSize) {
                     pageSize.addEventListener("change", function () {
@@ -104,19 +122,14 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
 
-                /* ⭐ Show UI */
+                /* Show UI */
                 loading.style.display = "none";
                 ui.style.visibility = "visible";
-
-				// ⭐ Wait for DataTables to finish rendering rows
-				setTimeout(() => {
-					syncAllCheckboxes();
-				}, 0);
             }
         });
 
         /* ============================================================
-           ⭐ Delegated checkbox handler (popular_variables style)
+           Delegated checkbox handler
            ============================================================ */
 
         $('#myTable2 tbody').on('change', '.table-checkbox', function () {
@@ -131,31 +144,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
         /* ============================================================
-           Sync checkboxes on every redraw
+           YADCF filter
            ============================================================ */
 
-        table.on("draw", syncAllCheckboxes);
-
-        /* ⭐ YADCF filter */
         if (typeof yadcf !== "undefined") {
             yadcf.init(table, [
                 { column_number: 4, filter_type: "select", cumulative_filtering: true }
             ]);
         }
 
-        /* ⭐ Resize handler */
+        /* Resize handler */
         $(window).on('resize', function () {
             table.columns.adjust();
             if (table.fixedHeader) table.fixedHeader.adjust();
-        });
-    }
-
-    function syncAllCheckboxes() {
-        const basket = loadBasket();
-
-        document.querySelectorAll(".table-checkbox").forEach(cb => {
-            const id = cb.dataset.id;
-            cb.checked = basket.some(item => item.id === id);
         });
     }
 
