@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const jsonFile = `${baseName}.json`;
 
     /* ============================================================
-       Build table rows
+       Build table rows (static HTML source for DataTables)
        ============================================================ */
 
     function buildTable(data) {
@@ -99,7 +99,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             ],
 
-            /* ⭐ The FIX — runs after every draw, including the first */
+            /* Ensure checkbox state is applied as rows are created */
+            createdRow: function (row, data) {
+                // data is an array because we used HTML source
+                const id = data[2]; // NSHD Variable Name column
+                const cb = row.querySelector(".table-checkbox");
+                if (cb && isInBasket(id)) {
+                    cb.checked = true;
+                }
+            },
+
+            /* Extra safety: re-sync after every draw */
             drawCallback: function () {
                 syncAllCheckboxes();
             },
@@ -125,6 +135,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 /* Show UI */
                 loading.style.display = "none";
                 ui.style.visibility = "visible";
+
+                // Initial sync once everything is fully ready
+                syncAllCheckboxes();
             }
         });
 
