@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function isInBasket(id) {
         try {
-            return loadBasket().some(item => item.id === id);
+            return loadBasket().some(item => String(item.id) === String(id));
         } catch {
             return false;
         }
@@ -31,47 +31,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const jsonFile = `${baseName}.json`;
 
     /* ============================================================
-       Build table rows (static HTML source for DataTables)
+       Initialise DataTables with JSON data
        ============================================================ */
 
-    function buildTable(data) {
-        const tbody = document.querySelector("#myTable2 tbody");
-
-        tbody.innerHTML = data.map(row => `
-            <tr>
-                <td>
-                    <input type="checkbox" class="table-checkbox"
-                        data-id="${row["NSHD Variable Name"]}"
-                        data-label="${(row["Variable Label"] || "").replace(/"/g, "&quot;")}">
-                </td>
-                <td>${row["Order"]}</td>
-                <td>${row["NSHD Variable Name"]}</td>
-                <td>${row["Showcase Field ID"]}</td>
-                <td>${row["Variable Label"]}</td>
-            </tr>
-        `).join("");
-    }
-
-    /* ============================================================
-       Sync checkboxes with basket
-       ============================================================ */
-
-    function syncAllCheckboxes() {
-        const basket = loadBasket();
-
-        document.querySelectorAll(".table-checkbox").forEach(cb => {
-            const id = cb.dataset.id;
-            cb.checked = basket.some(item => item.id === id);
-        });
-    }
-
-    /* ============================================================
-       Initialise DataTables
-       ============================================================ */
-
-    function initDataTable() {
+    function initDataTable(data) {
 
         const table = $('#myTable2').DataTable({
+            data: data,
             pageLength: 15,
             lengthMenu: [15, 30, 50, 100],
             deferRender: true,
@@ -83,35 +49,48 @@ document.addEventListener("DOMContentLoaded", function () {
                 headerOffset: 0
             },
 
-            columnDefs: [
+            columns: [
                 {
-                    targets: 2,
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    render: function (row) {
+                        const id = row["NSHD Variable Name"]; // ⭐ same ID as popular page
+                        const label = (row["Variable Label"] || "").replace(/"/g, "&quot;");
+                        const checked = isInBasket(id) ? "checked" : "";
+                        return `
+                            <input type="checkbox"
+                                   class="table-checkbox"
+                                   data-id="${id}"
+                                   data-label="${label}"
+                                   ${checked}>
+                        `;
+                    }
+                },
+                { data: "Order" },
+                {
+                    data: "NSHD Variable Name",
                     render: function (data) {
                         return `<a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${data}.html" target="_blank">${data}</a>`;
                     }
                 },
                 {
-                    targets: 3,
+                    data: "Showcase Field ID",
                     className: "dt-center",
                     render: function (data) {
                         return `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${data}" target="_blank">${data}</a>`;
                     }
-                }
+                },
+                { data: "Variable Label" }
             ],
 
-            /* Ensure checkbox state is applied as rows are created */
-            createdRow: function (row, data) {
-                // data is an array because we used HTML source
-                const id = data[2]; // NSHD Variable Name column
-                const cb = row.querySelector(".table-checkbox");
-                if (cb && isInBasket(id)) {
-                    cb.checked = true;
-                }
-            },
-
-            /* Extra safety: re-sync after every draw */
             drawCallback: function () {
-                syncAllCheckboxes();
+                // If basket changed elsewhere, keep in sync
+                const basket = loadBasket();
+                $('#myTable2 .table-checkbox').each(function () {
+                    const id = this.dataset.id;
+                    this.checked = basket.some(item => String(item.id) === String(id));
+                });
             },
 
             initComplete: function () {
@@ -135,24 +114,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 /* Show UI */
                 loading.style.display = "none";
                 ui.style.visibility = "visible";
-
-                // Initial sync once everything is fully ready
-                syncAllCheckboxes();
             }
         });
 
         /* ============================================================
-           Delegated checkbox handler
+           Delegated checkbox handler (same semantics as popular page)
            ============================================================ */
 
         $('#myTable2 tbody').on('change', '.table-checkbox', function () {
-            const id = this.dataset.id;
+            const id = this.dataset.id;      // NSHD Variable Name
             const label = this.dataset.label || "";
+
+            if (!id) return;
 
             if (this.checked) {
                 addToBasket(id, label);
             } else {
                 removeFromBasket(id);
+            }
+
+            // Optional: if you have the same basket pulse UI here
+            if (typeof updateBasketCountUI === "function") {
+                updateBasketCountUI();
+            }
+            const icon = document.getElementById("basket-icon");
+            if (icon) {
+                icon.classList.add("basket-pulse");
+                setTimeout(() => icon.classList.remove("basket-pulse"), 300);
             }
         });
 
@@ -180,8 +168,7 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch(jsonFile)
         .then(r => r.json())
         .then(data => {
-            buildTable(data);
-            initDataTable();
+            initDataTable(data);
         })
         .catch(err => {
             console.error("JSON load error:", err);
