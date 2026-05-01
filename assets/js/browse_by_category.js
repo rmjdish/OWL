@@ -1,7 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  console.log("Browse-by-category script starting…");
-
   const loading = document.getElementById("loadingScreen");
   const ui = document.getElementById("browseUI");
 
@@ -14,27 +12,25 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentPage = 1;
   let pageSize = 15;
 
+  // ⭐ Normalise IDs everywhere
+  function norm(x) {
+    return String(x || "").trim().toUpperCase();
+  }
+
   function isInBasket(id) {
+    const nid = norm(id);
     try {
-      return loadBasket().some(item => String(item.id) === String(id));
+      return loadBasket().some(item => norm(item.id) === nid);
     } catch {
       return false;
     }
   }
 
-  /* ============================================================
-     RENDER TABLE (same mechanism as popular_variables.js)
-     ============================================================ */
-
   function renderTable() {
     let data = [...filteredData];
 
-    // ⭐ Always sort by Order ascending
-    data.sort((a, b) => {
-      const ao = Number(a["Order"]) || 0;
-      const bo = Number(b["Order"]) || 0;
-      return ao - bo;
-    });
+    // Sort by Order
+    data.sort((a, b) => (Number(a.Order) || 0) - (Number(b.Order) || 0));
 
     const totalRows = data.length;
     const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
@@ -44,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const pageRows = data.slice(start, start + pageSize);
 
     tbody.innerHTML = pageRows.map(row => {
-      const id = row["NSHD Variable Name"];
+      const id = norm(row["NSHD Variable Name"]);
       const label = row["Variable Label"] || "";
       const checked = isInBasket(id);
 
@@ -62,16 +58,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <td>
             <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${id}.html"
-               target="_blank">
-               ${id}
-            </a>
+               target="_blank">${id}</a>
           </td>
 
           <td class="dt-center">
             <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row["Showcase Field ID"]}"
-               target="_blank">
-               ${row["Showcase Field ID"]}
-            </a>
+               target="_blank">${row["Showcase Field ID"]}</a>
           </td>
 
           <td>${label}</td>
@@ -82,43 +74,27 @@ document.addEventListener("DOMContentLoaded", () => {
     attachBasketEvents();
   }
 
-  /* ============================================================
-     BASKET EVENTS (same as popular_variables.js)
-     ============================================================ */
-
   function attachBasketEvents() {
     document.querySelectorAll(".add-to-basket").forEach(cb => {
       cb.onclick = () => {
-        const name = cb.dataset.name;
+        const id = norm(cb.dataset.name);
         const label = cb.dataset.label;
 
-        if (!name) return;
-
         if (cb.checked) {
-          addToBasket(name, label);
+          addToBasket(id, label);
         } else {
-          removeFromBasket(name);
+          removeFromBasket(id);
         }
 
         updateBasketCountUI();
-
-        const icon = document.getElementById("basket-icon");
-        if (icon) {
-          icon.classList.add("basket-pulse");
-          setTimeout(() => icon.classList.remove("basket-pulse"), 300);
-        }
       };
     });
   }
 
-  /* ============================================================
-     SEARCH + PAGE SIZE
-     ============================================================ */
-
   searchBox.onkeyup = () => {
     const q = searchBox.value.toLowerCase();
     filteredData = allData.filter(row =>
-      row["NSHD Variable Name"].toLowerCase().includes(q) ||
+      norm(row["NSHD Variable Name"]).includes(q.toUpperCase()) ||
       (row["Variable Label"] || "").toLowerCase().includes(q)
     );
     currentPage = 1;
@@ -131,10 +107,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTable();
   };
 
-  /* ============================================================
-     LOAD JSON + START
-     ============================================================ */
-
   const htmlFile = window.location.pathname.split("/").pop();
   const baseName = htmlFile.replace(/\.html$/, "");
   const jsonFile = `${baseName}.json`;
@@ -142,6 +114,11 @@ document.addEventListener("DOMContentLoaded", () => {
   fetch(jsonFile)
     .then(r => r.json())
     .then(data => {
+      // ⭐ Normalise IDs immediately
+      data.forEach(row => {
+        row["NSHD Variable Name"] = norm(row["NSHD Variable Name"]);
+      });
+
       allData = data;
       filteredData = data;
 
