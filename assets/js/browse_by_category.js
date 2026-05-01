@@ -14,18 +14,27 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentPage = 1;
   let pageSize = 15;
 
-  /* ============================================================
-     RENDER TABLE (same mechanism as popular_variables.js)
-     ============================================================ */
+  // ⭐ Sorting state
+  let sortColumn = "Order";
+  let sortAsc = true;
 
   function renderTable() {
     let data = [...filteredData];
 
-    // Always sort by Order ascending
+    // ⭐ Apply sorting
     data.sort((a, b) => {
-      const ao = Number(a["Order"]) || 0;
-      const bo = Number(b["Order"]) || 0;
-      return ao - bo;
+      const A = a[sortColumn];
+      const B = b[sortColumn];
+
+      // Numeric sort for Order + Showcase Field ID
+      if (!isNaN(A) && !isNaN(B)) {
+        return sortAsc ? A - B : B - A;
+      }
+
+      // String sort
+      return sortAsc
+        ? String(A).localeCompare(String(B))
+        : String(B).localeCompare(String(A));
     });
 
     const totalRows = data.length;
@@ -36,9 +45,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const pageRows = data.slice(start, start + pageSize);
 
     tbody.innerHTML = pageRows.map(row => {
-      const name = row["NSHD Variable Name"];      // basket ID
+      const name = row["NSHD Variable Name"];
       const label = row["Variable Label"] || "";
-      const checked = isInBasket(name);            // ⭐ use GLOBAL isInBasket
+      const checked = isInBasket(name);
 
       return `
         <tr>
@@ -54,16 +63,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <td>
             <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${name}.html"
-               target="_blank">
-               ${name}
-            </a>
+               target="_blank">${name}</a>
           </td>
 
           <td class="dt-center">
             <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row["Showcase Field ID"]}"
-               target="_blank">
-               ${row["Showcase Field ID"]}
-            </a>
+               target="_blank">${row["Showcase Field ID"]}</a>
           </td>
 
           <td>${label}</td>
@@ -72,64 +77,86 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join("");
 
     attachBasketEvents();
+    updateSortIcons();
   }
 
-  /* ============================================================
-     BASKET EVENTS (identical semantics to popular_variables.js)
-     ============================================================ */
+  /* ⭐ SORT ICONS (same behaviour as popular page) */
+  function updateSortIcons() {
+    document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
+      const col = th.dataset.sort;
 
+      if (!th.querySelector(".sort-icon")) {
+        th.innerHTML = `
+          <span class="header-label">${th.textContent}</span>
+          <span class="sort-icon">⇅</span>
+        `;
+      }
+
+      const icon = th.querySelector(".sort-icon");
+
+      if (col !== sortColumn) {
+        icon.textContent = "⇅";
+        icon.style.opacity = 0.4;
+        return;
+      }
+
+      icon.style.opacity = 1;
+      icon.textContent = sortAsc ? "▲" : "▼";
+    });
+  }
+
+  /* ⭐ CLICK TO SORT */
+  document.querySelectorAll("#myTable2 th[data-sort]").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.sort;
+
+      if (sortColumn === col) {
+        sortAsc = !sortAsc;
+      } else {
+        sortColumn = col;
+        sortAsc = true;
+      }
+
+      currentPage = 1;
+      renderTable();
+    });
+  });
+
+  /* ⭐ BASKET EVENTS */
   function attachBasketEvents() {
     document.querySelectorAll(".add-to-basket").forEach(cb => {
       cb.onclick = () => {
         const name = cb.dataset.name;
         const label = cb.dataset.label;
 
-        if (!name) return;
+        if (cb.checked) addToBasket(name, label);
+        else removeFromBasket(name);
 
-        if (cb.checked) {
-          addToBasket(name, label);
-        } else {
-          removeFromBasket(name);
-        }
-
-        if (typeof updateBasketCountUI === "function") {
-          updateBasketCountUI();
-        }
-
-        const icon = document.getElementById("basket-icon");
-        if (icon) {
-          icon.classList.add("basket-pulse");
-          setTimeout(() => icon.classList.remove("basket-pulse"), 300);
-        }
+        updateBasketCountUI();
       };
     });
   }
 
-  /* ============================================================
-     SEARCH + PAGE SIZE
-     ============================================================ */
-
+  /* ⭐ SEARCH */
   searchBox.onkeyup = () => {
     const q = searchBox.value.toLowerCase();
     filteredData = allData.filter(row =>
-      (row["NSHD Variable Name"] || "").toLowerCase().includes(q) ||
+      row["NSHD Variable Name"].toLowerCase().includes(q) ||
       (row["Variable Label"] || "").toLowerCase().includes(q) ||
-      String(row["Showcase Field ID"] || "").toLowerCase().includes(q)
+      String(row["Showcase Field ID"]).toLowerCase().includes(q)
     );
     currentPage = 1;
     renderTable();
   };
 
+  /* ⭐ PAGE SIZE */
   pageSizeControl.onchange = () => {
     pageSize = parseInt(pageSizeControl.value);
     currentPage = 1;
     renderTable();
   };
 
-  /* ============================================================
-     LOAD JSON + START
-     ============================================================ */
-
+  /* ⭐ LOAD JSON */
   const htmlFile = window.location.pathname.split("/").pop();
   const baseName = htmlFile.replace(/\.html$/, "");
   const jsonFile = `${baseName}.json`;
@@ -144,11 +171,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ui.style.visibility = "visible";
 
       renderTable();
-    })
-    .catch(err => {
-      console.error("JSON load error:", err);
-      loading.style.display = "none";
-      ui.style.visibility = "visible";
     });
 
 });
