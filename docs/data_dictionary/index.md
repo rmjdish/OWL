@@ -334,10 +334,6 @@ classes: page-search-data-dictionary
   overflow: visible !important;
 }
 
-/* ⭐ FIX: Ensure header_custom glow wins */
-#basketTop.basket-glow {
-  box-shadow: 0 0 10px 4px rgba(128, 0, 255, 0.6) !important;
-}
 </style>
 
   <script src="/OWL/assets/js/basket_header.js"></script>
