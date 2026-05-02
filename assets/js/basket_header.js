@@ -133,6 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   basket.addEventListener("click", () => {
-    window.location = "/OWL/docs/baskets/";
+    window.location = "/OWL/docs/baskets/basket.html";
   });
 });
