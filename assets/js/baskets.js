@@ -1,4 +1,3 @@
-{% raw %}
 window.addEventListener("load", function () {
 
   let basketPage = 1;
@@ -185,4 +184,3 @@ window.addEventListener("load", function () {
   renderBasket();
 
 });
-{% endraw %}
