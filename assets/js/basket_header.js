@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `)
         .join("")}
-      <div class="view-full" onclick="window.location='/OWL/docs/baskets/'">
+      <div class="view-full" onclick="window.location='/OWL/docs/baskets/basket.html'">
         View full basket →
       </div>
     `;
