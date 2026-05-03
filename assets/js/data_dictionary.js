@@ -11,6 +11,7 @@ let currentPage = 1;
 let pageSize = 15;
 let sortColumn = null;
 let sortDirection = 1; // 1 = asc, -1 = desc
+let currentSearch = ""; // 🔹 track current text search
 
 const filterColumns = [
   "Topic",
@@ -37,52 +38,14 @@ fetch("NSHD_Data_Dictionary_Public.json")
 
     buildFilters();
     buildTableHeader();
-    applyAllFilters(); // unified pipeline
+    applyFilters(); // 🔹 initial filter + search pass
 
     // Hide loading, show UI
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("dataUI").style.display = "block";
 
-    updateBasketCountUI(); // global glow logic
+    updateBasketCountUI(); // global glow logic now runs
   });
-
-// ============================================================
-// Unified filtering pipeline
-// ============================================================
-
-function applyAllFilters() {
-  const q = document.getElementById("globalSearch").value.toLowerCase();
-
-  // Collect active dropdown filters
-  const activeFilters = {};
-  document.querySelectorAll("#filter-bar select").forEach(sel => {
-    if (sel.value !== "") activeFilters[sel.dataset.column] = sel.value;
-  });
-
-  // Apply BOTH dropdown filters + text search
-  filteredData = rawData.filter(row => {
-    // Dropdown filters
-    const matchesFilters = Object.entries(activeFilters)
-      .every(([col, val]) => row[col] === val);
-
-    if (!matchesFilters) return false;
-
-    // Text search
-    if (q.trim() !== "") {
-      const matchesSearch = Object.values(row)
-        .some(v => String(v).toLowerCase().includes(q));
-      return matchesSearch;
-    }
-
-    return true;
-  });
-
-  currentPage = 1;
-  renderTable();
-  renderPagination();
-  updateResultsCount();
-  updateAllFilters(); // keep dropdowns synced
-}
 
 // ============================================================
 // Filters
@@ -102,10 +65,40 @@ function buildFilters() {
       select.innerHTML += `<option value="${v}">${v}</option>`;
     });
 
-    select.addEventListener("change", applyAllFilters);
+    select.addEventListener("change", () => {
+      applyFilters();
+      updateAllFilters();
+    });
 
     bar.appendChild(select);
   });
+}
+
+function applyFilters() {
+  const activeFilters = {};
+  document.querySelectorAll("#filter-bar select").forEach(sel => {
+    if (sel.value !== "") activeFilters[sel.dataset.column] = sel.value;
+  });
+
+  // 1) Apply dropdown filters to rawData
+  let base = rawData.filter(row =>
+    Object.entries(activeFilters).every(([col, val]) => row[col] === val)
+  );
+
+  // 2) Apply current text search on top of filtered subset
+  const q = currentSearch.toLowerCase().trim();
+  if (q !== "") {
+    base = base.filter(row =>
+      Object.values(row).some(v => String(v).toLowerCase().includes(q))
+    );
+  }
+
+  filteredData = base;
+
+  currentPage = 1;
+  renderTable();
+  renderPagination();
+  updateResultsCount();
 }
 
 function updateAllFilters() {
@@ -172,7 +165,11 @@ function updateSortIcons() {
 // Global search, page size, reset
 // ============================================================
 
-document.getElementById("globalSearch").addEventListener("input", applyAllFilters);
+document.getElementById("globalSearch").addEventListener("input", e => {
+  currentSearch = e.target.value || "";
+  applyFilters();      // 🔹 re-run filters + search together
+  updateAllFilters();  // 🔹 keep dropdown options in sync with current subset
+});
 
 document.getElementById("pageSize").addEventListener("change", e => {
   pageSize = Number(e.target.value);
@@ -185,9 +182,20 @@ document.getElementById("pageSize").addEventListener("change", e => {
 document.getElementById("resetFiltersBtn").addEventListener("click", resetAllFilters);
 
 function resetAllFilters() {
-  document.querySelectorAll("#filter-bar select").forEach(sel => sel.value = "");
+  document.querySelectorAll("#filter-bar select").forEach(sel => {
+    sel.value = "";
+  });
+
   document.getElementById("globalSearch").value = "";
-  applyAllFilters();
+  currentSearch = ""; // 🔹 clear search state
+
+  filteredData = [...rawData];
+  currentPage = 1;
+
+  updateAllFilters();
+  renderTable();
+  renderPagination();
+  updateResultsCount();
 }
 
 // ============================================================
@@ -216,7 +224,7 @@ function buildTableHeader() {
       <span class="header-label">Add variable</span>
     </div>
   `;
-  headerRow.appendChild(thSelect);
+  headerRow.appendChild(thSelect); // ⭐ FIXED duplicate append
 
   // Sortable headers
   tableColumns.forEach(col => {
@@ -309,7 +317,7 @@ function renderTable() {
     body.appendChild(tr);
   });
 
-  // Glow updates after add/remove
+  // ⭐ ensure glow updates after add/remove
   document.querySelectorAll(".row-select").forEach(cb => {
     cb.addEventListener("change", e => {
       const varName = e.target.dataset.varName;
@@ -322,7 +330,7 @@ function renderTable() {
         removeFromBasket(varName);
       }
 
-      updateBasketCountUI();
+      updateBasketCountUI(); // ⭐ global glow logic
     });
   });
 
@@ -402,4 +410,3 @@ function downloadFilteredCSV() {
 
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
-  
