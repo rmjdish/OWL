@@ -76,7 +76,6 @@ classes: home-page
 
     <section class="search-methods">
 
-      <!-- GLOBAL SITE SEARCH -->
       <h2>1. Global Site Search</h2>
       <p>
         The global site search is the fastest way to navigate the entire documentation set when you are looking for a specific concept, page, or keyword. Located in the site header, this search bar uses a pre‑built Lunr.js index to scan all page titles, headings, and body text across the whole Just the Docs site. This makes it ideal for broad discovery, especially when you are unsure which section contains the information you need. Because the search index is generated automatically during site build, results appear instantly as you type, without requiring any server‑side processing. This ensures consistently fast performance, even on large documentation sites.
@@ -85,7 +84,6 @@ classes: home-page
         Global search is particularly useful when you want to jump directly to a known topic or when you need to explore multiple areas of the documentation at once. For example, searching for “blood pressure” will return pages from the Data Dictionary, variable metadata, methodology notes, and any related guidance pages. This makes it a powerful tool for users who prefer a keyword‑driven approach rather than navigating through menus or categories. Because it searches the entire site, it is the best method for locating high‑level explanations, conceptual overviews, and cross‑cutting documentation that may not appear in dataset‑specific tools.
       </p>
 
-      <!-- DATA DICTIONARY SEARCH -->
       <h2>2. Data Dictionary Search</h2>
       <p>
         The Data Dictionary search is designed specifically for exploring NSHD variables and their associated metadata. Unlike the global site search, which scans documentation pages, this search operates directly on the structured dataset. It examines variable names, labels, descriptions, categories, and all metadata fields, making it highly effective for identifying variables based on keywords or partial matches. This method is ideal for researchers who need to locate variables related to a specific concept, measurement, or domain. Because the search is applied to the dataset itself, it can surface variables that may not be mentioned explicitly in the written documentation.
@@ -94,7 +92,6 @@ classes: home-page
         One of the strengths of the Data Dictionary search is its ability to work in combination with the filter panel. Users can apply topic or subtopic filters and then refine the results further using text search. This layered approach allows for precise narrowing of the dataset, ensuring that only variables matching all criteria are displayed. The search updates instantly as you type, providing immediate feedback and helping you explore the dataset interactively. This makes it especially valuable when working with large variable collections, where manual browsing would be time‑consuming. Overall, the Data Dictionary search is the most powerful method for detailed variable‑level exploration.
       </p>
 
-      <!-- CATEGORY BROWSING -->
       <h2>3. Category‑Based Browsing</h2>
       <p>
         Category‑based browsing provides a structured, hierarchical way to explore the dataset without relying on keywords. Variables are grouped into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer to navigate conceptually, especially when they are not searching for a specific variable name but instead want to understand the broader structure of the dataset. By expanding categories and subcategories, users can quickly see which variables belong to each domain and how different areas of the dataset relate to one another.
@@ -103,7 +100,6 @@ classes: home-page
         This browsing method is particularly helpful for new users who are still learning how the dataset is organised. It allows them to explore related variables within a domain, identify patterns, and gain a clearer understanding of the dataset’s thematic structure. Category‑based browsing also supports exploratory research, where users may not yet know which variables are relevant but want to scan the available options. Because it presents variables in a logical, curated order, it reduces the cognitive load compared to keyword search and helps users discover variables they might not have known to search for directly.
       </p>
 
-      <!-- POPULAR VARIABLES -->
       <h2>4. Popular Variables</h2>
       <p>
         The Popular Variables tool provides a data‑driven way to explore the variables most frequently selected by researchers across recent projects. Instead of relying on keywords or categories, this method highlights variables that have been added to baskets most often, offering insight into which measures are commonly used, trusted, or considered essential within the research community. This can be especially useful for new users who want to understand which variables are widely adopted or for experienced users who want to ensure they are not overlooking commonly used measures. The Popular Variables table includes counts, labels, and direct links to metadata pages, making it easy to explore each variable in more detail.
@@ -136,24 +132,17 @@ html {
 }
 
 /* -----------------------------------------
-   HOME PAGE — THEME MATCHED STYLING
+   HOME PAGE — FIXED LAYOUT + THEME
    ----------------------------------------- */
 
 .home-page {
-  padding-bottom: 30px !important;
   max-width: 900px;
   margin: 0 auto;
-  margin-right: 300px !important;
+  padding-right: 300px; /* <-- FIX: reserve space for sidebar */
   position: relative;
 }
 
-/* Remove margin when sidebar is hidden */
-@media (max-width: 1100px) {
-  .home-page {
-    margin-right: 0 !important;
-  }
-
-/* HERO BANNER (same width as content) */
+/* HERO BANNER */
 .hero-banner {
   background: linear-gradient(135deg,
     #E8F5E9,
@@ -165,7 +154,6 @@ html {
   padding: 26px 30px;
   margin-bottom: 28px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-  text-align: left;
 }
 
 .hero-banner h1 {
@@ -181,9 +169,7 @@ html {
   color: #333;
 }
 
-/* ========================= */
-/* SIDEBAR SUMMARY           */
-/* ========================= */
+/* SIDEBAR SUMMARY */
 .sidebar-summary {
   position: fixed;
   right: 40px;
@@ -221,7 +207,6 @@ html {
   margin-bottom: 8px;
 }
 
-/* shift bullets/links inward */
 .sidebar-summary a {
   display: block;
   padding: 4px 8px;
@@ -231,7 +216,6 @@ html {
   font-size: 14px;
 }
 
-/* hover + active state */
 .sidebar-summary a:hover {
   background: rgba(255,255,255,0.6);
   text-decoration: underline;
@@ -243,16 +227,17 @@ html {
   font-weight: 700;
 }
 
-/* Hide sidebar on smaller screens */
+/* Hide sidebar on mobile */
 @media (max-width: 1100px) {
   .sidebar-summary {
     display: none;
   }
+  .home-page {
+    padding-right: 0 !important;
+  }
 }
 
-/* ========================= */
-/* SECTION CARDS             */
-/* ========================= */
+/* SECTION CARDS */
 .home-section {
   background: #faf7ff;
   border: 1px solid rgba(0,0,0,0.06);
@@ -295,36 +280,26 @@ html {
 </style>
 
 <script>
-// Active section highlighting for sidebar
+// Active section highlighting
 document.addEventListener('DOMContentLoaded', function () {
   const sections = document.querySelectorAll('.home-section[id]');
   const links = document.querySelectorAll('.sidebar-link');
 
-  if (!('IntersectionObserver' in window)) return;
-
-  const mapIdToLink = {};
+  const map = {};
   links.forEach(link => {
-    const href = link.getAttribute('href');
-    if (href && href.startsWith('#')) {
-      mapIdToLink[href.substring(1)] = link;
-    }
+    const id = link.getAttribute('href').substring(1);
+    map[id] = link;
   });
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       const id = entry.target.id;
-      const link = mapIdToLink[id];
-      if (!link) return;
-
       if (entry.isIntersecting) {
         links.forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
+        map[id].classList.add('active');
       }
     });
-  }, {
-    root: null,
-    threshold: 0.4
-  });
+  }, { threshold: 0.4 });
 
   sections.forEach(section => observer.observe(section));
 });
