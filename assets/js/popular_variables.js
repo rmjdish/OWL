@@ -51,32 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
     let sortAsc = true;
     let pageSize = 15;
     let currentPage = 1;
-    let labelFilterValue = "";   // ⭐ NEW
 
     const tbody = document.querySelector("#vars-table tbody");
     const resultsCount = document.getElementById("resultsCount");
     const pageSizeControl = document.getElementById("pageSize");
-
-    // ⭐ Populate label filter dropdown
-    populateLabelFilter(data);
-
-    function populateLabelFilter(data) {
-      const select = document.getElementById("labelFilter");
-      const unique = [...new Set(data.map(r => r.label))].sort();
-
-      unique.forEach(label => {
-        const opt = document.createElement("option");
-        opt.value = label;
-        opt.textContent = label;
-        select.appendChild(opt);
-      });
-
-      select.addEventListener("change", () => {
-        labelFilterValue = select.value;
-        currentPage = 1;
-        renderTable();
-      });
-    }
 
     // Page size change
     pageSizeControl.onchange = () => {
@@ -87,27 +65,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ⭐ RENDER TABLE
     function renderTable() {
-      let working = [...data];
-
-      // ⭐ Apply label filter BEFORE sorting + pagination
-      if (labelFilterValue) {
-        working = working.filter(row => row.label === labelFilterValue);
-      }
+      let sorted = [...data];
 
       // Sorting
       if (sortColumn) {
-        working.sort((a, b) => {
+        sorted.sort((a, b) => {
           if (a[sortColumn] < b[sortColumn]) return sortAsc ? -1 : 1;
           if (a[sortColumn] > b[sortColumn]) return sortAsc ? 1 : -1;
           return 0;
         });
       }
 
-      const totalRows = working.length;
+      const totalRows = sorted.length;
       const totalPages = Math.ceil(totalRows / pageSize);
 
       const start = (currentPage - 1) * pageSize;
-      const pageRows = working.slice(start, start + pageSize);
+      const pageRows = sorted.slice(start, start + pageSize);
 
       resultsCount.textContent = `Showing ${totalRows} results`;
 
