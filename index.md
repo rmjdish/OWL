@@ -1,11 +1,16 @@
----
-layout: default
-title: Home
-nav_order: 1
+_order: 1
 classes: home-page
 ---
 
 <div class="home-page">
+
+  <!-- ========================= -->
+  <!-- HERO BANNER               -->
+  <!-- ========================= -->
+  <div class="hero-banner">
+    <h1>Welcome to the NSHD Data Dictionary</h1>
+    <p>Explore variables, metadata, and documentation for the NSHD study.</p>
+  </div>
 
   <!-- ========================= -->
   <!-- SIDEBAR SUMMARY           -->
@@ -13,11 +18,11 @@ classes: home-page
   <aside class="sidebar-summary">
     <h3>On this page</h3>
     <ul>
-      <li><a href="#about">About This Resource</a></li>
-      <li><a href="#coverage">Data Coverage</a></li>
-      <li><a href="#howto">How to Use This Site</a></li>
-      <li><a href="#search">Search Methods</a></li>
-      <li><a href="#access">Access & Permissions</a></li>
+      <li><a href="#about"   class="sidebar-link">📘 About This Resource</a></li>
+      <li><a href="#coverage" class="sidebar-link">📊 Data Coverage</a></li>
+      <li><a href="#howto"   class="sidebar-link">🧭 How to Use This Site</a></li>
+      <li><a href="#search"  class="sidebar-link">🔍 Search Methods</a></li>
+      <li><a href="#access"  class="sidebar-link">🔐 Access & Permissions</a></li>
     </ul>
   </aside>
 
@@ -122,6 +127,11 @@ classes: home-page
 </div>
 
 <style>
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
 /* -----------------------------------------
    HOME PAGE — THEME MATCHED STYLING
    ----------------------------------------- */
@@ -129,7 +139,36 @@ classes: home-page
 .home-page {
   padding-bottom: 30px !important;
   max-width: 900px;
+  margin: 0 auto;
   position: relative;
+}
+
+/* HERO BANNER (same width as content) */
+.hero-banner {
+  background: linear-gradient(135deg,
+    #E8F5E9,
+    #F3E5F5,
+    #FFF3E0,
+    #E0F7FA
+  );
+  border-radius: 12px;
+  padding: 26px 30px;
+  margin-bottom: 28px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  text-align: left;
+}
+
+.hero-banner h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #2b004d;
+}
+
+.hero-banner p {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
 }
 
 /* ========================= */
@@ -139,12 +178,17 @@ classes: home-page
   position: fixed;
   right: 40px;
   top: 140px;
-  width: 220px;
-  background: #faf7ff;
+  width: 230px;
+  background: linear-gradient(135deg,
+    #E8F5E9,
+    #F3E5F5,
+    #FFF3E0,
+    #E0F7FA
+  );
   border: 1px solid rgba(0,0,0,0.08);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 16px 18px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 
 .sidebar-summary h3 {
@@ -167,17 +211,29 @@ classes: home-page
   margin-bottom: 8px;
 }
 
+/* shift bullets/links inward */
 .sidebar-summary a {
+  display: block;
+  padding: 4px 8px;
+  border-radius: 6px;
   color: #4b067a;
   text-decoration: none;
   font-size: 14px;
 }
 
+/* hover + active state */
 .sidebar-summary a:hover {
+  background: rgba(255,255,255,0.6);
   text-decoration: underline;
 }
 
-/* Hide sidebar on mobile */
+.sidebar-summary a.active {
+  background: rgba(255,255,255,0.9);
+  border-left: 3px solid #6a0dad;
+  font-weight: 700;
+}
+
+/* Hide sidebar on smaller screens */
 @media (max-width: 1100px) {
   .sidebar-summary {
     display: none;
@@ -227,5 +283,41 @@ classes: home-page
   color: #333 !important;
 }
 </style>
+
+<script>
+// Active section highlighting for sidebar
+document.addEventListener('DOMContentLoaded', function () {
+  const sections = document.querySelectorAll('.home-section[id]');
+  const links = document.querySelectorAll('.sidebar-link');
+
+  if (!('IntersectionObserver' in window)) return;
+
+  const mapIdToLink = {};
+  links.forEach(link => {
+    const href = link.getAttribute('href');
+    if (href && href.startsWith('#')) {
+      mapIdToLink[href.substring(1)] = link;
+    }
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.id;
+      const link = mapIdToLink[id];
+      if (!link) return;
+
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, {
+    root: null,
+    threshold: 0.4
+  });
+
+  sections.forEach(section => observer.observe(section));
+});
+</script>
 
 <script src="/OWL/assets/js/basket_header.js"></script>
