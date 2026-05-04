@@ -8,7 +8,6 @@ classes: page-baskets
 
 <div class="page-baskets">
 
-
 <h1>Variable Basket</h1>
 
 <p class="basket-info">
@@ -35,16 +34,22 @@ classes: page-baskets
   <button id="downloadBasketCsvBtn">Download Basket (CSV)</button>
 </div>
 
-
 <table id="basketTable">
-	<thead>
-	  <tr>
-		<th>Remove</th>	
-		<th data-sort="varName">NSHD Variable Name</th>
-		<th data-sort="label">Variable label</th>
-	  </tr>
-	</thead>
-  <tbody></tbody>
+  <thead>
+    <tr>
+      <!-- FIXED: Remove column now has its own class -->
+      <th class="remove-col">Remove</th>
+      <th data-sort="varName">NSHD Variable Name</th>
+      <th data-sort="label">Variable label</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <!-- JS will insert rows here.
+         Each row MUST include:
+         <td class="remove-col">[button]</td>
+    -->
+  </tbody>
 </table>
 
 <!-- Pagination (bottom) -->
