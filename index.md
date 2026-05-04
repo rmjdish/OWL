@@ -103,8 +103,8 @@ classes: home-page
         Because the Popular Variables list is generated from real usage patterns, it serves as a practical guide for identifying high‑value variables. Users can sort the table, adjust page size, and filter results to focus on specific areas of interest. This method is particularly helpful when planning a new project, as it provides a quick overview of variables that are frequently included in analyses. It also complements the other search methods by offering a usage‑based perspective rather than a structural or keyword‑based one. For many users, the Popular Variables tool becomes a starting point for exploring the dataset, helping them quickly identify reliable and widely used measures.
       </p>
 
-      <!-- 5. GLOBAL SITE SEARCH -->
-      <h2>5. Global Site Search</h2>
+      <!-- 4. GLOBAL SITE SEARCH -->
+      <h2>4. Global Site Search</h2>
       <p>
         The global site search is the fastest way to navigate the entire documentation set when you are looking for a specific concept, page, or keyword. Located in the site header, this search bar uses a pre‑built Lunr.js index to scan all page titles, headings, and body text across the whole Just the Docs site. This makes it ideal for broad discovery, especially when you are unsure which section contains the information you need. Because the search index is generated automatically during site build, results appear instantly as you type, without requiring any server‑side processing. This ensures consistently fast performance, even on large documentation sites.
       </p>
