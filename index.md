@@ -143,6 +143,7 @@ html {
   padding-bottom: 30px !important;
   max-width: 900px;
   margin: 0 auto;
+  margin-right: 300px !important;
   position: relative;
 }
 
