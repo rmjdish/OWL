@@ -11,8 +11,10 @@ classes: page-baskets
 
 <h1>Variable Basket</h1>
 
-<p>
-  You have <span id="basketCountPage">0</span> variables in your basket.
+<p class="basket-info">
+  You have <span id="basketCountPage" class="basket-count">0</span> variables in your basket.
+  <br>
+  <span class="basket-warning">Please make sure you do not have more than 500 variables in a single basket. It is fine for projects to have multiple baskets</span>
 </p>
 
 <!-- Results count box -->
