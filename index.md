@@ -139,7 +139,7 @@ html {
   max-width: 900px;
   margin-left: 0; /* LEFT ALIGN */
   margin-right: 0;
-  padding-right: 300px; /* reserve space for sidebar */
+  padding-right: 0px; /* reserve space for sidebar */
   position: relative;
 }
 
