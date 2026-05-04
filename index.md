@@ -7,6 +7,36 @@ classes: home-page
 
 <div class="home-page">
 
+  <div class="home-section">
+    <h2>About This Resource</h2>
+    <p>...</p>
+  </div>
+
+  <div class="home-section">
+    <h2>Data Coverage</h2>
+    <p>...</p>
+  </div>
+
+  <div class="home-section">
+    <h2>How to Use This Site</h2>
+    <p>...</p>
+  </div>
+
+  <div class="home-section">
+    <h2>Search Methods</h2>
+    <section class="search-methods">
+      <!-- your four methods stay exactly as they are -->
+    </section>
+  </div>
+
+  <div class="home-section">
+    <h2>Access and Permissions</h2>
+    <p>...</p>
+  </div>
+
+</div>
+
+
   <h2>About This Resource</h2>
   <p>
     The NSHD Data Dictionary is a comprehensive metadata browser for the 1946 British birth cohort study.
@@ -92,34 +122,57 @@ classes: home-page
 
 <style>
 /* -----------------------------------------
-   HOME PAGE — SCOPED STYLING ONLY FOR THIS PAGE
+   HOME PAGE — THEME MATCHED STYLING
    ----------------------------------------- */
 
-.home-page h1 {
-  font-size: 28px !important;
-  font-weight: bold !important;
-  color: #333 !important;
-  margin-top: 10px !important;
-  text-decoration: underline !important;
+.home-page {
+  padding-bottom: 30px !important;
+  max-width: 900px;
+}
+
+/* Section “cards” */
+.home-section {
+  background: #faf7ff; /* faint pastel purple */
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 8px;
+  padding: 22px 26px;
+  margin-bottom: 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* Section headers */
+.home-section h2 {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  color: #3a0066 !important;
+  margin-top: 0 !important;
+  margin-bottom: 14px !important;
+  border-bottom: 2px solid #6a0dad !important; /* purple underline */
+  padding-bottom: 6px !important;
   text-underline-offset: 4px !important;
 }
 
-.home-page h2 {
-  font-size: 22px !important;
-  font-weight: bold !important;
-  color: #444 !important;
-  margin-top: 30px !important;
-}
-
-.home-page p {
-  max-width: 750px !important;
+/* Paragraphs */
+.home-section p {
+  max-width: 780px !important;
   line-height: 1.65 !important;
-  margin-bottom: 15px !important;
+  margin-bottom: 14px !important;
   color: #333 !important;
 }
 
-.home-page {
-  padding-bottom: 20px !important;
+/* Search methods sub‑headers */
+.search-methods h2 {
+  font-size: 20px !important;
+  margin-top: 22px !important;
+  color: #4b067a !important;
+  border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+  padding-bottom: 4px !important;
+}
+
+/* Search method paragraphs */
+.search-methods p {
+  margin-bottom: 14px !important;
+  color: #333 !important;
 }
 </style>
 
