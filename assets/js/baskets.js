@@ -82,29 +82,41 @@ window.addEventListener("load", function () {
     basket.slice(start, end).forEach(function (item) {
       const tr = document.createElement("tr");
 
+      // ============================================================
+      // ⭐ REMOVE BUTTON — now uses global removeFromBasket()
+      // ============================================================
       const tdRemove = document.createElement("td");
       const btn = document.createElement("button");
       btn.textContent = "Remove";
-      btn.addEventListener("click", function () {
-        let b = loadBasket();
-        b = b.filter(x => x.varName !== item.varName);
-        saveBasket(b);
 
+      btn.addEventListener("click", function () {
+
+        // ⭐ Use global remove function (this triggers shake animation)
+        removeFromBasket(item.varName);
+
+        // Recalculate pagination if needed
+        const b = loadBasket();
         const maxPage = Math.ceil(b.length / basketPageSize) || 1;
         if (basketPage > maxPage) basketPage = maxPage;
 
+        // Refresh UI
         renderBasket();
         renderBasketPagination();
         updateBasketResultsCount();
+
+        // ⭐ Ensure glow + shake + count update runs
         updateBasketCountUI();
       });
+
       tdRemove.appendChild(btn);
       tr.appendChild(tdRemove);
 
+      // Variable name
       const tdName = document.createElement("td");
       tdName.textContent = item.varName;
       tr.appendChild(tdName);
 
+      // Label
       const tdLabel = document.createElement("td");
       tdLabel.textContent = item.label || "";
       tr.appendChild(tdLabel);
@@ -116,18 +128,17 @@ window.addEventListener("load", function () {
     updateBasketResultsCount();
   }
 
-	function clearBasket() {
-	  const confirmed = confirm("Are you sure you want to clear your basket?");
+  function clearBasket() {
+    const confirmed = confirm("Are you sure you want to clear your basket?");
+    if (!confirmed) return;
 
-	  if (!confirmed) return;
-
-	  saveBasket([]);
-	  basketPage = 1;
-	  renderBasket();
-	  renderBasketPagination();
-	  updateBasketResultsCount();
-	  updateBasketCountUI();
-	}
+    saveBasket([]);
+    basketPage = 1;
+    renderBasket();
+    renderBasketPagination();
+    updateBasketResultsCount();
+    updateBasketCountUI();
+  }
 
   function downloadBasketCSV() {
     const basket = loadBasket();
