@@ -147,6 +147,12 @@ html {
   position: relative;
 }
 
+/* Remove margin when sidebar is hidden */
+@media (max-width: 1100px) {
+  .home-page {
+    margin-right: 0 !important;
+  }
+
 /* HERO BANNER (same width as content) */
 .hero-banner {
   background: linear-gradient(135deg,
