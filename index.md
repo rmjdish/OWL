@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Home page
+title: Home
 nav_order: 1
 classes: home-page
 ---
