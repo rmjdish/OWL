@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Condor</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet">
+
+<style>
+/* ------------------------------
+   GLOBAL PAGE STYLES
+--------------------------------*/
+body {
+  background: white;
+  font-family: Montserrat, sans-serif;
+  font-size: 0.9vw;
+  margin: 0;
+  padding: 0 360px 40px 40px; /* space for wider sidebar */
+  color: black;
+  position: relative;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Vertical divider OUTSIDE sidebar */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  right: 360px; /* sidebar (300px) + padding */
+  width: 1px;
+  height: 100vh;
+  background: rgba(0,0,0,0.08);
+}
+
+/* Back to top button */
+#back-to-top {
+  position: fixed;
+  bottom: 30px;
+  right: 40px;
+  background: #F3E5F5;
+  color: #2e2d62;
+  padding: 10px 14px;
+  border-radius: 50%;
+  font-size: 1.4vw;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  display: none;
+  transition: all 0.2s ease;
+}
+#back-to-top:hover {
+  background: #E8F5E9;
+}
+
+/* ------------------------------
+   GRADIENT HEADER BANNER
+--------------------------------*/
+.nshd-banner {
+  background: linear-gradient(90deg, #F3E5F5 0%, #FDE2F3 40%, #FFF3E0 100%);
+  padding: 14px 22px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  margin: 60px 0 20px 0;
+}
+
+.nshd-banner img {
+  max-height: 65px;
+  width: auto;
+}
+
+.nshd-banner h1 {
+  font-size: 1.9vw;
+  margin: 0;
+  color: #2e2d62;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ------------------------------
+   SIDEBAR SUMMARY (RIGHT SIDE)
+--------------------------------*/
+.sidebar-summary {
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  width: 300px; /* widened */
+  padding: 15px 20px;
+  background: linear-gradient(180deg, #F3E5F5, #FFF3E0);
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-size: 0.9vw;
+}
+
+.sidebar-summary h3 {
+  margin-top: 0;
+  color: #2e2d62;
+  font-size: 1vw;
+  font-weight: 600;
+}
+
+.sidebar-summary ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin: 0;
+}
+
+.sidebar-summary li {
+  margin-bottom: 6px;
+}
+
+.sidebar-summary li a {
+  display: inline-block;
+  padding: 4px 2px;
+  color: #2e2d62;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.sidebar-summary li a:hover {
+  background: rgba(255,255,255,0.6);
+  border-left: 3px solid #9c27b0;
+}
+
+.sidebar-summary li a.active {
+  background: rgba(255,255,255,0.9);
+  border-left: 3px solid #9c27b0;
+  font-weight: 600;
+}
+
+/* ------------------------------
+   TABLE STYLING (PASTEL THEME)
+--------------------------------*/
+.results table {
+  width: 90%; /* reduced width */
+  border-collapse: collapse;
+  margin: 1em 0;
+  table-layout: fixed;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e0d4eb;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Column colours */
+.results table td:first-child,
+.results table th:first-child {
+  background: #F3E5F5; /* lilac */
+}
+
+.results table td:nth-child(2),
+.results table th:nth-child(2) {
+  background: #E8F5E9; /* mint */
+  max-width: 70%; /* allow shrinking */
+  width: auto;
+}
+
+/* Hover effect */
+.results table tr:hover td {
+  background: rgba(0,0,0,0.04);
+  transition: background 0.15s ease;
+}
+
+.results table th {
+  color: #2e2d62;
+  padding: 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #d4c2e3;
+}
+
+.results table td {
+  padding: 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+/* ------------------------------
+   FIRST COLUMN WIDTHS (C1)
+--------------------------------*/
+#table-metadata td:first-child { width: 10% !important; }
+#table-associated td:first-child { width: 17% !important; }
+#table-categories td:first-child { width: 20% !important; }
+#table-values th:first-child,
+#table-values td:first-child { width: 10% !important; }
+
+/* ------------------------------
+   SECTION TITLES
+--------------------------------*/
+h2 {
+  margin-top: 40px;
+  color: #2e2d62;
+  padding-bottom: 4px;
+  border-bottom: 3px solid transparent;
+  border-image: linear-gradient(90deg, #F3E5F5, #FDE2F3, #FFF3E0) 1;
+  position: relative;
+}
+
+/* Print stylesheet */
+@media print {
+  .sidebar-summary,
+  #back-to-top {
+    display: none !important;
+  }
+  body {
+    padding: 0;
+  }
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="back-to-top">⬆️</div>
+
+<!-- SIDEBAR SUMMARY -->
+<div class="sidebar-summary">
+  <h3>On this page</h3>
+  <ul>
+    <li>📄 <a href="#variable-metadata">Variable Metadata</a></li>
+    <li>🔗 <a href="#linked-variables">Linked & Longitudinal</a></li>
+    <li>📁 <a href="#associated-documents">Associated Documents</a></li>
+    <li>🧬 <a href="#category-memberships">Category Memberships</a></li>
+    <li>🏷️ <a href="#value-labels">Value Labels</a></li>
+    <li>📊 <a href="#frequency-distribution">Frequency Distribution</a></li>
+  </ul>
+</div>
+
+<!-- HEADER -->
+<div class="nshd-banner">
+  <img src="images/NSHDLogo.png" alt="NSHD Logo">
+  <h1>MRC National Survey of Health and Development</h1>
+  <img src="images/ukrimrc.png" alt="UKRI Logo">
+</div>
+
+<!-- PAGE CONTENT -->
+<div class="results">
+
+<h2 id="variable-metadata">Variable Metadata</h2>
+<table id="table-metadata">
+<tr>
+  <td><strong>Variable</strong></td>
+  <td>a1anttr_hbg99</td>
+</tr>
+<tr>
+  <td><strong>Field ID</strong></td>
+  <td><a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=31200">31200</a></td>
+</tr>
+</table>
+
+<h2 id="linked-variables">Linked and Longitudinal Variables</h2>
+<p>There are no associated variables.</p>
+
+<h2 id="associated-documents">Associated Documents</h2>
+<table id="table-associated">
+<tr>
+  <td>Questionnaires</td>
+  <td><a href="https://skylark.ucl.ac.uk/NSHD/exploring/nshd-questionnaires/" target="_blank">View</a></td>
+</tr>
+</table>
+
+<h2 id="category-memberships">Category Memberships</h2>
+<table id="table-categories">
+<tr>
+  <td>DNA samples [26]</td>
+  <td>Legacy Category</td>
+</tr>
+<tr>
+  <td>Genomics [303]</td>
+  <td>Genomic data derived from blood and saliva assays on the 1946 birth cohort.</td>
+</tr>
+</table>
+
+<h2 id="value-labels">Value Labels</h2>
+<table id="table-values">
+<tr>
+  <th>Value</th>
+  <th>Label</th>
+</tr>
+<tr>
+  <td>-9.0</td>
+  <td>Unknown</td>
+</tr>
+</table>
+
+<h2 id="frequency-distribution">Frequency Distribution For a1anttr_hbg99</h2>
+<p style="font-size: 1.25em;">Plots and statistics for this variable are hidden as the variable is highly sensitive.</p>
+
+</div>
+
+<!-- JS -->
+<script>
+/* Scroll spy */
+function updateActiveSection() {
+  const sections = document.querySelectorAll("h2[id]");
+  const midpoint = window.innerHeight / 2;
+  let current = "";
+
+  sections.forEach(sec => {
+    const rect = sec.getBoundingClientRect();
+    if (rect.top <= midpoint && rect.bottom >= midpoint) {
+      current = sec.id;
+    }
+  });
+
+  document.querySelectorAll(".sidebar-summary a").forEach(a => {
+    a.classList.toggle("active", a.getAttribute("href") === "#" + current);
+  });
+}
+
+/* Back to top button */
+window.addEventListener("scroll", () => {
+  const btn = document.getElementById("back-to-top");
+  btn.style.display = window.scrollY > 300 ? "block" : "none";
+});
+document.getElementById("back-to-top").onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+document.addEventListener("scroll", updateActiveSection);
+document.addEventListener("DOMContentLoaded", updateActiveSection);
+window.addEventListener("resize", updateActiveSection);
+</script>
+
+</body>
+</html>
