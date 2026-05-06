@@ -301,7 +301,7 @@ function renderTable() {
         `;
       } else if (col === "NSHD Variable Name" && value !== "") {
         td.innerHTML = `
-          <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${value}"
+          <a href="https://rmjdish.github.io/OWL/docs/variable_metadata/${value}"
              target="_blank"
              class="field-link">
              ${value}
