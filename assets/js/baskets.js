@@ -111,10 +111,16 @@ window.addEventListener("load", function () {
       tdRemove.appendChild(btn);
       tr.appendChild(tdRemove);
 
-      // Variable name
-      const tdName = document.createElement("td");
-      tdName.textContent = item.varName;
-      tr.appendChild(tdName);
+	// ⭐ Variable name as link to metadata page
+	const tdName = document.createElement("td");
+	const link = document.createElement("a");
+
+	link.textContent = item.varName;
+	link.href = `https://rmjdish.github.io/OWL/docs/variable_metadata/${item.varName}.html`;
+	link.target = "_blank";  // optional: open in new tab
+
+	tdName.appendChild(link);
+	tr.appendChild(tdName);
 
       // Label
       const tdLabel = document.createElement("td");
