@@ -26,3 +26,31 @@ document.getElementById("back-to-top").onclick = () => window.scrollTo({ top: 0,
 document.addEventListener("scroll", updateActiveSection);
 document.addEventListener("DOMContentLoaded", updateActiveSection);
 window.addEventListener("resize", updateActiveSection);
+
+/* Rewrite Linked Variables table links */
+function rewriteLinkedVariableLinks() {
+  const table = document.querySelector("#linked-variables-table");
+  if (!table) return;
+
+  const rows = table.querySelectorAll("tr");
+
+  rows.forEach(row => {
+    const firstCell = row.querySelector("td");
+    if (!firstCell) return;
+
+    const link = firstCell.querySelector("a");
+    if (!link) return;
+
+    const variableName = link.textContent.trim();
+    if (!variableName) return;
+
+    // Build new URL
+    const newUrl = `https://rmjdish.github.io/OWL/docs/variable_metadata/${variableName}.html`;
+
+    // Update the link
+    link.href = newUrl;
+  });
+}
+
+document.addEventListener("DOMContentLoaded", rewriteLinkedVariableLinks);
+
