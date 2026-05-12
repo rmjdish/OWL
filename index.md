@@ -11,7 +11,7 @@ classes: home-page
   <!-- HERO BANNER               -->
   <!-- ========================= -->
   <div class="hero-banner">
-    <h1>Welcome to the NSHD Data Dictionary</h1>
+    <h1>Welcome to the National Survey of Health and Development (NSHD) Data Dictionary</h1>
     <p>Explore variables, metadata, and documentation for the NSHD study.</p>
   </div>
 
