@@ -13,7 +13,7 @@ classes: page-baskets
 <p class="basket-info">
   You have <span id="basketCountPage" class="basket-count">0</span> variables in your basket.
   <br>
-  <span class="basket-warning">Please make sure you do not have more than 500 variables in a single basket. It is fine for projects to have multiple baskets</span>
+  <span class="basket-warning">Please make sure you do not have more than 500 variables in a single basket. It is fine for projects to have multiple baskets.</span>
 </p>
 
 <!-- Results count box -->
