@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ${lastFive
         .map(i => `
           <div class="basket-preview-item">
-            <a href="https://rmjdish.github.io/data_dict/docs/variable_metadata/${i.varName}"
+            <a href="https://rmjdish.github.io/OWL/docs/variable_metadata/${i.varName}"
                target="_blank"
                class="field-link">
                ${i.varName}
