@@ -129,8 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
       <button ${currentPage === totalPages ? "disabled" : ""} data-dir="1">Next</button>
     `;
 
-    top.innerHTML    = html;
-    bottom.innerHTML = html;
+    top.querySelector(".pagination-controls").innerHTML = html;
+    bottom.querySelector(".pagination-controls").innerHTML = html;
 
     document.querySelectorAll("#paginationTop button, #paginationBottom button")
       .forEach(btn => {
