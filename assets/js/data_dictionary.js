@@ -12,6 +12,7 @@ let pageSize = 15;
 let sortColumn = null;
 let sortDirection = 1; // 1 = asc, -1 = desc
 let currentSearch = ""; // 🔹 track current text search
+let searchDebounce;
 
 const filterColumns = [
   "Topic",
