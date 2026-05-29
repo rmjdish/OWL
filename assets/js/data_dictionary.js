@@ -169,6 +169,12 @@ document.getElementById("globalSearch").addEventListener("input", e => {
   currentSearch = e.target.value || "";
   applyFilters();      // 🔹 re-run filters + search together
   // updateAllFilters();  // 🔹 keep dropdown options in sync with current subset
+
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    updateAllFilters();   // ⭐ update filters AFTER user stops typing
+  }, 300);
+
 });
 
 document.getElementById("pageSize").addEventListener("change", e => {
