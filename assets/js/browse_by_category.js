@@ -79,8 +79,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
     attachBasketEvents();
     updateSortIcons();
+	updateAddAllButtonLabel2();
     renderPagination(totalPages);
   }
+
+
+	/* ============================================================
+	   ADD/REMOVE ALL HELPERS
+	   ============================================================ */
+	function allVisibleRowsSelected2() {
+	  const start = (currentPage - 1) * pageSize;
+	  const end = start + pageSize;
+	  const visibleRows = filteredData.slice(start, end);
+
+	  return visibleRows.every(row => {
+		const varName = row["NSHD Variable Name"];
+		return varName && isInBasket(varName);
+	  });
+	}
+
+	function updateAddAllButtonLabel2() {
+	  const btn = document.getElementById("addAllBtn2");
+	  if (!btn) return;
+
+	  if (allVisibleRowsSelected2()) {
+		btn.textContent = "Remove all variables";
+		btn.classList.add("remove-mode");
+	  } else {
+		btn.textContent = "Add all variables";
+		btn.classList.remove("remove-mode");
+	  }
+	}
+
+
+
 
   /* ============================================================
      PAGINATION
