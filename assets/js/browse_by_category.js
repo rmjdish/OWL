@@ -103,10 +103,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	  if (!btn) return;
 
 	  if (allVisibleRowsSelected2()) {
-		btn.textContent = "Remove all variables";
+		btn.textContent = "Remove all visible variables";
 		btn.classList.add("remove-mode");
 	  } else {
-		btn.textContent = "Add all variables";
+		btn.textContent = "Add all visible variables";
 		btn.classList.remove("remove-mode");
 	  }
 	}
