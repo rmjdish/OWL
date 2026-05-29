@@ -141,6 +141,33 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
+
+	const addBtn = document.getElementById("addAllBtn2");
+	if (addBtn) {
+		addBtn.onclick = () => {
+			const start = (currentPage - 1) * pageSize;
+			const end = start + pageSize;
+			const visibleRows = filteredData.slice(start, end);
+
+			if (allVisibleRowsSelected2()) {
+				visibleRows.forEach(row => removeFromBasket(row["NSHD Variable Name"]));
+			} else {
+				visibleRows.forEach(row => {
+					const name = row["NSHD Variable Name"];
+					const label = row["Variable Label"] || "";
+					addToBasket(name, label);
+				});
+			}
+
+			updateBasketCountUI();
+			renderTable();
+		};
+	}
+
+
+
+
+
   /* ============================================================
      SORT ICONS
      ============================================================ */
