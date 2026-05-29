@@ -420,11 +420,16 @@ document.getElementById("downloadCsvBtn")
   
 
 // ============================================================
-// Add All to Basket
+// Add All (Visible Rows Only) to Basket
 // ============================================================
 
 document.getElementById("addAllBtn").addEventListener("click", () => {
-  filteredData.forEach(row => {
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+
+  const visibleRows = filteredData.slice(start, end);
+
+  visibleRows.forEach(row => {
     const varName = row["NSHD Variable Name"];
     const label = row["Variable Label"] || "";
     if (varName) addToBasket(varName, label);
