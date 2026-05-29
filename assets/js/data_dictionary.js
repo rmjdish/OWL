@@ -168,7 +168,7 @@ function updateSortIcons() {
 document.getElementById("globalSearch").addEventListener("input", e => {
   currentSearch = e.target.value || "";
   applyFilters();      // 🔹 re-run filters + search together
-  updateAllFilters();  // 🔹 keep dropdown options in sync with current subset
+  // updateAllFilters();  // 🔹 keep dropdown options in sync with current subset
 });
 
 document.getElementById("pageSize").addEventListener("change", e => {
