@@ -417,3 +417,19 @@ function downloadFilteredCSV() {
 
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
+  
+
+// ============================================================
+// Add All to Basket
+// ============================================================
+
+document.getElementById("addAllBtn").addEventListener("click", () => {
+  filteredData.forEach(row => {
+    const varName = row["NSHD Variable Name"];
+    const label = row["Variable Label"] || "";
+    if (varName) addToBasket(varName, label);
+  });
+
+  updateBasketCountUI();
+  renderTable(); // refresh checkboxes
+});
