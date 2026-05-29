@@ -37,6 +37,7 @@ classes: page-search-data-dictionary
           <option value="100">100</option>
         </select>
         <button id="resetFiltersBtn">Reset Filters</button>
+		<button id="addAllBtn" class="add-all-btn">Add All to Basket</button>
         <button id="downloadCsvBtn" class="download-btn">Download Results (CSV)</button>
         <a href="NSHD_Data_Dictionary-Public.xlsx" download class="download-excel-btn">
           Download Data Dictionary
