@@ -264,6 +264,34 @@ function buildTableHeader() {
 }
 
 // ============================================================
+// Add/Remove All Helpers
+// ============================================================
+
+function allVisibleRowsSelected() {
+  const start = (currentPage - 1) * pageSize;
+  const end = start + pageSize;
+  const visibleRows = filteredData.slice(start, end);
+
+  return visibleRows.every(row => {
+    const varName = row["NSHD Variable Name"];
+    return varName && isInBasket(varName);
+  });
+}
+
+function updateAddAllButtonLabel() {
+  const btn = document.getElementById("addAllBtn");
+
+  if (allVisibleRowsSelected()) {
+    btn.textContent = "Remove all variables";
+    btn.classList.add("remove-mode");
+  } else {
+    btn.textContent = "Add all variables";
+    btn.classList.remove("remove-mode");
+  }
+}
+
+
+// ============================================================
 // Render table
 // ============================================================
 
@@ -340,7 +368,7 @@ function renderTable() {
       updateBasketCountUI(); // ⭐ global glow logic
     });
   });
-
+  updateAddAllButtonLabel();
   document.getElementById("myTable").style.tableLayout = "fixed";
 }
 
@@ -420,21 +448,29 @@ document.getElementById("downloadCsvBtn")
   
 
 // ============================================================
-// Add All (Visible Rows Only) to Basket
+// Add/Remove All Visible Rows
 // ============================================================
 
 document.getElementById("addAllBtn").addEventListener("click", () => {
   const start = (currentPage - 1) * pageSize;
   const end = start + pageSize;
-
   const visibleRows = filteredData.slice(start, end);
 
-  visibleRows.forEach(row => {
-    const varName = row["NSHD Variable Name"];
-    const label = row["Variable Label"] || "";
-    if (varName) addToBasket(varName, label);
-  });
+  if (allVisibleRowsSelected()) {
+    // ⭐ REMOVE ALL VISIBLE
+    visibleRows.forEach(row => {
+      const varName = row["NSHD Variable Name"];
+      if (varName) removeFromBasket(varName);
+    });
+  } else {
+    // ⭐ ADD ALL VISIBLE
+    visibleRows.forEach(row => {
+      const varName = row["NSHD Variable Name"];
+      const label = row["Variable Label"] || "";
+      if (varName) addToBasket(varName, label);
+    });
+  }
 
   updateBasketCountUI();
-  renderTable(); // refresh checkboxes
+  renderTable(); // refresh checkboxes + button label
 });
