@@ -142,6 +142,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 
+	// ⭐ Reattach Add/Remove All button handler after pagination renders
 	const addBtn = document.getElementById("addAllBtn2");
 	if (addBtn) {
 		addBtn.onclick = () => {
@@ -150,7 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			const visibleRows = filteredData.slice(start, end);
 
 			if (allVisibleRowsSelected2()) {
-				visibleRows.forEach(row => removeFromBasket(row["NSHD Variable Name"]));
+				visibleRows.forEach(row =>
+					removeFromBasket(row["NSHD Variable Name"])
+				);
 			} else {
 				visibleRows.forEach(row => {
 					const name = row["NSHD Variable Name"];
@@ -160,7 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 
 			updateBasketCountUI();
-			renderTable();
+			renderTable(); // refresh table + button state
 		};
 	}
 
