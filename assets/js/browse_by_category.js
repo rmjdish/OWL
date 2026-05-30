@@ -92,6 +92,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	  const end = start + pageSize;
 	  const visibleRows = filteredData.slice(start, end);
 
+	  if (visibleRows.length === 0) return false; 
+
 	  return visibleRows.every(row => {
 		const varName = row["NSHD Variable Name"];
 		return varName && isInBasket(varName);
@@ -102,12 +104,25 @@ document.addEventListener("DOMContentLoaded", () => {
 	  const btn = document.getElementById("addAllBtn");
 	  if (!btn) return;
 
-	  if (allVisibleRowsSelected2()) {
+	  const start = (currentPage - 1) * pageSize;
+	  const end = start + pageSize;
+	  const visibleRows = filteredData.slice(start, end);
+
+	  if (visibleRows.length === 0) {
+		btn.textContent = "No visible variables to add";
+		btn.classList.remove("remove-mode");
+		btn.style.color = "black";
+		btn.disabled = true;
+	  } else if (allVisibleRowsSelected2()) {
 		btn.textContent = "Remove all visible variables";
 		btn.classList.add("remove-mode");
+		btn.style.color = "";
+		btn.disabled = false;
 	  } else {
 		btn.textContent = "Add all visible variables";
 		btn.classList.remove("remove-mode");
+		btn.style.color = "";
+		btn.disabled = false;
 	  }
 	}
 
