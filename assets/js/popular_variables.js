@@ -264,47 +264,45 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    renderTable();
-  } // end initUI
-
 	// ============================================================
 	// Download filtered CSV
 	// ============================================================
 
-	function downloadVisibleCSV() {
-	  const start = (currentPage - 1) * pageSize;
-	  const end = start + pageSize;
-	  const visibleRows = filteredData.slice(start, end);
-
-	  if (visibleRows.length === 0) {
-		alert("No visible rows to download.");
+	function downloadFilteredCSV() {
+	  if (!filteredData || filteredData.length === 0) {
+		alert("No data to download");
 		return;
 	  }
 
-	  const headers = ["NSHD Variable Name", "Variable Label", "Count"];
+	  const headers = Object.keys(filteredData[0]);
+	  let csvContent = headers.join(",") + "\n";
 
-	  let csv = headers.join(",") + "\n";
-
-	  visibleRows.forEach(row => {
-		const line = [
-		  `"${row.name.replace(/"/g, '""')}"`,
-		  `"${row.label.replace(/"/g, '""')}"`,
-		  row.count
-		].join(",");
-		csv += line + "\n";
+	  filteredData.forEach(row => {
+		const line = headers.map(h => {
+		  const value = row[h] ?? "";
+		  return `"${String(value).replace(/"/g, '""')}"`;
+		}).join(",");
+		csvContent += line + "\n";
 	  });
 
-	  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+	  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
 	  const url = URL.createObjectURL(blob);
 
 	  const link = document.createElement("a");
 	  link.href = url;
-	  link.download = "Popular_Variables_Visible_Rows.csv";
+	  link.download = "Popular_Variables_filtered_results.csv";
 	  link.click();
 
 	  URL.revokeObjectURL(url);
 	}
 
-	document.getElementById("downloadCsvBtn").onclick = downloadVisibleCSV;
+	document.getElementById("downloadCsvBtn")
+	  .addEventListener("click", downloadFilteredCSV);
+
+
+    renderTable();
+  } // end initUI
+
+
 
 }); // end DOMContentLoaded
