@@ -382,6 +382,7 @@ function renderTable() {
       }
 
       updateBasketCountUI(); // ⭐ global glow logic
+	  updateAddAllButtonLabel()
     });
   });
   updateAddAllButtonLabel();
