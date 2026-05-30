@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const visibleRows = filteredData.slice(start, end);
 
       if (visibleRows.length === 0) {
-        addAllBtn.textContent = "No visible variables";
+        addAllBtn.textContent = "No visible variables to add";
         addAllBtn.classList.remove("remove-mode");
         addAllBtn.disabled = true;
         return;
@@ -266,5 +266,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderTable();
   } // end initUI
+
+	// ============================================================
+	// Download filtered CSV
+	// ============================================================
+
+	function downloadFilteredCSV() {
+	  if (!filteredData || filteredData.length === 0) {
+		alert("No data to download");
+		return;
+	  }
+
+	  const headers = Object.keys(filteredData[0]);
+	  let csvContent = headers.join(",") + "\n";
+
+	  filteredData.forEach(row => {
+		const line = headers.map(h => {
+		  const value = row[h] ?? "";
+		  return `"${String(value).replace(/"/g, '""')}"`;
+		}).join(",");
+		csvContent += line + "\n";
+	  });
+
+	  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+	  const url = URL.createObjectURL(blob);
+
+	  const link = document.createElement("a");
+	  link.href = url;
+	  link.download = "NSHD_Data_Dictionary_filtered_results.csv";
+	  link.click();
+
+	  URL.revokeObjectURL(url);
+	}
+
+	document.getElementById("downloadCsvBtn")
+	  .addEventListener("click", downloadFilteredCSV);
+
+
 
 }); // end DOMContentLoaded
