@@ -192,7 +192,37 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 
+	// ============================================================
+	// Download filtered CSV
+	// ============================================================
 
+	function downloadFilteredCSV() {
+	  if (!filteredData || filteredData.length === 0) {
+		alert("No data to download");
+		return;
+	  }
+
+	  const headers = Object.keys(filteredData[0]);
+	  let csvContent = headers.join(",") + "\n";
+
+	  filteredData.forEach(row => {
+		const line = headers.map(h => {
+		  const value = row[h] ?? "";
+		  return `"${String(value).replace(/"/g, '""')}"`;
+		}).join(",");
+		csvContent += line + "\n";
+	  });
+
+	  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+	  const url = URL.createObjectURL(blob);
+
+	  const link = document.createElement("a");
+	  link.href = url;
+	  link.download = "NSHD_Data_Dictionary_filtered_results.csv";
+	  link.click();
+
+	  URL.revokeObjectURL(url);
+	}
 
 
   /* ============================================================
