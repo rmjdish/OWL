@@ -297,6 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
         else removeFromBasket(name);
 
         updateBasketCountUI();
+		updateAddAllButtonLabel2(); 
       };
     });
   }
