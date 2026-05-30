@@ -462,7 +462,7 @@ function downloadFilteredCSV() {
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
   
-/*
+
 // ============================================================
 // Add/Remove All Visible Rows
 // ============================================================
