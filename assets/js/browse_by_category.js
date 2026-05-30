@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	  if (visibleRows.length === 0) {
 		btn.textContent = "No visible variables to add";
 		btn.classList.remove("remove-mode");
-		btn.style.color = "black";
+		btn.style.color = "";
 		btn.disabled = true;
 	  } else if (allVisibleRowsSelected2()) {
 		btn.textContent = "Remove all visible variables";
