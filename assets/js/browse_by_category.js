@@ -6,8 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const ui = document.getElementById("browseUI");
 
   const tbody = document.querySelector("#myTable2 tbody");
-  const searchBox = document.getElementById("manualSearch");
-  const pageSizeControl = document.getElementById("manualPageSize");
+  const searchBox = document.getElementById("globalSearch");
+  const pageSizeControl = document.getElementById("pageSize");
   const labelFilter = document.getElementById("labelFilterHeader");
 
   let allData = [];
@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       });
   
-	const addBtn = document.getElementById("addAllBtn2");
+	const addBtn = document.getElementById("addAllBtn");
 	if (addBtn) {
 		addBtn.onclick = () => {
 			const start = (currentPage - 1) * pageSize;
@@ -167,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 	// ⭐ Reattach Add/Remove All button handler after pagination renders
-	const addBtn = document.getElementById("addAllBtn2");
+	const addBtn = document.getElementById("addAllBtn");
 	if (addBtn) {
 		addBtn.onclick = () => {
 			const start = (currentPage - 1) * pageSize;
