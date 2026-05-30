@@ -224,6 +224,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	  URL.revokeObjectURL(url);
 	}
 
+	document.getElementById("downloadCsvBtn")
+	  .addEventListener("click", downloadFilteredCSV);
 
   /* ============================================================
      SORT ICONS
