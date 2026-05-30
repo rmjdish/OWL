@@ -55,17 +55,70 @@ document.addEventListener("DOMContentLoaded", () => {
     const tbody = document.querySelector("#vars-table tbody");
     const resultsCount = document.getElementById("resultsCount");
     const pageSizeControl = document.getElementById("pageSize");
+    const searchBox = document.getElementById("globalSearch");
+    const addAllBtn = document.getElementById("addAllBtn");
 
-    // Page size change
+    let filteredData = [...data];
+
+    // ⭐ SEARCH
+    searchBox.oninput = () => {
+      const q = searchBox.value.toLowerCase();
+      filteredData = data.filter(row =>
+        row.name.toLowerCase().includes(q) ||
+        row.label.toLowerCase().includes(q)
+      );
+      currentPage = 1;
+      renderTable();
+    };
+
+    // ⭐ PAGE SIZE
     pageSizeControl.onchange = () => {
       pageSize = parseInt(pageSizeControl.value);
       currentPage = 1;
       renderTable();
     };
 
+    // ⭐ ADD / REMOVE ALL BUTTON
+    addAllBtn.onclick = () => {
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const visibleRows = filteredData.slice(start, end);
+
+      if (allVisibleRowsSelected()) {
+        visibleRows.forEach(row => removeFromBasket(row.name));
+      } else {
+        visibleRows.forEach(row => addToBasket(row.name, row.label));
+      }
+
+      updateBasketCountUI();
+      renderTable();
+    };
+
+    // ⭐ CHECK IF ALL VISIBLE ARE SELECTED
+    function allVisibleRowsSelected() {
+      const start = (currentPage - 1) * pageSize;
+      const end = start + pageSize;
+      const visibleRows = filteredData.slice(start, end);
+
+      if (visibleRows.length === 0) return false;
+
+      return visibleRows.every(row => isInBasket(row.name));
+    }
+
+    // ⭐ UPDATE BUTTON LABEL
+    function updateAddAllButtonLabel() {
+      if (allVisibleRowsSelected()) {
+        addAllBtn.textContent = "Remove all visible variables";
+        addAllBtn.classList.add("remove-mode");
+      } else {
+        addAllBtn.textContent = "Add all visible variables";
+        addAllBtn.classList.remove("remove-mode");
+      }
+    }
+
     // ⭐ RENDER TABLE
     function renderTable() {
-      let sorted = [...data];
+      let sorted = [...filteredData];
 
       // Sorting
       if (sortColumn) {
@@ -84,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       resultsCount.textContent = `Showing ${totalRows} results`;
 
-      // Build rows (respect basket state)
+      // Build rows
       tbody.innerHTML = pageRows.map(row => {
         const checked = isInBasket(row.name);
         return `
@@ -114,6 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
       updateSortIcons();
       renderPagination(totalPages);
       attachBasketEvents();
+      updateAddAllButtonLabel();
     }
 
     // ⭐ PAGINATION
@@ -130,7 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
       top.innerHTML = html;
       bottom.innerHTML = html;
 
-      // Attach events
       document.querySelectorAll("#paginationTop button, #paginationBottom button")
         .forEach(btn => {
           btn.onclick = () => {
@@ -182,28 +235,18 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // ⭐ BASKET EVENTS (shared with Data Dictionary)
+    // ⭐ BASKET EVENTS
     function attachBasketEvents() {
       document.querySelectorAll(".add-to-basket").forEach(cb => {
         cb.onclick = () => {
           const name = cb.dataset.name;
           const label = cb.dataset.label;
 
-          if (!name) return;
-
-          if (cb.checked) {
-            addToBasket(name, label);
-          } else {
-            removeFromBasket(name);
-          }
+          if (cb.checked) addToBasket(name, label);
+          else removeFromBasket(name);
 
           updateBasketCountUI();
-
-          const icon = document.getElementById("basket-icon");
-          if (icon) {
-            icon.classList.add("basket-pulse");
-            setTimeout(() => icon.classList.remove("basket-pulse"), 300);
-          }
+          updateAddAllButtonLabel();
         };
       });
     }
