@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	function updateAddAllButtonLabel2() {
-	  const btn = document.getElementById("addAllBtn2");
+	  const btn = document.getElementById("addAllBtn");
 	  if (!btn) return;
 
 	  if (allVisibleRowsSelected2()) {
