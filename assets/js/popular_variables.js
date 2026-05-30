@@ -305,7 +305,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	  URL.revokeObjectURL(url);
 	}
 
-	document.getElementById("downloadCsvBtn")
-	  .addEventListener("click", downloadVisibleCSV);
+	document.getElementById("downloadCsvBtn").onclick = downloadVisibleCSV;
 
 }); // end DOMContentLoaded
