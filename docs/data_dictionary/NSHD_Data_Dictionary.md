@@ -29,7 +29,6 @@ classes: page-search-data-dictionary
       <!-- SEARCH + PAGE SIZE + RESET + PAGINATION -->
       <div id="search-pagination-top" class="search-pagination-top">
         <div id="resultsCount"></div>
-		<div style="flex-basis: 100%; height: 0; margin: 0; padding: 0;"></div>
         <input id="globalSearch" type="text" placeholder="Search…" />
         <select id="pageSize">
           <option value="15">15</option>
