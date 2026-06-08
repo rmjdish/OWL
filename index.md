@@ -15,12 +15,12 @@ classes: home-page
   <!-- STATS STRIP -->
   <div class="stats-strip">
     <div class="stat-item">
-      <div class="stat-number">5,000+</div>
+      <div class="stat-number">30,000+</div>
       <div class="stat-label">Variables</div>
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item">
-      <div class="stat-number">79 years</div>
+      <div class="stat-number">80 years</div>
       <div class="stat-label">Data span</div>
     </div>
     <div class="stat-divider"></div>
@@ -87,6 +87,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Data Dictionary search operates directly on the structured dataset, examining variable names, labels, descriptions, categories, and all metadata fields. It is the most powerful method for detailed variable-level exploration and works in combination with the filter panel for layered, precise narrowing of results.</p>
               <p>The search updates instantly as you type, making it especially valuable when working with large variable collections where manual browsing would be time-consuming.</p>
+              <a class="inner-link" href="/OWL/docs/data_dictionary/NSHD_Data_Dictionary.html">Go to Data Dictionary Search →</a>
             </div>
           </div>
 
@@ -99,6 +100,7 @@ classes: home-page
             <div class="inner-body">
               <p>Variables are grouped into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer to navigate conceptually, or for new users learning how the dataset is organised.</p>
               <p>Category browsing supports exploratory research — it lets you scan available options and discover variables you might not have known to search for directly.</p>
+              <a class="inner-link" href="/OWL/docs/browse_by_category/Browse_by_Category.html">Go to Category Browsing →</a>
             </div>
           </div>
 
@@ -111,6 +113,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Popular Variables tool highlights variables added to baskets most often across recent projects, offering insight into which measures are widely used or considered essential within the research community.</p>
               <p>The table includes counts, labels, and direct links to metadata pages, and can be sorted and filtered to focus on specific areas of interest.</p>
+              <a class="inner-link" href="/OWL/docs/popular_vars/popular-variables.html">Go to Popular Variables →</a>
             </div>
           </div>
 
@@ -122,6 +125,7 @@ classes: home-page
             </button>
             <div class="inner-body">
               <p>Browse and download the survey instruments used at every wave of the study, from the 1946 maternity survey through to 2025. Questionnaires are available by decade and respondent type, with variable names annotated directly on the PDFs, linking survey questions to the data held in the NSHD Data Dictionary.</p>
+              <a class="inner-link" href="/OWL/docs/questionnaires/NSHD_questionnaires_homepage.html">Go to Questionnaires →</a>
             </div>
           </div>
 
@@ -132,7 +136,8 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>The search bar in the site header uses a pre-built Lunr.js index to scan all page titles, headings, and body text across the whole site. It is the fastest way to jump directly to a known topic or locate cross-cutting documentation that may not appear in dataset-specific tools.</p>
+              <p>The search bar at the top of every page uses a pre-built Lunr.js index to scan all page titles, headings, and body text across the whole site. It is the fastest way to jump directly to a known topic or locate cross-cutting documentation that may not appear in dataset-specific tools.</p>
+              <p class="inner-hint">💡 Use the <strong>search bar in the site header</strong> above to get started — no separate page needed.</p>
             </div>
           </div>
 
@@ -438,6 +443,33 @@ classes: home-page
 .inner-body p:last-child {
   margin-bottom: 0 !important;
 }
+
+.inner-link {
+  display: inline-block;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6a0dad !important;
+  text-decoration: none !important;
+  border-bottom: 1px solid rgba(106,13,173,0.3);
+  padding-bottom: 1px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.inner-link:hover {
+  color: #3a0066 !important;
+  border-bottom-color: #3a0066;
+}
+
+.inner-hint {
+  background: #f5f0ff;
+  border-left: 3px solid #6a0dad;
+  border-radius: 0 4px 4px 0;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  color: #3a0066 !important;
+  margin-top: 10px !important;
+}
 </style>
 
 <script>
@@ -465,3 +497,4 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script src="/OWL/assets/js/basket_header.js"></script>
+
