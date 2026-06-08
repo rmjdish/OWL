@@ -64,35 +64,41 @@ classes: home-page
       <!-- 1. DATA DICTIONARY SEARCH -->
       <h2>1. Data Dictionary Search</h2>
       <p>
-        The Data Dictionary search is designed specifically for exploring NSHD variables and their associated metadata. Unlike the global site search, which scans documentation pages, this search operates directly on the structured dataset. It examines variable names, labels, descriptions, categories, and all metadata fields, making it highly effective for identifying variables based on keywords or partial matches. This method is ideal for researchers who need to locate variables related to a specific concept, measurement, or domain. Because the search is applied to the dataset itself, it can surface variables that may not be mentioned explicitly in the written documentation.
+        The Data Dictionary search is designed specifically for exploring NSHD variables and their associated metadata. 
+		Unlike the global site search, which scans documentation pages, this search operates directly on the structured dataset. 
+		It examines variable names, labels, descriptions, categories, and all metadata fields, making it highly effective for 
+		identifying variables based on keywords or partial matches. This method is ideal for researchers who need to locate variables 
+		related to a specific concept, measurement, or domain. Because the search is applied to the dataset itself, it can surface 
+		variables that may not be mentioned explicitly in the written documentation.
       </p>
       <p>
-        One of the strengths of the Data Dictionary search is its ability to work in combination with the filter panel. Users can apply topic or subtopic filters and then refine the results further using text search. This layered approach allows for precise narrowing of the dataset, ensuring that only variables matching all criteria are displayed. The search updates instantly as you type, providing immediate feedback and helping you explore the dataset interactively. This makes it especially valuable when working with large variable collections, where manual browsing would be time‑consuming. Overall, the Data Dictionary search is the most powerful method for detailed variable‑level exploration.
+        One of the strengths of the Data Dictionary search is its ability to work in combination with the filter panel. Users can apply 
+		topic or subtopic filters and then refine the results further using text search. This layered approach allows for precise narrowing 
+		of the dataset, ensuring that only variables matching all criteria are displayed. The search updates instantly as you type, 
+		providing immediate feedback and helping you explore the dataset interactively. This makes it especially valuable when working with 
+		large variable collections, where manual browsing would be time‑consuming. Overall, the Data Dictionary search is the most powerful 
+		method for detailed variable‑level exploration.
       </p>
 
       <!-- 2. CATEGORY BROWSING -->
       <h2>2. Category‑Based Browsing</h2>
       <p>
-        Category‑based browsing provides a structured, hierarchical way to explore the dataset without relying on keywords. Variables are grouped into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer to navigate conceptually, especially when they are not searching for a specific variable name but instead want to understand the broader structure of the dataset. By expanding categories and subcategories, users can quickly see which variables belong to each domain and how different areas of the dataset relate to one another.
+        Category‑based browsing provides a structured, hierarchical way to explore the dataset without relying on keywords. Variables are grouped 
+		into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer 
+		to navigate conceptually, especially when they are not searching for a specific variable name but instead want to understand the broader 
+		structure of the dataset. By expanding categories and subcategories, users can quickly see which variables belong to each domain and how 
+		different areas of the dataset relate to one another.
       </p>
       <p>
-        This browsing method is particularly helpful for new users who are still learning how the dataset is organised. It allows them to explore related variables within a domain, identify patterns, and gain a clearer understanding of the dataset’s thematic structure. Category‑based browsing also supports exploratory research, where users may not yet know which variables are relevant but want to scan the available options. Because it presents variables in a logical, curated order, it reduces the cognitive load compared to keyword search and helps users discover variables they might not have known to search for directly.
+        This browsing method is particularly helpful for new users who are still learning how the dataset is organised. It allows them to explore 
+		related variables within a domain, identify patterns, and gain a clearer understanding of the dataset’s thematic structure. Category‑based 
+		browsing also supports exploratory research, where users may not yet know which variables are relevant but want to scan the available options. 
+		Because it presents variables in a logical, curated order, it reduces the cognitive load compared to keyword search and helps users discover 
+		variables they might not have known to search for directly.
       </p>
 
       <!-- 3. POPULAR VARIABLES -->
       <h2>3. Popular Variables</h2>
-      <p>
-        The NSHD Questionnaires section provides a comprehensive, easy-to-navigate archive of survey instruments used throughout the National Survey of Health and Development — Britain's longest-running birth cohort study, spanning from 1946 to the present day.
-      </p>
-      <p>
-        The homepage allows visitors to browse questionnaires by decade, from the original 1946 maternity survey through to the most recent 2025 wave, with colour-coded pills distinguishing general surveys, Women's Health studies, and Covid-era questionnaires. Researchers can also filter by respondent type — including study members, mothers, school doctors, and teachers — making it straightforward to locate the exact instruments relevant to their work.
-      </p>
-      <p>
-        Each detailed questionnaire page provides full context including responding population figures, data collection methods, topics covered, and downloadable PDF versions of every questionnaire used. Variable names are annotated directly on the PDFs, linking survey questions to the data held in the NSHD Data Dictionary.
-      </p>
-
-      <!-- 4. Explore NSHD Questionnaires -->
-      <h2>4. Explore NSHD Questionnaires</h2>
       <p>
         The Popular Variables tool provides a data‑driven way to explore the variables most frequently selected by researchers across recent projects. Instead of relying on keywords or categories, this method highlights variables that have been added to baskets most often, offering insight into which measures are commonly used, trusted, or considered essential within the research community. This can be especially useful for new users who want to understand which variables are widely adopted or for experienced users who want to ensure they are not overlooking commonly used measures. The Popular Variables table includes counts, labels, and direct links to metadata pages, making it easy to explore each variable in more detail.
       </p>
@@ -100,6 +106,24 @@ classes: home-page
         Because the Popular Variables list is generated from real usage patterns, it serves as a practical guide for identifying high‑value variables. Users can sort the table, adjust page size, and filter results to focus on specific areas of interest. This method is particularly helpful when planning a new project, as it provides a quick overview of variables that are frequently included in analyses. It also complements the other search methods by offering a usage‑based perspective rather than a structural or keyword‑based one. For many users, the Popular Variables tool becomes a starting point for exploring the dataset, helping them quickly identify reliable and widely used measures.
       </p>
 	  
+      <!-- 4. Explore NSHD Questionnaires -->
+      <h2>4. Explore NSHD Questionnaires</h2>
+      <p>
+        The NSHD Questionnaires section provides a comprehensive, easy-to-navigate archive of survey instruments used throughout the National Survey of 
+		Health and Development — Britain's longest-running birth cohort study, spanning from 1946 to the present day.
+      </p>
+      <p>
+        The homepage allows visitors to browse questionnaires by decade, from the original 1946 maternity survey through to the most recent 2025 wave, 
+		with colour-coded pills distinguishing general surveys, Women's Health studies, and Covid-era questionnaires. Researchers can also filter by 
+		respondent type — including study members, mothers, school doctors, and teachers — making it straightforward to locate the exact instruments 
+		relevant to their work.
+      </p>
+      <p>
+        Each detailed questionnaire page provides full context including responding population figures, data collection methods, topics covered, and 
+		downloadable PDF versions of every questionnaire used. Variable names are annotated directly on the PDFs, linking survey questions to the data 
+		held in the NSHD Data Dictionary.
+      </p>
+
       <!-- 5. GLOBAL SITE SEARCH -->
       <h2>5. Global Site Search</h2>
       <p>
