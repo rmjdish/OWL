@@ -8,7 +8,7 @@ classes: home-page
 <div class="home-page">
 
   <div class="hero-banner">
-    <h1><span class="owl-letter">N</span>ational <span class="owl-letter">S</span>urvey of <span class="owl-letter">H</span>ealth and <span class="owl-letter">D</span>evelopment — <span class="owl-letter">O</span>nline <span class="owl-letter">W</span>ellbeing and <span class="owl-letter">L</span>Lifecourse Resource</h1>
+    <h1><span class="owl-letter">N</span>ational <span class="owl-letter">S</span>urvey of <span class="owl-letter">H</span>ealth and <span class="owl-letter">D</span>evelopment — <span class="owl-letter">O</span>nline <span class="owl-letter">W</span>ellbeing and <span class="owl-letter">L</span>ifecourse Resource</h1>
     <p>From birth in post-war Britain to life in the twenty-first century — the NSHD OWL brings together the variables, questionnaires, and metadata behind one of worlds most remarkable long-term studies.</p>
   </div>
 
