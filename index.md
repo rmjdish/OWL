@@ -23,7 +23,6 @@ classes: home-page
     <ul>
       <li><a href="#about"   class="sidebar-link">📘 About This Resource</a></li>
       <li><a href="#coverage" class="sidebar-link">📊 Data Coverage</a></li>
-      <li><a href="#howto"   class="sidebar-link">🧭 How to Use This Site</a></li>
       <li><a href="#search"  class="sidebar-link">🔍 Search Methods</a></li>
       <li><a href="#access"  class="sidebar-link">🔐 Access & Permissions</a></li>
     </ul>
@@ -55,21 +54,7 @@ classes: home-page
   </div>
 
   <!-- ========================= -->
-  <!-- 3. HOW TO USE THIS SITE   -->
-  <!-- ========================= -->
-  <div class="home-section" id="howto">
-    <h2>How to Use This Site</h2>
-    <p>
-      Use the navigation panel on the left to browse categories of variables. Each category contains 
-      detailed metadata including variable labels, field IDs, and links to further documentation. 
-      You can search and filter within any category to find the variables most relevant to your research, 
-      or use the Data Dictionary search tool to query the entire metadata repository at once, allowing you 
-      to quickly locate specific variables, concepts, or keywords across all topics and sweeps.
-    </p>
-  </div>
-
-  <!-- ========================= -->
-  <!-- 4. SEARCH METHODS         -->
+  <!-- 3. SEARCH METHODS         -->
   <!-- ========================= -->
   <div class="home-section" id="search">
     <h2>Search Methods</h2>
@@ -97,14 +82,26 @@ classes: home-page
       <!-- 3. POPULAR VARIABLES -->
       <h2>3. Popular Variables</h2>
       <p>
+        The NSHD Questionnaires section provides a comprehensive, easy-to-navigate archive of survey instruments used throughout the National Survey of Health and Development — Britain's longest-running birth cohort study, spanning from 1946 to the present day.
+      </p>
+      <p>
+        The homepage allows visitors to browse questionnaires by decade, from the original 1946 maternity survey through to the most recent 2025 wave, with colour-coded pills distinguishing general surveys, Women's Health studies, and Covid-era questionnaires. Researchers can also filter by respondent type — including study members, mothers, school doctors, and teachers — making it straightforward to locate the exact instruments relevant to their work.
+      </p>
+      <p>
+        Each detailed questionnaire page provides full context including responding population figures, data collection methods, topics covered, and downloadable PDF versions of every questionnaire used. Variable names are annotated directly on the PDFs, linking survey questions to the data held in the NSHD Data Dictionary.
+      </p>
+
+      <!-- 4. Explore NSHD Questionnaires -->
+      <h2>4. Explore NSHD Questionnaires</h2>
+      <p>
         The Popular Variables tool provides a data‑driven way to explore the variables most frequently selected by researchers across recent projects. Instead of relying on keywords or categories, this method highlights variables that have been added to baskets most often, offering insight into which measures are commonly used, trusted, or considered essential within the research community. This can be especially useful for new users who want to understand which variables are widely adopted or for experienced users who want to ensure they are not overlooking commonly used measures. The Popular Variables table includes counts, labels, and direct links to metadata pages, making it easy to explore each variable in more detail.
       </p>
       <p>
         Because the Popular Variables list is generated from real usage patterns, it serves as a practical guide for identifying high‑value variables. Users can sort the table, adjust page size, and filter results to focus on specific areas of interest. This method is particularly helpful when planning a new project, as it provides a quick overview of variables that are frequently included in analyses. It also complements the other search methods by offering a usage‑based perspective rather than a structural or keyword‑based one. For many users, the Popular Variables tool becomes a starting point for exploring the dataset, helping them quickly identify reliable and widely used measures.
       </p>
-
-      <!-- 4. GLOBAL SITE SEARCH -->
-      <h2>4. Global Site Search</h2>
+	  
+      <!-- 5. GLOBAL SITE SEARCH -->
+      <h2>5. Global Site Search</h2>
       <p>
         The global site search is the fastest way to navigate the entire documentation set when you are looking for a specific concept, page, or keyword. Located in the site header, this search bar uses a pre‑built Lunr.js index to scan all page titles, headings, and body text across the whole Just the Docs site. This makes it ideal for broad discovery, especially when you are unsure which section contains the information you need. Because the search index is generated automatically during site build, results appear instantly as you type, without requiring any server‑side processing. This ensures consistently fast performance, even on large documentation sites.
       </p>
@@ -116,7 +113,7 @@ classes: home-page
   </div>
 
   <!-- ========================= -->
-  <!-- 5. ACCESS & PERMISSIONS   -->
+  <!-- 4. ACCESS & PERMISSIONS   -->
   <!-- ========================= -->
   <div class="home-section" id="access">
     <h2>Access & Permissions</h2>
