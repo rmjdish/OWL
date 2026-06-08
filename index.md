@@ -7,163 +7,173 @@ classes: home-page
 
 <div class="home-page">
 
-  <!-- ========================= -->
-  <!-- HERO BANNER               -->
-  <!-- ========================= -->
   <div class="hero-banner">
     <h1>Welcome to the National Survey of Health and Development (NSHD) Data Dictionary</h1>
     <p>Explore variables, metadata, and documentation for the NSHD study.</p>
   </div>
 
-  <!-- ========================= -->
-  <!-- SIDEBAR SUMMARY           -->
-  <!-- ========================= -->
-  <aside class="sidebar-summary">
-    <h3>On this page</h3>
-    <ul>
-      <li><a href="#about"   class="sidebar-link">📘 About This Resource</a></li>
-      <li><a href="#coverage" class="sidebar-link">📊 Data Coverage</a></li>
-      <li><a href="#search"  class="sidebar-link">🔍 Search Methods</a></li>
-      <li><a href="#access"  class="sidebar-link">🔐 Access & Permissions</a></li>
-    </ul>
-  </aside>
-
-  <!-- ========================= -->
-  <!-- 1. ABOUT THIS RESOURCE    -->
-  <!-- ========================= -->
-  <div class="home-section" id="about">
-    <h2>About This Resource</h2>
-    <p>
-      The NSHD Data Dictionary is a comprehensive metadata browser for the 1946 British birth cohort study.
-      It provides researchers with detailed information about the variables, assays, and data collected
-      across decades of longitudinal follow-up, serving as a comprehensive reference for all data held within the cohort.
-    </p>
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stat-item">
+      <div class="stat-number">5,000+</div>
+      <div class="stat-label">Variables</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-number">79 years</div>
+      <div class="stat-label">Data span</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-number">36</div>
+      <div class="stat-label">Survey waves</div>
+    </div>
+    <div class="stat-divider"></div>
+    <div class="stat-item">
+      <div class="stat-number">5,362</div>
+      <div class="stat-label">Study members</div>
+    </div>
   </div>
 
-  <!-- ========================= -->
-  <!-- 2. DATA COVERAGE          -->
-  <!-- ========================= -->
-  <div class="home-section" id="coverage">
-    <h2>Data Coverage</h2>
-    <p>
-      The dictionary spans a wide range of domains including clinical assessments, cognitive testing,
-      biological assays, lifestyle questionnaires, and socioeconomic measures. Variables are organised
-      into categories and subcategories, making it straightforward to locate data from specific sweeps
-      or topic areas across the cohort's history.
-    </p>
-  </div>
+  <!-- MAIN ACCORDION -->
+  <div class="sections-accordion">
 
-  <!-- ========================= -->
-  <!-- 3. SEARCH METHODS         -->
-  <!-- ========================= -->
-  <div class="home-section" id="search">
-    <h2>Search Methods</h2>
+    <!-- ABOUT -->
+    <div class="sec-row">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon">📘</span>
+        <span class="sec-title">About This Resource</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>The NSHD Data Dictionary is a comprehensive metadata browser for the 1946 British birth cohort study.
+        It provides researchers with detailed information about the variables, assays, and data collected
+        across decades of longitudinal follow-up, serving as a comprehensive reference for all data held within the cohort.</p>
+      </div>
+    </div>
 
-    <section class="search-methods">
+    <!-- COVERAGE -->
+    <div class="sec-row">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon">📊</span>
+        <span class="sec-title">Data Coverage</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>The dictionary spans a wide range of domains including clinical assessments, cognitive testing,
+        biological assays, lifestyle questionnaires, and socioeconomic measures. Variables are organised
+        into categories and subcategories, making it straightforward to locate data from specific sweeps
+        or topic areas across the cohort's history.</p>
+      </div>
+    </div>
 
-      <!-- 1. DATA DICTIONARY SEARCH -->
-      <h2>1. Data Dictionary Search</h2>
-      <p>
-        The Data Dictionary search is designed specifically for exploring NSHD variables and their associated metadata. 
-		Unlike the global site search, which scans documentation pages, this search operates directly on the structured dataset. 
-		It examines variable names, labels, descriptions, categories, and all metadata fields, making it highly effective for 
-		identifying variables based on keywords or partial matches. This method is ideal for researchers who need to locate variables 
-		related to a specific concept, measurement, or domain. Because the search is applied to the dataset itself, it can surface 
-		variables that may not be mentioned explicitly in the written documentation.
-      </p>
-      <p>
-        One of the strengths of the Data Dictionary search is its ability to work in combination with the filter panel. Users can apply 
-		topic or subtopic filters and then refine the results further using text search. This layered approach allows for precise narrowing 
-		of the dataset, ensuring that only variables matching all criteria are displayed. The search updates instantly as you type, 
-		providing immediate feedback and helping you explore the dataset interactively. This makes it especially valuable when working with 
-		large variable collections, where manual browsing would be time‑consuming. Overall, the Data Dictionary search is the most powerful 
-		method for detailed variable‑level exploration.
-      </p>
+    <!-- SEARCH METHODS -->
+    <div class="sec-row">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon">🔍</span>
+        <span class="sec-title">Search Methods</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <div class="inner-accordion">
 
-      <!-- 2. CATEGORY BROWSING -->
-      <h2>2. Category‑Based Browsing</h2>
-      <p>
-        Category‑based browsing provides a structured, hierarchical way to explore the dataset without relying on keywords. Variables are grouped 
-		into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer 
-		to navigate conceptually, especially when they are not searching for a specific variable name but instead want to understand the broader 
-		structure of the dataset. By expanding categories and subcategories, users can quickly see which variables belong to each domain and how 
-		different areas of the dataset relate to one another.
-      </p>
-      <p>
-        This browsing method is particularly helpful for new users who are still learning how the dataset is organised. It allows them to explore 
-		related variables within a domain, identify patterns, and gain a clearer understanding of the dataset’s thematic structure. Category‑based 
-		browsing also supports exploratory research, where users may not yet know which variables are relevant but want to scan the available options. 
-		Because it presents variables in a logical, curated order, it reduces the cognitive load compared to keyword search and helps users discover 
-		variables they might not have known to search for directly.
-      </p>
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">🔍</span>
+              <span class="inner-title">1. Data Dictionary Search</span>
+              <span class="inner-badge">Recommended</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The Data Dictionary search operates directly on the structured dataset, examining variable names, labels, descriptions, categories, and all metadata fields. It is the most powerful method for detailed variable-level exploration and works in combination with the filter panel for layered, precise narrowing of results.</p>
+              <p>The search updates instantly as you type, making it especially valuable when working with large variable collections where manual browsing would be time-consuming.</p>
+            </div>
+          </div>
 
-      <!-- 3. POPULAR VARIABLES -->
-      <h2>3. Popular Variables</h2>
-      <p>
-        The Popular Variables tool provides a data‑driven way to explore the variables most frequently selected by researchers across recent projects. Instead of relying on keywords or categories, this method highlights variables that have been added to baskets most often, offering insight into which measures are commonly used, trusted, or considered essential within the research community. This can be especially useful for new users who want to understand which variables are widely adopted or for experienced users who want to ensure they are not overlooking commonly used measures. The Popular Variables table includes counts, labels, and direct links to metadata pages, making it easy to explore each variable in more detail.
-      </p>
-      <p>
-        Because the Popular Variables list is generated from real usage patterns, it serves as a practical guide for identifying high‑value variables. Users can sort the table, adjust page size, and filter results to focus on specific areas of interest. This method is particularly helpful when planning a new project, as it provides a quick overview of variables that are frequently included in analyses. It also complements the other search methods by offering a usage‑based perspective rather than a structural or keyword‑based one. For many users, the Popular Variables tool becomes a starting point for exploring the dataset, helping them quickly identify reliable and widely used measures.
-      </p>
-	  
-      <!-- 4. Explore NSHD Questionnaires -->
-      <h2>4. Explore NSHD Questionnaires</h2>
-      <p>
-        The NSHD Questionnaires section provides a comprehensive, easy-to-navigate archive of survey instruments used throughout the National Survey of 
-		Health and Development — Britain's longest-running birth cohort study, spanning from 1946 to the present day.
-      </p>
-      <p>
-        The homepage allows visitors to browse questionnaires by decade, from the original 1946 maternity survey through to the most recent 2025 wave, 
-		with colour-coded pills distinguishing general surveys, Women's Health studies, and Covid-era questionnaires. Researchers can also filter by 
-		respondent type — including study members, mothers, school doctors, and teachers — making it straightforward to locate the exact instruments 
-		relevant to their work.
-      </p>
-      <p>
-        Each detailed questionnaire page provides full context including responding population figures, data collection methods, topics covered, and 
-		downloadable PDF versions of every questionnaire used. Variable names are annotated directly on the PDFs, linking survey questions to the data 
-		held in the NSHD Data Dictionary.
-      </p>
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">📂</span>
+              <span class="inner-title">2. Category-Based Browsing</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Variables are grouped into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer to navigate conceptually, or for new users learning how the dataset is organised.</p>
+              <p>Category browsing supports exploratory research — it lets you scan available options and discover variables you might not have known to search for directly.</p>
+            </div>
+          </div>
 
-      <!-- 5. GLOBAL SITE SEARCH -->
-      <h2>5. Global Site Search</h2>
-      <p>
-        The global site search is the fastest way to navigate the entire documentation set when you are looking for a specific concept, page, or keyword. Located in the site header, this search bar uses a pre‑built Lunr.js index to scan all page titles, headings, and body text across the whole Just the Docs site. This makes it ideal for broad discovery, especially when you are unsure which section contains the information you need. Because the search index is generated automatically during site build, results appear instantly as you type, without requiring any server‑side processing. This ensures consistently fast performance, even on large documentation sites.
-      </p>
-      <p>
-        Global search is particularly useful when you want to jump directly to a known topic or when you need to explore multiple areas of the documentation at once. For example, searching for “blood pressure” will return pages from the Data Dictionary, variable metadata, methodology notes, and any related guidance pages. This makes it a powerful tool for users who prefer a keyword‑driven approach rather than navigating through menus or categories. Because it searches the entire site, it is the best method for locating high‑level explanations, conceptual overviews, and cross‑cutting documentation that may not appear in dataset‑specific tools.
-      </p>
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">⭐</span>
+              <span class="inner-title">3. Popular Variables</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The Popular Variables tool highlights variables added to baskets most often across recent projects, offering insight into which measures are widely used or considered essential within the research community.</p>
+              <p>The table includes counts, labels, and direct links to metadata pages, and can be sorted and filtered to focus on specific areas of interest.</p>
+            </div>
+          </div>
 
-    </section>
-  </div>
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">📄</span>
+              <span class="inner-title">4. Explore NSHD Questionnaires</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Browse and download the survey instruments used at every wave of the study, from the 1946 maternity survey through to 2025. Questionnaires are available by decade and respondent type, with variable names annotated directly on the PDFs, linking survey questions to the data held in the NSHD Data Dictionary.</p>
+            </div>
+          </div>
 
-  <!-- ========================= -->
-  <!-- 4. ACCESS & PERMISSIONS   -->
-  <!-- ========================= -->
-  <div class="home-section" id="access">
-    <h2>Access & Permissions</h2>
-    <p>
-      Some variables may not be publicly displayed due to data sensitivity or access restrictions.
-      If you believe a variable should be visible or require access to restricted data, please contact
-      the NSHD data access team directly for further guidance.
-    </p>
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">🌐</span>
+              <span class="inner-title">5. Global Site Search</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The search bar in the site header uses a pre-built Lunr.js index to scan all page titles, headings, and body text across the whole site. It is the fastest way to jump directly to a known topic or locate cross-cutting documentation that may not appear in dataset-specific tools.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCESS -->
+    <div class="sec-row">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon">🔐</span>
+        <span class="sec-title">Access & Permissions</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>Some variables may not be publicly displayed due to data sensitivity or access restrictions.
+        If you believe a variable should be visible or require access to restricted data, please contact
+        the NSHD data access team directly for further guidance.</p>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
 <style>
-/* -----------------------------------------
-   HOME PAGE — FIXED LAYOUT + THEME
-   ----------------------------------------- */
+/* ============================================================
+   HOME PAGE
+   ============================================================ */
 
 .home-page {
   max-width: 900px;
   margin-left: 0;
   margin-right: 0;
-  padding-right: 0px;
   position: relative;
 }
 
-/* HERO BANNER */
+/* ============================================================
+   HERO BANNER
+   ============================================================ */
+
 .hero-banner {
   background: linear-gradient(135deg,
     #E8F5E9,
@@ -173,7 +183,7 @@ classes: home-page
   );
   border-radius: 12px;
   padding: 26px 30px;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
@@ -190,139 +200,267 @@ classes: home-page
   color: #333;
 }
 
-/* SIDEBAR SUMMARY */
-.sidebar-summary {
-  position: fixed;
-  right: 40px;
-  top: 140px;
-  width: 230px;
+/* ============================================================
+   STATS STRIP
+   ============================================================ */
+
+.stats-strip {
+  display: flex;
+  align-items: center;
   background: linear-gradient(135deg,
     #E8F5E9,
     #F3E5F5,
     #FFF3E0,
     #E0F7FA
   );
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid rgba(106,13,173,0.15);
   border-radius: 10px;
-  padding: 16px 18px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-}
-
-.sidebar-summary h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #3a0066;
-  border-bottom: 2px solid #6a0dad;
-  padding-bottom: 4px;
-}
-
-.sidebar-summary ul {
-  list-style: none;
-  padding-left: 0;
-  margin: 0;
-}
-
-.sidebar-summary li {
-  margin-bottom: 8px;
-}
-
-.sidebar-summary a {
-  display: block;
-  padding: 4px 8px;
-  border-radius: 6px;
-  color: #4b067a;
-  text-decoration: none;
-  font-size: 14px;
-}
-
-.sidebar-summary a:hover {
-  background: rgba(255,255,255,0.6);
-  text-decoration: underline;
-}
-
-.sidebar-summary a.active {
-  background: rgba(255,255,255,0.9);
-  border-left: 3px solid #6a0dad;
-  font-weight: 700;
-}
-
-/* Hide sidebar on mobile */
-@media (max-width: 1100px) {
-  .sidebar-summary {
-    display: none;
-  }
-  .home-page {
-    padding-right: 0 !important;
-  }
-}
-
-/* SECTION CARDS */
-.home-section {
-  background: #faf7ff;
-  border: 1px solid rgba(0,0,0,0.06);
-  border-radius: 8px;
-  padding: 1px 20px;
+  padding: 16px 28px;
   margin-bottom: 28px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 
-.home-section h2 {
-  font-size: 24px !important;
-  font-weight: 700 !important;
-  color: #3a0066 !important;
-  margin-top: 0 !important;
-  margin-bottom: 14px !important;
-  border-bottom: 2px solid #6a0dad !important;
-  padding-bottom: 6px !important;
+.stat-item {
+  flex: 1;
+  text-align: center;
 }
 
-.home-section p {
-  max-width: 860px !important;
+.stat-number {
+  font-size: 22px;
+  font-weight: 800;
+  color: #3a0066;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #6a3d8a;
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(106,13,173,0.2);
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .stats-strip { flex-wrap: wrap; gap: 14px; padding: 14px; }
+  .stat-divider { display: none; }
+  .stat-item { flex: 0 0 45%; }
+}
+
+/* ============================================================
+   MAIN SECTIONS ACCORDION
+   ============================================================ */
+
+.sections-accordion {
+  background: #faf7ff;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  margin-bottom: 28px;
+}
+
+.sec-row {
+  border-bottom: 1px solid rgba(106,13,173,0.1);
+}
+
+.sec-row:last-child {
+  border-bottom: none;
+}
+
+.sec-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #f5f0ff;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.sec-trigger:hover {
+  background: #ede5ff;
+}
+
+.sec-trigger[aria-expanded="true"] {
+  background: #ede5ff;
+  border-bottom: 1px solid rgba(106,13,173,0.15);
+}
+
+.sec-icon {
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.sec-title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+  color: #3a0066;
+}
+
+.sec-chevron {
+  font-size: 16px;
+  color: #6a0dad;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.sec-trigger[aria-expanded="true"] .sec-chevron {
+  transform: rotate(180deg);
+}
+
+.sec-body {
+  display: none;
+  padding: 16px 20px;
+  background: #fff;
+}
+
+.sec-body.open {
+  display: block;
+}
+
+.sec-body > p {
+  font-size: 15px !important;
   line-height: 1.65 !important;
-  margin-bottom: 14px !important;
   color: #333 !important;
+  margin-bottom: 12px !important;
+  max-width: 860px !important;
 }
 
-/* Search methods sub‑headers */
-.search-methods h2 {
-  font-size: 20px !important;
-  margin-top: 22px !important;
-  color: #4b067a !important;
-  border-bottom: 1px solid rgba(0,0,0,0.1) !important;
-  padding-bottom: 4px !important;
+.sec-body > p:last-child {
+  margin-bottom: 0 !important;
 }
 
-.search-methods p {
-  margin-bottom: 14px !important;
+/* ============================================================
+   INNER ACCORDION (Search Methods)
+   ============================================================ */
+
+.inner-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.inner-item {
+  border: 1px solid rgba(106,13,173,0.15);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #faf7ff;
+}
+
+.inner-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  background: #f9f5ff;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.inner-trigger:hover {
+  background: #f0e8ff;
+}
+
+.inner-trigger[aria-expanded="true"] {
+  background: #f0e8ff;
+  border-bottom: 1px solid rgba(106,13,173,0.12);
+}
+
+.inner-icon {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.inner-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #3a0066;
+}
+
+.inner-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+  border-radius: 20px;
+  padding: 2px 10px;
+  flex-shrink: 0;
+}
+
+.inner-chevron {
+  font-size: 14px;
+  color: #6a0dad;
+  flex-shrink: 0;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.inner-trigger[aria-expanded="true"] .inner-chevron {
+  transform: rotate(180deg);
+}
+
+.inner-body {
+  display: none;
+  padding: 12px 14px;
+  background: #fff;
+}
+
+.inner-body.open {
+  display: block;
+}
+
+.inner-body p {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
   color: #333 !important;
+  margin-bottom: 10px !important;
+  max-width: 100% !important;
+}
+
+.inner-body p:last-child {
+  margin-bottom: 0 !important;
 }
 </style>
 
 <script>
-// Active section highlighting
 document.addEventListener('DOMContentLoaded', function () {
-  const sections = document.querySelectorAll('.home-section[id]');
-  const links = document.querySelectorAll('.sidebar-link');
 
-  const map = {};
-  links.forEach(link => {
-    const id = link.getAttribute('href').substring(1);
-    map[id] = link;
+  /* Outer accordion */
+  document.querySelectorAll('.sec-trigger').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      this.nextElementSibling.classList.toggle('open', !expanded);
+    });
   });
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const id = entry.target.id;
-      if (entry.isIntersecting) {
-        links.forEach(l => l.classList.remove('active'));
-        map[id].classList.add('active');
-      }
+  /* Inner accordion */
+  document.querySelectorAll('.inner-trigger').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var expanded = this.getAttribute('aria-expanded') === 'true';
+      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      this.nextElementSibling.classList.toggle('open', !expanded);
     });
-  }, { threshold: 0.4 });
+  });
 
-  sections.forEach(section => observer.observe(section));
 });
 </script>
 
