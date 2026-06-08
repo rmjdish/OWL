@@ -215,10 +215,6 @@ classes: home-page
 .owl-letter {
   font-weight: 800;
   color: #3a0066;
-  background: rgba(106,13,173,0.1);
-  border-radius: 3px;
-  padding: 0px 3px;
-  font-size: 16px;
 }
 
 .hero-banner p {
