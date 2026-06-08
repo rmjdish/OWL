@@ -8,19 +8,19 @@ classes: home-page
 <div class="home-page">
 
   <div class="hero-banner">
-    <h1>Welcome to the National Survey of Health and Development (NSHD) Data Dictionary</h1>
-    <p>Explore variables, metadata, and documentation for the NSHD study.</p>
+    <h1><span class="owl-letter">N</span>ational <span class="owl-letter">S</span>urvey of <span class="owl-letter">H</span>ealth and <span class="owl-letter">D</span>evelopment — <span class="owl-letter">O</span>nline <span class="owl-letter">W</span>ellbeing and <span class="owl-letter">L</span>ongitudinal Resource</h1>
+    <p>From birth in post-war Britain to life in the twenty-first century — the NSHD OWL brings together the variables, questionnaires, and metadata behind one of science's most remarkable long-term studies.</p>
   </div>
 
   <!-- STATS STRIP -->
   <div class="stats-strip">
     <div class="stat-item">
-      <div class="stat-number">30,000+</div>
+      <div class="stat-number">5,000+</div>
       <div class="stat-label">Variables</div>
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item">
-      <div class="stat-number">80 years</div>
+      <div class="stat-number">79 years</div>
       <div class="stat-label">Data span</div>
     </div>
     <div class="stat-divider"></div>
@@ -46,9 +46,8 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>The NSHD Data Dictionary is a comprehensive metadata browser for the 1946 British birth cohort study.
-        It provides researchers with detailed information about the variables, assays, and data collected
-        across decades of longitudinal follow-up, serving as a comprehensive reference for all data held within the cohort.</p>
+        <p>The NSHD OWL — Online Wellbeing and Longitudinal Resource — is the central reference for the National Survey of Health and Development, Britain's longest-running birth cohort study. The study has followed over 5,000 individuals born in a single week of March 1946, now into their late seventies, generating one of the richest longitudinal datasets in the world.</p>
+        <p>Spanning physical health, cognitive development, mental wellbeing, lifestyle, and socioeconomic circumstance from birth through to older age, the NSHD offers unparalleled insight into how lives unfold across time. This resource gives researchers structured access to that data — search thousands of variables by keyword or metadata, browse by topic area, explore the questionnaires used at each survey wave, and identify the measures most commonly used across research projects. Whether you are planning a new analysis, reviewing the study's scope, or tracking down a specific variable, the OWL is designed to make navigating nearly eighty years of data as straightforward as possible.</p>
       </div>
     </div>
 
@@ -87,7 +86,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Data Dictionary search operates directly on the structured dataset, examining variable names, labels, descriptions, categories, and all metadata fields. It is the most powerful method for detailed variable-level exploration and works in combination with the filter panel for layered, precise narrowing of results.</p>
               <p>The search updates instantly as you type, making it especially valuable when working with large variable collections where manual browsing would be time-consuming.</p>
-              <a class="inner-link" href="/OWL/docs/data_dictionary/NSHD_Data_Dictionary.html">Go to Data Dictionary Search →</a>
+              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/data_dictionary/NSHD_Data_Dictionary.html">Go to Data Dictionary Search →</a>
             </div>
           </div>
 
@@ -100,7 +99,7 @@ classes: home-page
             <div class="inner-body">
               <p>Variables are grouped into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer to navigate conceptually, or for new users learning how the dataset is organised.</p>
               <p>Category browsing supports exploratory research — it lets you scan available options and discover variables you might not have known to search for directly.</p>
-              <a class="inner-link" href="/OWL/docs/browse_by_category/Browse_by_Category.html">Go to Category Browsing →</a>
+              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/browse_by_category/Browse_by_Category.html">Go to Category Browsing →</a>
             </div>
           </div>
 
@@ -113,7 +112,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Popular Variables tool highlights variables added to baskets most often across recent projects, offering insight into which measures are widely used or considered essential within the research community.</p>
               <p>The table includes counts, labels, and direct links to metadata pages, and can be sorted and filtered to focus on specific areas of interest.</p>
-              <a class="inner-link" href="/OWL/docs/popular_vars/popular-variables.html">Go to Popular Variables →</a>
+              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/popular_vars/popular-variables.html">Go to Popular Variables →</a>
             </div>
           </div>
 
@@ -124,8 +123,8 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>Browse and download the survey instruments used at every wave of the study, from the 1946 maternity survey through to 2025. Questionnaires are available by decade and respondent type, with variable names annotated directly on the PDFs, linking survey questions to the data held in the NSHD Data Dictionary.</p>
-              <a class="inner-link" href="/OWL/docs/questionnaires/NSHD_questionnaires_homepage.html">Go to Questionnaires →</a>
+              <p>Browse and download the survey instruments used at every wave of the study, from the 1946 maternity survey through to 2025. Questionnaires are available by decade and respondent type, with variable names annotated directly on the PDFs, linking survey questions to the data held in the OWL.</p>
+              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/questionnaires/NSHD_questionnaires_homepage.html">Go to Questionnaires →</a>
             </div>
           </div>
 
@@ -193,10 +192,27 @@ classes: home-page
 }
 
 .hero-banner h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
+  margin: 0 0 4px 0;
+  font-size: 32px;
   font-weight: 800;
   color: #2b004d;
+}
+
+.hero-subtitle {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  color: #6a0dad !important;
+  margin: 0 0 10px 0 !important;
+  letter-spacing: 0.01em;
+}
+
+.owl-letter {
+  font-weight: 800;
+  color: #3a0066;
+  background: rgba(106,13,173,0.1);
+  border-radius: 3px;
+  padding: 0px 3px;
+  font-size: 16px;
 }
 
 .hero-banner p {
@@ -497,4 +513,3 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script src="/OWL/assets/js/basket_header.js"></script>
-
