@@ -79,7 +79,7 @@ classes: home-page
           <div class="inner-item">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🔍</span>
-              <span class="inner-title">1. Data Dictionary Search</span>
+              <span class="inner-title">1. Search Data Dictionary</span>
               <span class="inner-badge">Recommended</span>
               <span class="inner-chevron">▾</span>
             </button>
@@ -93,7 +93,7 @@ classes: home-page
           <div class="inner-item">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">📂</span>
-              <span class="inner-title">2. Category-Based Browsing</span>
+              <span class="inner-title">2. Browse by Category</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
@@ -106,7 +106,7 @@ classes: home-page
           <div class="inner-item">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">⭐</span>
-              <span class="inner-title">3. Popular Variables</span>
+              <span class="inner-title">3. View Popular Variables</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
