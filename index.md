@@ -9,18 +9,18 @@ classes: home-page
 
   <div class="hero-banner">
     <h1><span class="owl-letter">N</span>ational <span class="owl-letter">S</span>urvey of <span class="owl-letter">H</span>ealth and <span class="owl-letter">D</span>evelopment — <span class="owl-letter">O</span>nline <span class="owl-letter">W</span>ellbeing and <span class="owl-letter">L</span>ongitudinal Resource</h1>
-    <p>From birth in post-war Britain to life in the twenty-first century — the NSHD OWL brings together the variables, questionnaires, and metadata behind one of science's most remarkable long-term studies.</p>
+    <p>From birth in post-war Britain to life in the twenty-first century — the NSHD OWL brings together the variables, questionnaires, and metadata behind one of worlds most remarkable long-term studies.</p>
   </div>
 
   <!-- STATS STRIP -->
   <div class="stats-strip">
     <div class="stat-item">
-      <div class="stat-number">5,000+</div>
+      <div class="stat-number">30,000+</div>
       <div class="stat-label">Variables</div>
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item">
-      <div class="stat-number">79 years</div>
+      <div class="stat-number">80 years</div>
       <div class="stat-label">Data span</div>
     </div>
     <div class="stat-divider"></div>
@@ -136,7 +136,7 @@ classes: home-page
             </button>
             <div class="inner-body">
               <p>The search bar at the top of every page uses a pre-built Lunr.js index to scan all page titles, headings, and body text across the whole site. It is the fastest way to jump directly to a known topic or locate cross-cutting documentation that may not appear in dataset-specific tools.</p>
-              <p class="inner-hint">💡 Use the <strong>search bar in the site header</strong> above to get started — no separate page needed.</p>
+              <p class="inner-hint">💡 Use the <strong>search bar in the site header</strong> above to get started.</p>
             </div>
           </div>
 
