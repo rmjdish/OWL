@@ -219,8 +219,8 @@ classes: home-page
 
 .hero-banner p {
   margin: 0;
-  font-size: 16px;
-  color: #333;
+  font-size: 15px;
+  color: #555;
 }
 
 /* ============================================================
