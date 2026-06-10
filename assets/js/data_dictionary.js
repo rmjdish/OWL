@@ -491,3 +491,17 @@ document.getElementById("addAllBtn").addEventListener("click", () => {
   updateBasketCountUI();
   renderTable(); // refresh checkboxes + button label
 });
+
+
+// ============================================================
+// Make search methods label appear when the Data Dictionary page is active 
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.nav-list-link.active').forEach(function (link) {
+    if (link.textContent.trim() === 'Search Data Dictionary') {
+      const item = link.closest('.nav-list-item');
+      if (item) item.setAttribute('data-dd-active', 'true');
+    }
+  });
+});
