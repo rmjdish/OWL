@@ -174,7 +174,7 @@ classes: home-page
    ============================================================ */
 
 .home-page {
-  max-width: 900px;
+  max-width: 1000px;
   margin-left: 0;
   margin-right: 0;
   position: relative;
