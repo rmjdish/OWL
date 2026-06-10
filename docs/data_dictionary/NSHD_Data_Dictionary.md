@@ -18,12 +18,11 @@ classes: page-search-data-dictionary
 
     <div id="data-dictionary-app">
 
-      <!-- FILTER BAR -->
-      <div id="filter-box" class="filter-box">
-        <div class="filter-box-inner">
-          <div class="filter-title">Filters</div>
-          <div id="filter-bar" class="filter-bar"></div>
-        </div>
+      <!-- HERO BANNER (title + filters combined) -->
+      <div class="hero-banner">
+        <h1>Search NSHD Data Dictionary</h1>
+        <p>Filter by topic, wave, or keyword to explore variables across the study.</p>
+        <div id="filter-bar" class="filter-bar"></div>
       </div>
 
       <!-- SEARCH + PAGE SIZE + RESET + PAGINATION -->
