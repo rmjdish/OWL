@@ -2,7 +2,6 @@
    NSHD Questionnaire Sub-page by respondent
    ============================================================ */
  
-<script>
 document.addEventListener('DOMContentLoaded', function () {
   document.querySelectorAll('.page-questionnaire_by_respondent .sec-trigger').forEach(function(btn) {
     btn.addEventListener('click', function() {
@@ -12,4 +11,3 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 });
-</script>
