@@ -21,7 +21,7 @@ classes: page-search-data-dictionary
       <!-- HERO BANNER (title + filters combined) -->
       <div class="hero-banner">
         <h1>Search NSHD Data Dictionary</h1>
-        <p>Filter by topic, wave, or keyword to explore variables across the study.</p>
+        <p>Variables are organised into a hierarchical category structure — use the filters to drill down through topics and subtopics, or type a keyword to search across variable names and descriptions..</p>
         <div id="filter-bar" class="filter-bar"></div>
       </div>
 
