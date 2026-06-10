@@ -21,7 +21,7 @@ classes: page-search-data-dictionary
       <!-- HERO BANNER (title + filters combined) -->
       <div class="hero-banner">
         <h1>Search NSHD Data Dictionary</h1>
-        <p>Variables are organised into a hierarchical category structure — use the filters to drill down through topics and subtopics, or type a keyword to search across variable names and descriptions..</p>
+        <p>Variables are organised into a hierarchical category structure. Use the filters to drill down through topics and subtopics, or type a keyword to search across variable metadata.</p>
         <div id="filter-bar" class="filter-bar"></div>
       </div>
 
