@@ -393,17 +393,26 @@ document.addEventListener('DOMContentLoaded', function () {
     map[id] = link;
   });
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      const id = entry.target.id;
-      if (entry.isIntersecting) {
-        links.forEach(l => l.classList.remove('active'));
-        if (map[id]) map[id].classList.add('active');
+  function setActive(id) {
+    links.forEach(l => l.classList.remove('active'));
+    if (map[id]) map[id].classList.add('active');
+  }
+
+  // Use scroll position to find which section is currently most visible
+  function onScroll() {
+    let current = null;
+    sections.forEach(section => {
+      const rect = section.getBoundingClientRect();
+      // Section is considered active when its top is within the top half of the viewport
+      if (rect.top <= window.innerHeight * 0.5) {
+        current = section.id;
       }
     });
-  }, { threshold: 0.1 });
+    if (current) setActive(current);
+  }
 
-  sections.forEach(section => observer.observe(section));
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll(); // run on load
 });
 </script>
 
