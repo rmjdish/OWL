@@ -433,14 +433,28 @@ document.addEventListener('DOMContentLoaded', function () {
     if (current) setActive(current);
   }
 
-  // When a sidebar link is clicked, highlight it immediately
-  // then re-run onScroll after the browser has jumped to the anchor
   links.forEach(link => {
-    link.addEventListener('click', function () {
+    link.addEventListener('click', function (e) {
+      // Set active immediately on click, before any scroll/navigation happens
       const id = this.getAttribute('href').substring(1);
       setActive(id);
-      setTimeout(onScroll, 50);
+      // Re-apply after browser jumps to anchor, using multiple timeouts for safety
+      setTimeout(function() { setActive(id); }, 10);
+      setTimeout(function() { setActive(id); }, 100);
+      setTimeout(function() { setActive(id); }, 300);
     });
+  });
+
+  // Also highlight based on URL hash on load
+  if (window.location.hash) {
+    setActive(window.location.hash.substring(1));
+  }
+
+  // Update on hash change (e.g. browser back/forward)
+  window.addEventListener('hashchange', function () {
+    if (window.location.hash) {
+      setActive(window.location.hash.substring(1));
+    }
   });
 
   window.addEventListener('scroll', onScroll, { passive: true });
@@ -449,4 +463,3 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script src="/OWL/assets/js/basket_header.js"></script>
-<script src="/OWL/assets/js/questionnaire_by_respondent.js"></script>
