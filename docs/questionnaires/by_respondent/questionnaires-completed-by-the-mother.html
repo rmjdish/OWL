@@ -410,12 +410,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (map[id]) map[id].classList.add('active');
   }
 
-  // Use scroll position to find which section is currently most visible
   function onScroll() {
     let current = null;
     sections.forEach(section => {
       const rect = section.getBoundingClientRect();
-      // Section is considered active when its top is within the top half of the viewport
       if (rect.top <= window.innerHeight * 0.5) {
         current = section.id;
       }
@@ -423,8 +421,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (current) setActive(current);
   }
 
+  // When a sidebar link is clicked, highlight it immediately
+  // then re-run onScroll after the browser has jumped to the anchor
+  links.forEach(link => {
+    link.addEventListener('click', function () {
+      const id = this.getAttribute('href').substring(1);
+      setActive(id);
+      setTimeout(onScroll, 50);
+    });
+  });
+
   window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll(); // run on load
+  onScroll();
 });
 </script>
 
