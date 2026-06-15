@@ -1,50 +1,52 @@
 /* ============================================================
-   NSHD Questionnaire Sub-page — shared JavaScript
-   Active section highlighting in the fixed sidebar.
+   NSHD Topic Sub-page — shared JavaScript
+   Active section highlighting in the sidebar-summary box.
    Click locks the highlight; scroll updates it once settled.
    ============================================================ */
- 
+
 document.addEventListener('DOMContentLoaded', function () {
- 
+
   const sections = document.querySelectorAll('.home-section[id]');
-  const links    = document.querySelectorAll('.sidebar-link');
- 
+  const links    = document.querySelectorAll('.sidebar-summary a[href^="#"]');
+
+  if (!sections.length || !links.length) return;
+
   /* Build a quick id → link map */
   const map = {};
   links.forEach(link => {
     const id = link.getAttribute('href').replace('#', '');
     map[id] = link;
   });
- 
+
   function setActive(id) {
     links.forEach(l => l.classList.remove('active'));
     if (map[id]) map[id].classList.add('active');
   }
- 
+
   /* ── Click: lock the clicked item immediately ── */
   let scrollLock = false;
   let lockTimer  = null;
- 
+
   links.forEach(link => {
     link.addEventListener('click', function () {
       const id = this.getAttribute('href').replace('#', '');
       setActive(id);
- 
+
       /* Suppress the observer for long enough to finish scrolling */
       scrollLock = true;
       clearTimeout(lockTimer);
       lockTimer = setTimeout(() => { scrollLock = false; }, 1000);
     });
   });
- 
+
   /* ── Scroll: pick the section whose top is closest to the top of the viewport ── */
   const observer = new IntersectionObserver(entries => {
     if (scrollLock) return;
- 
+
     /* Find the section nearest the top of the viewport */
-    let best     = null;
-    let bestTop  = Infinity;
- 
+    let best    = null;
+    let bestTop = Infinity;
+
     sections.forEach(section => {
       const rect = section.getBoundingClientRect();
       /* Only consider sections that are at least partially visible */
@@ -56,11 +58,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
     });
- 
+
     if (best) setActive(best);
- 
+
   }, { threshold: [0, 0.1, 0.25, 0.5, 1] });
- 
+
   sections.forEach(section => observer.observe(section));
- 
+
+  /* Set an initial active state on load (in case page loads mid-scroll, e.g. via anchor link) */
+  if (sections.length) setActive(sections[0].id);
 });

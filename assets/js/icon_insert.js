@@ -227,109 +227,7 @@
     h1.insertBefore(i, h1.firstChild);
   }
 
-  /* ── 7. Sidebar summary scroll-spy ──────────────────────── */
-  /* Uses IntersectionObserver with a thin "active band" near the
-     top of the viewport. This handles sections that are close
-     together (or very short) far better than a simple scroll
-     offset check, because multiple headings can be tracked as
-     "visible" at once and we always pick the lowest (most
-     recently scrolled-to) one in document order. */
-  function initScrollSpy() {
-    var sumLinks = document.querySelectorAll(
-      ".page-topics .sidebar-summary a[href^='#']"
-    );
-    if (!sumLinks.length) return;
- 
-    var linkMap = {};
-    var targets = [];
-    sumLinks.forEach(function (a) {
-      var id = a.getAttribute("href").slice(1);
-      var el = document.getElementById(id);
-      if (el) {
-        targets.push(el);
-        linkMap[id] = a;
-      }
-    });
-    if (!targets.length) return;
- 
-    function setActive(id) {
-      sumLinks.forEach(function (a) { a.classList.remove("active"); });
-      if (linkMap[id]) linkMap[id].classList.add("active");
-    }
- 
-    /* ── Fallback for browsers without IntersectionObserver ── */
-    if (!("IntersectionObserver" in window)) {
-      function onScroll() {
-        var y = window.scrollY + 150;
-        var activeId = targets[0].id;
-        targets.forEach(function (t) {
-          if (t.getBoundingClientRect().top + window.scrollY <= y) {
-            activeId = t.id;
-          }
-        });
-        setActive(activeId);
-      }
-      window.addEventListener("scroll", onScroll, { passive: true });
-      onScroll();
-      return;
-    }
- 
-    /* ── IntersectionObserver implementation ─────────────────
-       rootMargin "-100px 0px -70% 0px" shrinks the observed
-       area to a thin horizontal band starting 100px below the
-       top of the viewport. A heading is "visible" while its
-       top edge is inside that band. */
-    var visible = new Set();
- 
-    function update() {
-      if (visible.size > 0) {
-        /* pick the LAST target in document order that's in the
-           band — i.e. the one closest to (or just above) the
-           band, which is the section currently being read */
-        for (var i = targets.length - 1; i >= 0; i--) {
-          if (visible.has(targets[i].id)) {
-            setActive(targets[i].id);
-            return;
-          }
-        }
-      }
- 
-      /* nothing in the band: either above the first heading or
-         past the last one — snap to the nearest end */
-      var firstTop = targets[0].getBoundingClientRect().top;
-      var lastTop = targets[targets.length - 1].getBoundingClientRect().top;
-      if (firstTop > 0) {
-        setActive(targets[0].id);
-      } else if (lastTop < 0) {
-        setActive(targets[targets.length - 1].id);
-      }
-    }
- 
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          visible.add(entry.target.id);
-        } else {
-          visible.delete(entry.target.id);
-        }
-      });
-      update();
-    }, {
-      root: null,
-      rootMargin: "-100px 0px -70% 0px",
-      threshold: 0
-    });
- 
-    targets.forEach(function (t) { observer.observe(t); });
- 
-    /* set initial state */
-    setActive(targets[0].id);
-    update();
-  }
- 
- 
-
-  /* ── 8. "Explore Documentation" label injection ──────────── */
+  /* ── 7. "Explore Documentation" label injection ──────────── */
   /* Inserts the grey uppercase label above the first
      "Explore NSHD questionnaires" nav item */
   function injectExploreLabel() {
@@ -359,7 +257,6 @@
     injectHeadingIcons();
     injectHeroIcon();
     injectExploreLabel();
-    initScrollSpy();
   }
 
   if (document.readyState === "loading") {
