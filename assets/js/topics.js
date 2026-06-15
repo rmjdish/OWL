@@ -1,13 +1,14 @@
 /* ============================================================
    NSHD Topic Sub-page — shared JavaScript
    Active section highlighting in the sidebar-summary box.
+   Works for pages with few/short sections as well as long ones.
    Click locks the highlight; scroll updates it once settled.
    ============================================================ */
 
 document.addEventListener('DOMContentLoaded', function () {
 
-  const sections = document.querySelectorAll('.home-section[id]');
-  const links    = document.querySelectorAll('.sidebar-summary a[href^="#"]');
+  const sections = Array.from(document.querySelectorAll('.home-section[id]'));
+  const links    = Array.from(document.querySelectorAll('.sidebar-summary a[href^="#"]'));
 
   if (!sections.length || !links.length) return;
 
@@ -32,39 +33,48 @@ document.addEventListener('DOMContentLoaded', function () {
       const id = this.getAttribute('href').replace('#', '');
       setActive(id);
 
-      /* Suppress the observer for long enough to finish scrolling */
       scrollLock = true;
       clearTimeout(lockTimer);
       lockTimer = setTimeout(() => { scrollLock = false; }, 1000);
     });
   });
 
-  /* ── Scroll: pick the section whose top is closest to the top of the viewport ── */
-  const observer = new IntersectionObserver(entries => {
+  /* ── Scroll: "active line" near the top of the viewport.
+     The active section is the LAST one (in document order)
+     whose top has crossed above the line. If none have,
+     default to the first section. ── */
+  const OFFSET = 150; // px from top of viewport
+
+  function updateActive() {
     if (scrollLock) return;
 
-    /* Find the section nearest the top of the viewport */
-    let best    = null;
-    let bestTop = Infinity;
+    let current = sections[0].id;
 
-    sections.forEach(section => {
+    for (const section of sections) {
       const rect = section.getBoundingClientRect();
-      /* Only consider sections that are at least partially visible */
-      if (rect.bottom > 0 && rect.top < window.innerHeight) {
-        const distFromTop = Math.abs(rect.top);
-        if (distFromTop < bestTop) {
-          bestTop = distFromTop;
-          best    = section.id;
-        }
+      if (rect.top - OFFSET <= 0) {
+        current = section.id;
+      } else {
+        break;
       }
-    });
+    }
 
-    if (best) setActive(best);
+    setActive(current);
+  }
 
-  }, { threshold: [0, 0.1, 0.25, 0.5, 1] });
+  let ticking = false;
+  window.addEventListener('scroll', function () {
+    if (!ticking) {
+      window.requestAnimationFrame(function () {
+        updateActive();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
 
-  sections.forEach(section => observer.observe(section));
+  window.addEventListener('resize', updateActive);
 
-  /* Set an initial active state on load (in case page loads mid-scroll, e.g. via anchor link) */
-  if (sections.length) setActive(sections[0].id);
+  /* Initial state on load */
+  updateActive();
 });
