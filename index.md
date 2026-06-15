@@ -48,7 +48,7 @@ classes: home-page
       <div class="sec-body">
         <p>The <strong>NSHD OWL</strong> — Online Wellbeing and Lifecourse Resource — is the central reference for the National Survey of Health and Development, 
 		Britain's longest-running birth cohort study. The study has followed over 5,000 individuals born in a single week of March 1946, now into 
-		their late seventies, generating one of the richest longitudinal datasets in the world.</p>
+		their eighties, generating one of the richest longitudinal datasets in the world.</p>
         <p>Spanning physical health, cognitive development, mental wellbeing, lifestyle, and socioeconomic circumstance from birth through to older age, 
 		the NSHD offers unparalleled insight into how lives unfold across time. This resource gives researchers structured access to metadata — search 
 		thousands of variables by keyword, browse by topic area, explore the questionnaires used at each survey wave, and identify the measures most commonly 
