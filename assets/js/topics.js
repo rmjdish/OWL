@@ -14,7 +14,7 @@
  
 document.addEventListener('DOMContentLoaded', function () {
  
-  const DEBUG = false;
+  const DEBUG = true;
  
   const sections = Array.from(document.querySelectorAll('.home-section[id]'));
  
