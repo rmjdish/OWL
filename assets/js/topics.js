@@ -79,6 +79,26 @@ document.addEventListener('DOMContentLoaded', function () {
   function updateActive() {
     if (scrollLock) return;
 
+    /* If scrolled (at or near) the bottom of the page, force the
+       last section active — its midpoint may never be able to
+       reach the reference line if the page doesn't scroll far
+       enough past it. */
+    const atBottom = (window.innerHeight + window.scrollY)
+      >= (document.documentElement.scrollHeight - 2);
+
+    if (atBottom) {
+      if (DEBUG) console.log('[topics] at bottom of page, forcing last section');
+      setActive(sections[sections.length - 1].id);
+      return;
+    }
+
+    /* Similarly, if at the very top of the page, force the first
+       section active. */
+    if (window.scrollY <= 2) {
+      setActive(sections[0].id);
+      return;
+    }
+
     const referenceY = window.innerHeight * REFERENCE_LINE_RATIO;
 
     let best = sections[0].id;
