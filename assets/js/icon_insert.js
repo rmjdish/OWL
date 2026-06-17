@@ -15,7 +15,7 @@
 
   /* ── 1. Load Tabler Icons webfont ────────────────────────── */
   var TABLER_CDN =
-    "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css";
+    "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.26.0/dist/tabler-icons.min.css";
   if (!document.querySelector('link[href*="tabler-icons"]')) {
     var link = document.createElement("link");
     link.rel = "stylesheet";
@@ -128,6 +128,7 @@
     "social class":                 "ti-award",
 	"nursery": 					    "ti-blocks",
 	"bedwetting":     				"ti-bed",
+	"early-indicators":				"ti-gauge",
   };
 
   /* ── 3. Section heading icon map ─────────────────────────── */
