@@ -127,6 +127,7 @@
     "menopause":                    "ti-gender-female",
     "social class":                 "ti-award",
 	"nursery": 					    "ti-blocks",
+	"bedwetting":     				"ti-bed",
   };
 
   /* ── 3. Section heading icon map ─────────────────────────── */
