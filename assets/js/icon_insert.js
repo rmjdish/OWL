@@ -126,7 +126,7 @@
     "life events":                  "ti-calendar-event",
     "menopause":                    "ti-gender-female",
     "social class":                 "ti-award",
-	"nursery": 					    "ti-blocks",
+	"nursery": 					    "ti-lego",
 	"bedwetting":     				"ti-bed",
 	"early-indicators":				"ti-gauge",
   };
