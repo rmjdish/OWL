@@ -129,7 +129,8 @@
 	"nursery": 					    "ti-lego",
 	"bedwetting":     				"ti-bed",
 	"early-indicators":				"ti-gauge",
-  };
+	"marital":      				"ti-rings",
+	};
 
   /* ── 3. Section heading icon map ─────────────────────────── */
   /* Maps h2 text fragments → Tabler icon class */
