@@ -126,6 +126,7 @@
     "life events":                  "ti-calendar-event",
     "menopause":                    "ti-gender-female",
     "social class":                 "ti-award",
+	"nursery": 					    "ti-blocks",
   };
 
   /* ── 3. Section heading icon map ─────────────────────────── */
