@@ -237,7 +237,6 @@
     injectNavIcons();
     injectHeadingIcons();
     injectHeroIcon();
-    injectExploreLabel();
   }
 
   if (document.readyState === "loading") {
