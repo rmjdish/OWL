@@ -231,31 +231,8 @@
     h1.insertBefore(i, h1.firstChild);
   }
 
-  /* ── 7. "Explore Documentation" label injection ──────────── */
-  /* Inserts the grey uppercase label above the first
-     "Explore NSHD questionnaires" nav item */
-  function injectExploreLabel() {
-    var links = document.querySelectorAll(".site-nav .nav-list-link");
-    links.forEach(function (a) {
-      var text = (a.textContent || "").toLowerCase();
-      if (
-        text.indexOf("explore nshd questionnaires") !== -1 &&
-        !a.parentElement.previousElementSibling?.classList.contains(
-          "nav-label-explore"
-        )
-      ) {
-        var label = document.createElement("span");
-        label.className = "nav-label-explore";
-        label.textContent = "Explore documentation";
-        a.parentElement.parentElement.insertBefore(
-          label,
-          a.parentElement
-        );
-      }
-    });
-  }
 
-  /* ── 9. Run everything ───────────────────────────────────── */
+  /* ── 7. Run everything ───────────────────────────────────── */
   function run() {
     injectNavIcons();
     injectHeadingIcons();
