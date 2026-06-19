@@ -1,7 +1,8 @@
 /* ============================================================
    OWL — Explore Topics
    /OWL/assets/js/topics.js
-   Shared script: active-section sidebar highlighting.
+   Shared script: active-section sidebar highlighting,
+   variable-code table linking, and table alignment fixes.
 
    Supports two sidebar markup styles used across the site:
      - .sidebar-link                  (older question/year pages)
@@ -41,100 +42,145 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (!sections.length || !links.length) {
     if (DEBUG) console.warn('[topics] No sections or links found — aborting.');
-    return;
-  }
+  } else {
 
-  /* Build a quick id → link map */
-  const map = {};
-  links.forEach(link => {
-    const id = link.getAttribute('href').replace('#', '');
-    map[id] = link;
-  });
-
-  function setActive(id) {
-    if (DEBUG) console.log('[topics] setActive ->', id);
-    links.forEach(l => l.classList.remove('active'));
-    if (map[id]) map[id].classList.add('active');
-  }
-
-  /* ── Click: lock the clicked item immediately ── */
-  let scrollLock = false;
-  let lockTimer  = null;
-
-  links.forEach(link => {
-    link.addEventListener('click', function () {
-      const id = this.getAttribute('href').replace('#', '');
-      setActive(id);
-
-      scrollLock = true;
-      clearTimeout(lockTimer);
-      lockTimer = setTimeout(() => { scrollLock = false; }, 1000);
-    });
-  });
-
-  /* ── Reference line: how far down the viewport do we consider
-     "where the reader's attention is"? ── */
-  const REFERENCE_LINE_RATIO = 0.3; // 30% down the viewport
-
-  function updateActive() {
-    if (scrollLock) return;
-
-    /* If scrolled (at or near) the bottom of the page, force the
-       last section active — its midpoint may never be able to
-       reach the reference line if the page doesn't scroll far
-       enough past it. */
-    const atBottom = (window.innerHeight + window.scrollY)
-      >= (document.documentElement.scrollHeight - 2);
-
-    if (atBottom) {
-      if (DEBUG) console.log('[topics] at bottom of page, forcing last section');
-      setActive(sections[sections.length - 1].id);
-      return;
-    }
-
-    /* Similarly, if at the very top of the page, force the first
-       section active. */
-    if (window.scrollY <= 2) {
-      setActive(sections[0].id);
-      return;
-    }
-
-    const referenceY = window.innerHeight * REFERENCE_LINE_RATIO;
-
-    let best = sections[0].id;
-    let bestDist = Infinity;
-
-    sections.forEach(section => {
-      const rect = section.el.getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      const dist = Math.abs(midpoint - referenceY);
-
-      if (DEBUG) {
-        console.log(`[topics] ${section.id} midpoint=${midpoint.toFixed(0)} dist=${dist.toFixed(0)}`);
-      }
-
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = section.id;
-      }
+    /* Build a quick id → link map */
+    const map = {};
+    links.forEach(link => {
+      const id = link.getAttribute('href').replace('#', '');
+      map[id] = link;
     });
 
-    setActive(best);
-  }
+    function setActive(id) {
+      if (DEBUG) console.log('[topics] setActive ->', id);
+      links.forEach(l => l.classList.remove('active'));
+      if (map[id]) map[id].classList.add('active');
+    }
 
-  let ticking = false;
-  window.addEventListener('scroll', function () {
-    if (!ticking) {
-      window.requestAnimationFrame(function () {
-        updateActive();
-        ticking = false;
+    /* ── Click: lock the clicked item immediately ── */
+    let scrollLock = false;
+    let lockTimer  = null;
+
+    links.forEach(link => {
+      link.addEventListener('click', function () {
+        const id = this.getAttribute('href').replace('#', '');
+        setActive(id);
+
+        scrollLock = true;
+        clearTimeout(lockTimer);
+        lockTimer = setTimeout(() => { scrollLock = false; }, 1000);
       });
-      ticking = true;
+    });
+
+    /* ── Reference line: how far down the viewport do we consider
+       "where the reader's attention is"? ── */
+    const REFERENCE_LINE_RATIO = 0.3; // 30% down the viewport
+
+    function updateActive() {
+      if (scrollLock) return;
+
+      /* If scrolled (at or near) the bottom of the page, force the
+         last section active — its midpoint may never be able to
+         reach the reference line if the page doesn't scroll far
+         enough past it. */
+      const atBottom = (window.innerHeight + window.scrollY)
+        >= (document.documentElement.scrollHeight - 2);
+
+      if (atBottom) {
+        if (DEBUG) console.log('[topics] at bottom of page, forcing last section');
+        setActive(sections[sections.length - 1].id);
+        return;
+      }
+
+      /* Similarly, if at the very top of the page, force the first
+         section active. */
+      if (window.scrollY <= 2) {
+        setActive(sections[0].id);
+        return;
+      }
+
+      const referenceY = window.innerHeight * REFERENCE_LINE_RATIO;
+
+      let best = sections[0].id;
+      let bestDist = Infinity;
+
+      sections.forEach(section => {
+        const rect = section.el.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        const dist = Math.abs(midpoint - referenceY);
+
+        if (DEBUG) {
+          console.log(`[topics] ${section.id} midpoint=${midpoint.toFixed(0)} dist=${dist.toFixed(0)}`);
+        }
+
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = section.id;
+        }
+      });
+
+      setActive(best);
     }
-  }, { passive: true });
 
-  window.addEventListener('resize', updateActive);
+    let ticking = false;
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        window.requestAnimationFrame(function () {
+          updateActive();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
 
-  /* Initial state on load */
-  updateActive();
+    window.addEventListener('resize', updateActive);
+
+    /* Initial state on load */
+    updateActive();
+  }
+
+  /* ============================================================
+     Variable-code linking
+     Turns any table cell in .topic-table whose full text is a
+     single alphanumeric token (e.g. WIC66, BRONC09) into a link
+     pointing at the variable metadata page, lowercased.
+     Cells with spaces, punctuation, or "—" are left untouched.
+     ============================================================ */
+  (function linkVariableCodes() {
+    const baseUrl = 'https://rmjdish.github.io/OWL/docs/variable_metadata/';
+    const cells = document.querySelectorAll('.topic-table tbody td');
+
+    cells.forEach(function (cell) {
+      const text = cell.textContent.trim();
+      if (/^[a-zA-Z0-9]+$/.test(text)) {
+        const link = document.createElement('a');
+        link.href = baseUrl + text.toLowerCase();
+        link.textContent = text;
+        cell.innerHTML = '';
+        cell.appendChild(link);
+      }
+    });
+  })();
+
+  /* ============================================================
+     Description column alignment
+     The base .topic-table styling center-aligns all columns
+     except the first. Any column whose header is literally
+     "Description" should stay left-aligned instead.
+     ============================================================ */
+  (function leftAlignDescriptionColumns() {
+    document.querySelectorAll('.topic-table').forEach(function (table) {
+      const headers = table.querySelectorAll('thead th');
+      headers.forEach(function (th, index) {
+        if (th.textContent.trim() === 'Description') {
+          th.style.textAlign = 'left';
+          table.querySelectorAll('tbody tr').forEach(function (row) {
+            const cell = row.children[index];
+            if (cell) cell.style.textAlign = 'left';
+          });
+        }
+      });
+    });
+  })();
+
 });
