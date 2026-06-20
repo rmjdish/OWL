@@ -560,5 +560,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
 });
 </script>
-
-<script src="/OWL/assets/js/basket_header.js"></script>
