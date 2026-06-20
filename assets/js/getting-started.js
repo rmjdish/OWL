@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-  /* Accordion logic — "How the site is organised" page */
   document.querySelectorAll('.gs-acc-trigger').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var expanded = this.getAttribute('aria-expanded') === 'true';
@@ -9,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  /* Jargon glossary — fetched from JSON, alphabetical, grouped, searchable */
   var jargonList = document.getElementById('gs-jargon-list');
   if (!jargonList) return;
 
