@@ -150,19 +150,43 @@ classes: home-page
       </div>
     </div>
 
-    <!-- EXPLORE BY QUESTIONNAIRES & TOPICS -->
+   <!-- EXPLORE DOCUMENTATION -->
     <div class="sec-row">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
-        <span class="sec-title">Explore by Questionnaires & Topics</span>
+        <span class="sec-title">Explore Documentation</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>Beyond keyword search, the OWL offers two complementary ways to explore the NSHD dataset by structure rather than by query: browsing the original survey instruments, or browsing by subject area.</p>
-        <p><strong>By Questionnaire</strong> lets you step through the study chronologically, sweep by sweep, from the earliest postwar surveys of the study members' parents through to the most recent data collection in adulthood. Each questionnaire page presents the original instrument alongside the variable names it generated, so you can see exactly how a question asked in, say, 1989 maps onto the coded data held in the dictionary today. This view is especially useful when you already know roughly when a measure was collected, or when you want to understand the original wording behind a variable before using it in analysis.</p>
-        <p><strong>By Topic</strong> instead groups variables thematically — physical health, mental wellbeing, cognition, lifestyle, and more — pulling together related measures regardless of which sweep they came from. Many topics, like respiratory or cardiovascular health, span several decades of the study, and the topic pages lay out how the same construct was measured as study members aged, including any changes in instrument or coding along the way. This is the natural starting point if you're approaching the data conceptually, rather than by date or variable name.</p>
-        <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/questionnaires/NSHD_questionnaires_homepage.html">Browse by Questionnaire →</a><br>
-        <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/topics/">Browse by Topic →</a>
+        <div class="inner-accordion">
+
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">📄</span>
+              <span class="inner-title">NSHD Questionnaires</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Step through the study chronologically, sweep by sweep, from the earliest postwar surveys of the study members' parents through to the most recent data collection in adulthood. Each questionnaire page presents the original instrument alongside the variable names it generated, so you can see exactly how a question asked in, say, 1989 maps onto the coded data held in the dictionary today.</p>
+              <p>This view is especially useful when you already know roughly when a measure was collected, or when you want to understand the original wording behind a variable before using it in analysis. Questionnaires are available by decade and respondent type, with variable names annotated directly on the PDFs, linking survey questions to the data held in the OWL.</p>
+              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/questionnaires/NSHD_questionnaires_homepage.html">Go to Questionnaires →</a>
+            </div>
+          </div>
+
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">🗂️</span>
+              <span class="inner-title">Topics</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Browse variables grouped thematically — physical health, mental wellbeing, cognition, lifestyle, and more — pulling together related measures regardless of which sweep they came from. Many topics, like respiratory or cardiovascular health, span several decades of the study, and the topic pages lay out how the same construct was measured as study members aged, including any changes in instrument or coding along the way.</p>
+              <p>This is the natural starting point if you're approaching the data conceptually, rather than by date or variable name — it lets you scan available options and discover variables you might not have known to search for directly.</p>
+              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/topics/">Go to Topics →</a>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -320,20 +344,10 @@ classes: home-page
   align-items: center;
   gap: 10px;
   padding: 14px 20px;
-  background: #f5f0ff;
   border: none;
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
-}
-
-.sec-trigger:hover {
-  background: #ede5ff;
-}
-
-.sec-trigger[aria-expanded="true"] {
-  background: #ede5ff;
-  border-bottom: 1px solid rgba(106,13,173,0.15);
 }
 
 .sec-icon {
@@ -345,12 +359,10 @@ classes: home-page
   flex: 1;
   font-size: 16px;
   font-weight: 700;
-  color: #3a0066;
 }
 
 .sec-chevron {
   font-size: 16px;
-  color: #6a0dad;
   flex-shrink: 0;
   transition: transform 0.2s;
   display: inline-block;
@@ -383,7 +395,38 @@ classes: home-page
 }
 
 /* ============================================================
-   INNER ACCORDION (Search Methods)
+   PER-SECTION PASTEL COLORS
+   ============================================================ */
+
+.sec-row:nth-child(1) { --row-h: 145; --row-s: 45%; } /* About — green */
+.sec-row:nth-child(2) { --row-h: 280; --row-s: 45%; } /* Coverage — purple */
+.sec-row:nth-child(3) { --row-h: 35;  --row-s: 60%; } /* Search Methods — orange */
+.sec-row:nth-child(4) { --row-h: 195; --row-s: 50%; } /* Explore by Q&T — teal */
+.sec-row:nth-child(5) { --row-h: 340; --row-s: 45%; } /* Access — pink */
+
+.sec-trigger {
+  background: hsl(var(--row-h) var(--row-s) 94%);
+}
+
+.sec-trigger:hover {
+  background: hsl(var(--row-h) var(--row-s) 90%);
+}
+
+.sec-trigger[aria-expanded="true"] {
+  background: hsl(var(--row-h) var(--row-s) 90%);
+  border-bottom: 1px solid hsl(var(--row-h) var(--row-s) 70%);
+}
+
+.sec-chevron {
+  color: hsl(var(--row-h) var(--row-s) 40%);
+}
+
+.sec-title {
+  color: hsl(var(--row-h) var(--row-s) 22%);
+}
+
+/* ============================================================
+   INNER ACCORDION (Search Methods) — inherits parent hue, darker
    ============================================================ */
 
 .inner-accordion {
@@ -393,10 +436,10 @@ classes: home-page
 }
 
 .inner-item {
-  border: 1px solid rgba(106,13,173,0.15);
+  border: 1px solid hsl(var(--row-h) var(--row-s) 75%);
   border-radius: 6px;
   overflow: hidden;
-  background: #faf7ff;
+  background: hsl(var(--row-h) var(--row-s) 90%);
 }
 
 .inner-trigger {
@@ -405,7 +448,7 @@ classes: home-page
   align-items: center;
   gap: 9px;
   padding: 10px 14px;
-  background: #f9f5ff;
+  background: hsl(var(--row-h) var(--row-s) 86%);
   border: none;
   cursor: pointer;
   text-align: left;
@@ -413,12 +456,12 @@ classes: home-page
 }
 
 .inner-trigger:hover {
-  background: #f0e8ff;
+  background: hsl(var(--row-h) var(--row-s) 80%);
 }
 
 .inner-trigger[aria-expanded="true"] {
-  background: #f0e8ff;
-  border-bottom: 1px solid rgba(106,13,173,0.12);
+  background: hsl(var(--row-h) var(--row-s) 80%);
+  border-bottom: 1px solid hsl(var(--row-h) var(--row-s) 65%);
 }
 
 .inner-icon {
@@ -430,7 +473,7 @@ classes: home-page
   flex: 1;
   font-size: 15px;
   font-weight: 600;
-  color: #3a0066;
+  color: hsl(var(--row-h) var(--row-s) 18%);
 }
 
 .inner-badge {
@@ -446,7 +489,7 @@ classes: home-page
 
 .inner-chevron {
   font-size: 14px;
-  color: #6a0dad;
+  color: hsl(var(--row-h) var(--row-s) 35%);
   flex-shrink: 0;
   transition: transform 0.2s;
   display: inline-block;
@@ -483,16 +526,16 @@ classes: home-page
   margin-top: 10px;
   font-size: 14px;
   font-weight: 600;
-  color: #6a0dad !important;
+  color: hsl(var(--row-h) var(--row-s) 35%) !important;
   text-decoration: none !important;
-  border-bottom: 1px solid rgba(106,13,173,0.3);
+  border-bottom: 1px solid hsl(var(--row-h) var(--row-s) 55%);
   padding-bottom: 1px;
   transition: border-color 0.15s, color 0.15s;
 }
 
 .inner-link:hover {
-  color: #3a0066 !important;
-  border-bottom-color: #3a0066;
+  color: hsl(var(--row-h) var(--row-s) 18%) !important;
+  border-bottom-color: hsl(var(--row-h) var(--row-s) 35%);
 }
 
 .inner-hint {
