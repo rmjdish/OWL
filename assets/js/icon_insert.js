@@ -29,6 +29,7 @@
   var NAV_ICONS = {
     /* Top-level pages */
     "home":                         "ti-home",
+	"getting started":              "ti-compass",
     "search data dictionary":       "ti-search",
     "browse by category":           "ti-layout-grid",
     "view popular variables":       "ti-star",
