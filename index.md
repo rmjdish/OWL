@@ -124,20 +124,8 @@ classes: home-page
 
           <div class="inner-item">
             <button class="inner-trigger" aria-expanded="false">
-              <span class="inner-icon">📄</span>
-              <span class="inner-title">4. Explore NSHD Questionnaires</span>
-              <span class="inner-chevron">▾</span>
-            </button>
-            <div class="inner-body">
-              <p>Explore and download the survey instruments used at every wave of the study, from the 1946 maternity survey through to 2025. Questionnaires are available by decade and respondent type, with variable names annotated directly on the PDFs, linking survey questions to the data held in the OWL.</p>
-              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/questionnaires/NSHD_questionnaires_homepage.html">Go to Questionnaires →</a>
-            </div>
-          </div>
-
-          <div class="inner-item">
-            <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🌐</span>
-              <span class="inner-title">5. Global Site Search</span>
+              <span class="inner-title">4. Global Site Search</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
