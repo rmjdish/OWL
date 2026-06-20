@@ -162,4 +162,25 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   })();
 
+  /* ============================================================
+     Description column alignment
+     The base .topic-table styling center-aligns all columns
+     except the first. Any column whose header is literally
+     "Description" should stay left-aligned instead.
+     ============================================================ */
+  (function leftAlignDescriptionColumns() {
+    document.querySelectorAll('.topic-table').forEach(function (table) {
+      const headers = table.querySelectorAll('thead th');
+      headers.forEach(function (th, index) {
+        if (th.textContent.trim() === 'Description') {
+          th.style.textAlign = 'left';
+          table.querySelectorAll('tbody tr').forEach(function (row) {
+            const cell = row.children[index];
+            if (cell) cell.style.setProperty('text-align', 'left', 'important');
+          });
+        }
+      });
+    });
+  })();
+
 });
