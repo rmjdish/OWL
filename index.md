@@ -15,7 +15,7 @@ classes: home-page
   <!-- STATS STRIP -->
   <div class="stats-strip">
     <div class="stat-item">
-      <div class="stat-number">30,000+</div>
+      <div class="stat-number">28,000+</div>
       <div class="stat-label">Variables</div>
     </div>
     <div class="stat-divider"></div>
