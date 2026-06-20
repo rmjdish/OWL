@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  fetch('{{ site.baseurl }}/assets/data/jargon-terms.json')
+  fetch('/OWL/assets/data/jargon-terms.json')
     .then(function (res) { return res.json(); })
     .then(function (data) {
       terms = sortAlphabetically(data);
