@@ -9,30 +9,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  /* Jargon glossary — search + A-Z jump + category grouping, no pagination */
+  /* Jargon glossary — fetched from JSON, alphabetical, grouped, searchable */
   var jargonList = document.getElementById('gs-jargon-list');
   if (!jargonList) return;
 
-  var terms = [
-    { term: "Sweep", cat: "Study design", icon: "ti-repeat",
-      def: "A single round of data collection from study members at a particular age or year. For example, the 1989 sweep collected data when study members were 43. The NSHD has had 36 sweeps spanning birth to age 76\u201377, each with its own questionnaire and set of variables." },
-    { term: "Cohort", cat: "Study design", icon: "ti-users",
-      def: "The group of individuals followed by the study, in this case everyone born in England, Scotland, and Wales during one week of March 1946. A birth cohort study follows the same people from birth, distinguishing it from studies that recruit at a later age." },
-    { term: "Birth cohort study", cat: "Study design", icon: "ti-baby-carriage",
-      def: "A study design that follows the same group of people from birth onward, rather than recruiting participants at a later age or following different people at each time point." },
-    { term: "Attrition", cat: "Study design", icon: "ti-trending-down",
-      def: "The loss of study members from the cohort over time, whether through death, withdrawal, or loss of contact. Attrition is common in long-running studies and is one reason sample sizes shrink in later sweeps compared to earlier ones." },
-    { term: "Variable name", cat: "Variables & data", icon: "ti-tag",
-      def: "The short, coded identifier used in the dataset, e.g. WIC82, usually combining an abbreviation with the sweep year. Variable names are often reused with different suffixes across sweeps to show the same question asked repeatedly over time." },
-    { term: "Variable label", cat: "Variables & data", icon: "ti-label",
-      def: "The plain-English description of what a variable measures, paired with its coded variable name in the data dictionary." },
-    { term: "Derived variable", cat: "Variables & data", icon: "ti-calculator",
-      def: "A variable calculated from one or more raw measurements rather than collected directly, for example Body Mass Index derived from separately measured height and weight, or a summary score combining several questionnaire items." },
-    { term: "Restricted variable", cat: "Access & governance", icon: "ti-lock",
-      def: "Some variables aren't publicly displayed in full due to data sensitivity, identifiability, or governance restrictions. If you believe you need access to a restricted variable for a project, contact the NSHD data access team directly." }
-  ];
-
-  var filtered = terms.slice();
+  var terms = [];
+  var filtered = [];
 
   function lettersAvailable() {
     var set = {};
@@ -66,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       groups[i.cat].push(i);
     });
+    order.sort();
     return { groups: groups, order: order };
   }
 
@@ -98,6 +81,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }).join('');
   }
 
+  function sortAlphabetically(arr) {
+    return arr.slice().sort(function (a, b) {
+      return a.term.localeCompare(b.term);
+    });
+  }
+
   var search = document.getElementById('gs-jargon-search');
   if (search) {
     search.addEventListener('input', function (e) {
@@ -109,6 +98,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  renderAZ();
-  render();
+  fetch('{{ site.baseurl }}/assets/data/jargon-terms.json')
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      terms = sortAlphabetically(data);
+      filtered = terms;
+      renderAZ();
+      render();
+    })
+    .catch(function () {
+      jargonList.innerHTML = '<p class="gs-jargon-empty">Couldn\'t load the glossary right now.</p>';
+    });
 });
