@@ -145,12 +145,18 @@ document.addEventListener('DOMContentLoaded', function () {
      single alphanumeric token (e.g. WIC66, BRONC09) into a link
      pointing at the variable metadata page, lowercased.
      Cells with spaces, punctuation, or "—" are left untouched.
+     Cells that already contain a link (e.g. topic-name cells
+     like "Diabetes" or "Medication") are skipped entirely, since
+     genuine variable-code cells are always plain text with no
+     existing <a> tag.
      ============================================================ */
   (function linkVariableCodes() {
     const baseUrl = 'https://rmjdish.github.io/OWL/docs/variable_metadata/';
     const cells = document.querySelectorAll('.topic-table tbody td');
 
     cells.forEach(function (cell) {
+      if (cell.querySelector('a')) return;
+
       const text = cell.textContent.trim();
       if (/^[a-zA-Z0-9]+$/.test(text)) {
         const link = document.createElement('a');
