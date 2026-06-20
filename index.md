@@ -150,6 +150,22 @@ classes: home-page
       </div>
     </div>
 
+    <!-- EXPLORE BY QUESTIONNAIRES & TOPICS -->
+    <div class="sec-row">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon">🧭</span>
+        <span class="sec-title">Explore by Questionnaires & Topics</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>Beyond keyword search, the OWL offers two complementary ways to explore the NSHD dataset by structure rather than by query: browsing the original survey instruments, or browsing by subject area.</p>
+        <p><strong>By Questionnaire</strong> lets you step through the study chronologically, sweep by sweep, from the earliest postwar surveys of the study members' parents through to the most recent data collection in adulthood. Each questionnaire page presents the original instrument alongside the variable names it generated, so you can see exactly how a question asked in, say, 1989 maps onto the coded data held in the dictionary today. This view is especially useful when you already know roughly when a measure was collected, or when you want to understand the original wording behind a variable before using it in analysis.</p>
+        <p><strong>By Topic</strong> instead groups variables thematically — physical health, mental wellbeing, cognition, lifestyle, and more — pulling together related measures regardless of which sweep they came from. Many topics, like respiratory or cardiovascular health, span several decades of the study, and the topic pages lay out how the same construct was measured as study members aged, including any changes in instrument or coding along the way. This is the natural starting point if you're approaching the data conceptually, rather than by date or variable name.</p>
+        <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/questionnaires/NSHD_questionnaires_homepage.html">Browse by Questionnaire →</a><br>
+        <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/topics/">Browse by Topic →</a>
+      </div>
+    </div>
+
     <!-- ACCESS -->
     <div class="sec-row">
       <button class="sec-trigger" aria-expanded="false">
