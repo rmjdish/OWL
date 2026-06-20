@@ -173,15 +173,15 @@ classes: home-page
             </div>
           </div>
 
-          <div class="inner-item">
+         <div class="inner-item">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🗂️</span>
               <span class="inner-title">Topics</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>Browse variables grouped thematically — physical health, mental wellbeing, cognition, lifestyle, and more — pulling together related measures regardless of which sweep they came from. Many topics, like respiratory or cardiovascular health, span several decades of the study, and the topic pages lay out how the same construct was measured as study members aged, including any changes in instrument or coding along the way.</p>
-              <p>This is the natural starting point if you're approaching the data conceptually, rather than by date or variable name — it lets you scan available options and discover variables you might not have known to search for directly.</p>
+              <p>Browse the study's subject areas grouped thematically — physical health, mental wellbeing, cognition, lifestyle, and more. Each topic page sets out what was measured, how it was asked about, and which sweeps it was collected at, giving you an overview of a subject's coverage across the cohort's history before you go looking for individual variables.</p>
+              <p>Many topics, like respiratory or cardiovascular health, span several decades of the study, and the topic pages show how the same construct was tracked as study members aged, including any changes in instrument or measurement along the way. This is the natural starting point if you're approaching the data conceptually, rather than by date or variable name.</p>
               <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/topics/">Go to Topics →</a>
             </div>
           </div>
