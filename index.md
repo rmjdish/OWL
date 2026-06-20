@@ -53,7 +53,7 @@ classes: home-page
 		the NSHD offers unparalleled insight into how lives unfold across time. This resource gives researchers structured access to metadata — search 
 		thousands of variables by keyword, browse by topic area, explore the questionnaires used at each survey wave, and identify the measures most commonly 
 		used across research projects. Whether you are planning a new analysis, reviewing the study's scope, or tracking down a specific variable, 
-		the OWL is designed to make navigating nearly eighty years of data as straightforward as possible.</p>
+		the OWL is designed to make navigating eighty years of data as straightforward as possible.</p>
       </div>
     </div>
 
