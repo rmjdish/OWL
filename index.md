@@ -732,9 +732,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function openOuter(id) {
     var row = document.getElementById(id);
     if (!row) return;
-    var trigger = row.querySelector('.sec-trigger');
-    var body = row.querySelector('.sec-body');
-    if (trigger && trigger.getAttribute('aria-expanded') !== 'true') {
+    var trigger = row.querySelector(':scope > .sec-trigger');
+    var body = row.querySelector(':scope > .sec-body');
+    if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
       trigger.setAttribute('aria-expanded', 'true');
       body.classList.add('open');
     }
@@ -743,9 +743,9 @@ document.addEventListener('DOMContentLoaded', function () {
   function openInner(id) {
     var item = document.getElementById(id);
     if (!item) return;
-    var trigger = item.querySelector('.inner-trigger');
-    var body = item.querySelector('.inner-body');
-    if (trigger && trigger.getAttribute('aria-expanded') !== 'true') {
+    var trigger = item.querySelector(':scope > .inner-trigger');
+    var body = item.querySelector(':scope > .inner-body');
+    if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
       trigger.setAttribute('aria-expanded', 'true');
       body.classList.add('open');
     }
@@ -764,12 +764,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
       var targetId = innerId || secId;
       var target = document.getElementById(targetId);
-      if (target) {
-        // wait one tick so layout has updated after expanding
-        requestAnimationFrame(function () {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        });
-      }
+      if (!target) return;
+
+      // give the browser time to actually reflow the newly-opened
+      // section before measuring its position
+      setTimeout(function () {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
     });
   });
 
