@@ -1,32 +1,19 @@
 document.addEventListener('DOMContentLoaded', function () {
-
-  document.querySelectorAll('.gs-acc-trigger').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var expanded = this.getAttribute('aria-expanded') === 'true';
-      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      this.nextElementSibling.classList.toggle('open', !expanded);
-    });
-  });
-
   var jargonList = document.getElementById('gs-jargon-list');
   if (!jargonList) return;
-
   var terms = [];
   var filtered = [];
-
   function lettersAvailable() {
     var set = {};
     terms.forEach(function (t) { set[t.term[0].toUpperCase()] = true; });
     return Object.keys(set).sort();
   }
-
   function renderAZ() {
     var az = document.getElementById('gs-az');
     if (!az) return;
     az.innerHTML = lettersAvailable().map(function (l) {
       return '<button type="button" class="gs-az-btn" data-letter="' + l + '">' + l + '</button>';
     }).join('');
-
     az.querySelectorAll('.gs-az-btn').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var letter = this.dataset.letter;
@@ -35,7 +22,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
   }
-
   function groupByCategory(items) {
     var groups = {};
     var order = [];
@@ -49,15 +35,12 @@ document.addEventListener('DOMContentLoaded', function () {
     order.sort();
     return { groups: groups, order: order };
   }
-
   function render() {
     if (filtered.length === 0) {
       jargonList.innerHTML = '<p class="gs-jargon-empty">No terms match your search.</p>';
       return;
     }
-
     var grouped = groupByCategory(filtered);
-
     jargonList.innerHTML = grouped.order.map(function (cat) {
       var items = grouped.groups[cat];
       return (
@@ -78,13 +61,11 @@ document.addEventListener('DOMContentLoaded', function () {
       );
     }).join('');
   }
-
   function sortAlphabetically(arr) {
     return arr.slice().sort(function (a, b) {
       return a.term.localeCompare(b.term);
     });
   }
-
   var search = document.getElementById('gs-jargon-search');
   if (search) {
     search.addEventListener('input', function (e) {
@@ -95,7 +76,6 @@ document.addEventListener('DOMContentLoaded', function () {
       render();
     });
   }
-
   fetch('/OWL/assets/data/jargon-terms.json')
     .then(function (res) { return res.json(); })
     .then(function (data) {
