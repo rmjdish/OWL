@@ -57,6 +57,68 @@ classes: home-page
       </div>
     </div>
 
+    <!-- GETTING STARTED -->
+    <div class="sec-row">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon">🧭</span>
+        <span class="sec-title">Getting Started</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <div class="inner-accordion">
+
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">🚦</span>
+              <span class="inner-title">Where should I start?</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>This page sets out two broad ways of using the OWL — searching, for when you already have something concrete to look for, and exploring documentation, for when you're browsing without a fixed target. It walks through five tools in turn: Search Data Dictionary and Browse by Category for targeted lookups, Popular Variables as a sanity check against common research practice, and NSHD Questionnaires and Topics for understanding context before diving into individual variables. Each tool is explained with a short description of who it suits and when to reach for it, so if you're not sure which part of the site fits your question, this is the page that points you to the right starting tool rather than leaving you to guess.</p>
+              <a class="inner-link" href="/OWL/docs/getting-started/where-to-start/">Go to Where should I start? →</a>
+            </div>
+          </div>
+
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">🗺️</span>
+              <span class="inner-title">How the site is organised</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>This page explains the structural logic behind the OWL rather than walking through individual tools one by one. It groups everything into three mechanisms: search-first tools that work by keyword and return tables of variables, documentation pages that explain a subject or sweep before pointing you toward the data itself, and the basket, which sits underneath both and lets you collect variables regardless of which route you took to find them. It also covers the sidebar summary component that appears on most documentation pages, showing how it tracks your position and lets you jump between sections. Read this if you want the bigger picture of how the site fits together, rather than instructions for any single page.</p>
+              <a class="inner-link" href="/OWL/docs/getting-started/how-the-site-is-organised/">Go to How the site is organised →</a>
+            </div>
+          </div>
+
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">🧺</span>
+              <span class="inner-title">Basket Management</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The basket is where you collect variables as you find them, regardless of which tool you used to locate them — keyword search, category browsing, or popular variables. Each variable metadata page includes an add-to-basket control, and a running total is always visible from the basket icon in the site header, along with a quick preview of the most recently added items. From the basket page itself you can review your full selection, remove anything you no longer need, check labels and sweep coverage at a glance, and export the complete list as a CSV — ready to use in a project proposal, a data access request, or as a working variable list for analysis. The basket persists as you move between pages, so there's no need to finish a search in one sitting before moving on to browse or look something else up.</p>
+              <a class="inner-link" href="/OWL/docs/getting-started/basket-management/">Go to Basket Management →</a>
+            </div>
+          </div>
+
+          <div class="inner-item">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">📖</span>
+              <span class="inner-title">Cohort study jargon</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Cohort studies carry their own vocabulary, and the NSHD is no exception — terms like sweep, attrition, wave, and study member appear throughout the site and the wider literature without always being defined. This page is a searchable glossary that collects those terms in one place, each with a plain-language explanation grouped by category and indexed alphabetically with a jump-to-letter nav. It's aimed at anyone newer to longitudinal cohort research who wants to follow documentation, questionnaires, or variable labels without having to look up unfamiliar terminology elsewhere. Keep it open in a separate tab while reading other parts of the site, or search it directly whenever an unfamiliar term comes up in a topic page or questionnaire.</p>
+              <a class="inner-link" href="/OWL/docs/getting-started/cohort-jargon/">Go to Cohort study jargon →</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
     <!-- COVERAGE -->
     <div class="sec-row">
       <button class="sec-trigger" aria-expanded="false">
@@ -384,13 +446,17 @@ classes: home-page
 
 /* ============================================================
    PER-SECTION PASTEL COLORS
+   Order: About — green, Getting Started — pastel blue,
+   Data Coverage — purple, Search Methods — orange,
+   Explore Documentation — teal, Access — pink
    ============================================================ */
 
 .sec-row:nth-child(1) { --row-h: 145; --row-s: 45%; } /* About — green */
-.sec-row:nth-child(2) { --row-h: 280; --row-s: 45%; } /* Coverage — purple */
-.sec-row:nth-child(3) { --row-h: 35;  --row-s: 60%; } /* Search Methods — orange */
-.sec-row:nth-child(4) { --row-h: 195; --row-s: 50%; } /* Explore by Q&T — teal */
-.sec-row:nth-child(5) { --row-h: 340; --row-s: 45%; } /* Access — pink */
+.sec-row:nth-child(2) { --row-h: 220; --row-s: 45%; } /* Getting Started — pastel blue */
+.sec-row:nth-child(3) { --row-h: 280; --row-s: 45%; } /* Data Coverage — purple */
+.sec-row:nth-child(4) { --row-h: 35;  --row-s: 60%; } /* Search Methods — orange */
+.sec-row:nth-child(5) { --row-h: 195; --row-s: 50%; } /* Explore Documentation — teal */
+.sec-row:nth-child(6) { --row-h: 340; --row-s: 45%; } /* Access — pink */
 
 .sec-trigger {
   background: hsl(var(--row-h) var(--row-s) 94%);
@@ -414,7 +480,7 @@ classes: home-page
 }
 
 /* ============================================================
-   INNER ACCORDION (Search Methods) — inherits parent hue, darker
+   INNER ACCORDION — inherits parent hue, darker
    ============================================================ */
 
 .inner-accordion {
