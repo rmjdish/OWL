@@ -35,11 +35,39 @@ classes: home-page
     </div>
   </div>
 
+  <!-- SIDEBAR SUMMARY -->
+  <div class="sidebar-summary">
+    <h3><i class="ti ti-list" aria-hidden="true"></i> On this page</h3>
+    <ul>
+      <li><a href="#sec-about" data-sec="sec-about">📘 About This Resource</a></li>
+
+      <li class="sb-parent"><a href="#sec-getting-started" data-sec="sec-getting-started">🧭 Getting Started</a></li>
+      <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where">Where should I start?</a></li>
+      <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
+      <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
+      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
+
+      <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
+
+      <li class="sb-parent"><a href="#sec-search" data-sec="sec-search">🔍 Search Methods</a></li>
+      <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd">Search Data Dictionary</a></li>
+      <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat">Browse by Category</a></li>
+      <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
+      <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
+
+      <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore">🧭 Explore Documentation</a></li>
+      <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest">NSHD Questionnaires</a></li>
+      <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics">Topics</a></li>
+
+      <li><a href="#sec-access" data-sec="sec-access">🔐 Access &amp; Permissions</a></li>
+    </ul>
+  </div>
+
   <!-- MAIN ACCORDION -->
   <div class="sections-accordion">
 
     <!-- ABOUT -->
-    <div class="sec-row">
+    <div class="sec-row" id="sec-about">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">📘</span>
         <span class="sec-title">About This Resource</span>
@@ -58,7 +86,7 @@ classes: home-page
     </div>
 
     <!-- GETTING STARTED -->
-    <div class="sec-row">
+    <div class="sec-row" id="sec-getting-started">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
         <span class="sec-title">Getting Started</span>
@@ -67,7 +95,7 @@ classes: home-page
       <div class="sec-body">
         <div class="inner-accordion">
 
-          <div class="inner-item">
+          <div class="inner-item" id="gs-where">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🚦</span>
               <span class="inner-title">Where should I start?</span>
@@ -79,7 +107,7 @@ classes: home-page
             </div>
           </div>
 
-          <div class="inner-item">
+          <div class="inner-item" id="gs-organised">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🗺️</span>
               <span class="inner-title">How the site is organised</span>
@@ -91,7 +119,7 @@ classes: home-page
             </div>
           </div>
 
-          <div class="inner-item">
+          <div class="inner-item" id="gs-basket">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🧺</span>
               <span class="inner-title">Basket Management</span>
@@ -103,7 +131,7 @@ classes: home-page
             </div>
           </div>
 
-          <div class="inner-item">
+          <div class="inner-item" id="gs-jargon">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">📖</span>
               <span class="inner-title">Cohort study jargon</span>
@@ -120,7 +148,7 @@ classes: home-page
     </div>
 
     <!-- COVERAGE -->
-    <div class="sec-row">
+    <div class="sec-row" id="sec-coverage">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">📊</span>
         <span class="sec-title">Data Coverage</span>
@@ -135,7 +163,7 @@ classes: home-page
     </div>
 
     <!-- SEARCH METHODS -->
-    <div class="sec-row">
+    <div class="sec-row" id="sec-search">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🔍</span>
         <span class="sec-title">Search Methods</span>
@@ -144,7 +172,7 @@ classes: home-page
       <div class="sec-body">
         <div class="inner-accordion">
 
-          <div class="inner-item">
+          <div class="inner-item" id="search-dd">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🔍</span>
               <span class="inner-title">1. Search Data Dictionary</span>
@@ -158,7 +186,7 @@ classes: home-page
             </div>
           </div>
 
-          <div class="inner-item">
+          <div class="inner-item" id="search-cat">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">📂</span>
               <span class="inner-title">2. Browse by Category</span>
@@ -171,7 +199,7 @@ classes: home-page
             </div>
           </div>
 
-          <div class="inner-item">
+          <div class="inner-item" id="search-pop">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">⭐</span>
               <span class="inner-title">3. View Popular Variables</span>
@@ -184,7 +212,7 @@ classes: home-page
             </div>
           </div>
 
-          <div class="inner-item">
+          <div class="inner-item" id="search-global">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🌐</span>
               <span class="inner-title">4. Global Site Search</span>
@@ -201,7 +229,7 @@ classes: home-page
     </div>
 
    <!-- EXPLORE DOCUMENTATION -->
-    <div class="sec-row">
+    <div class="sec-row" id="sec-explore">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
         <span class="sec-title">Explore Documentation</span>
@@ -210,7 +238,7 @@ classes: home-page
       <div class="sec-body">
         <div class="inner-accordion">
 
-          <div class="inner-item">
+          <div class="inner-item" id="doc-quest">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">📄</span>
               <span class="inner-title">NSHD Questionnaires</span>
@@ -223,7 +251,7 @@ classes: home-page
             </div>
           </div>
 
-         <div class="inner-item">
+         <div class="inner-item" id="doc-topics">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🗂️</span>
               <span class="inner-title">Topics</span>
@@ -241,7 +269,7 @@ classes: home-page
     </div>
 
     <!-- ACCESS -->
-    <div class="sec-row">
+    <div class="sec-row" id="sec-access">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🔐</span>
         <span class="sec-title">Access & Permissions</span>
@@ -368,6 +396,84 @@ classes: home-page
 }
 
 /* ============================================================
+   SIDEBAR SUMMARY
+   ============================================================ */
+
+.home-page .sidebar-summary {
+  position: fixed;
+  right: 36px;
+  top: 140px;
+  width: 230px;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  background: linear-gradient(135deg, #E8F5E9, #F3E5F5, #FFF3E0, #E0F7FA);
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  z-index: 100;
+}
+
+.home-page .sidebar-summary h3 {
+  margin: 0 0 10px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #3a0066 !important;
+  border-bottom: 2px solid #6a0dad !important;
+  padding-bottom: 4px !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.home-page .sidebar-summary ul {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.home-page .sidebar-summary li {
+  margin-bottom: 3px !important;
+}
+
+.home-page .sidebar-summary li.sb-sub {
+  margin-bottom: 1px !important;
+}
+
+.home-page .sidebar-summary a {
+  display: block;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-decoration: none !important;
+  font-size: 12.5px !important;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.home-page .sidebar-summary li.sb-sub a {
+  font-size: 11.5px !important;
+  font-weight: 400;
+  padding: 3px 8px 3px 20px;
+}
+
+.home-page .sidebar-summary a:hover {
+  background: rgba(255,255,255,0.6);
+  text-decoration: underline !important;
+}
+
+/* Per-section sidebar link colours, matching each accordion row's hue */
+.home-page .sidebar-summary a[data-sec="sec-about"]            { color: hsl(145 45% 28%) !important; }
+.home-page .sidebar-summary a[data-sec="sec-getting-started"]  { color: hsl(220 45% 30%) !important; }
+.home-page .sidebar-summary a[data-sec="sec-coverage"]         { color: hsl(280 45% 28%) !important; }
+.home-page .sidebar-summary a[data-sec="sec-search"]           { color: hsl(35  60% 30%) !important; }
+.home-page .sidebar-summary a[data-sec="sec-explore"]          { color: hsl(195 50% 28%) !important; }
+.home-page .sidebar-summary a[data-sec="sec-access"]           { color: hsl(340 45% 28%) !important; }
+
+@media (max-width: 1180px) {
+  .home-page .sidebar-summary { display: none; }
+}
+
+/* ============================================================
    MAIN SECTIONS ACCORDION
    ============================================================ */
 
@@ -446,9 +552,6 @@ classes: home-page
 
 /* ============================================================
    PER-SECTION PASTEL COLORS
-   Order: About — green, Getting Started — pastel blue,
-   Data Coverage — purple, Search Methods — orange,
-   Explore Documentation — teal, Access — pink
    ============================================================ */
 
 .sec-row:nth-child(1) { --row-h: 145; --row-s: 45%; } /* About — green */
@@ -621,6 +724,52 @@ document.addEventListener('DOMContentLoaded', function () {
       var expanded = this.getAttribute('aria-expanded') === 'true';
       this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
       this.nextElementSibling.classList.toggle('open', !expanded);
+    });
+  });
+
+  /* Sidebar links: expand the relevant accordion row (and inner item,
+     if present), then scroll smoothly to the target */
+  function openOuter(id) {
+    var row = document.getElementById(id);
+    if (!row) return;
+    var trigger = row.querySelector('.sec-trigger');
+    var body = row.querySelector('.sec-body');
+    if (trigger && trigger.getAttribute('aria-expanded') !== 'true') {
+      trigger.setAttribute('aria-expanded', 'true');
+      body.classList.add('open');
+    }
+  }
+
+  function openInner(id) {
+    var item = document.getElementById(id);
+    if (!item) return;
+    var trigger = item.querySelector('.inner-trigger');
+    var body = item.querySelector('.inner-body');
+    if (trigger && trigger.getAttribute('aria-expanded') !== 'true') {
+      trigger.setAttribute('aria-expanded', 'true');
+      body.classList.add('open');
+    }
+  }
+
+  document.querySelectorAll('.sidebar-summary a[data-sec]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      var secId = this.dataset.sec;
+      var innerId = this.dataset.inner;
+
+      openOuter(secId);
+      if (innerId) {
+        openInner(innerId);
+      }
+
+      var targetId = innerId || secId;
+      var target = document.getElementById(targetId);
+      if (target) {
+        // wait one tick so layout has updated after expanding
+        requestAnimationFrame(function () {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
     });
   });
 
