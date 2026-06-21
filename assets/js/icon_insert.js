@@ -215,7 +215,7 @@
 	"children":                     "ti-baby-carriage",
 /* ---- Browse by Category: cognitive sub-tests ---- */
 	"childhood cognition":              "ti-bulb",
-	"Adult cognition":            		"ti-bulb",
+	"adult cognition":            		"ti-bulb",
 	"reading comprehension":            "ti-book",
 	"peg placement":                    "ti-puzzle",
 	"visual memory":                    "ti-eye",
