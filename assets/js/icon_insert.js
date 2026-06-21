@@ -145,6 +145,7 @@
 	"saliva assays":                "ti-droplet",
 	"questionnaire data":           "ti-clipboard-text",
 	"health and medical history":   "ti-file-report",
+	"mental health":               	"ti-mental-health",
 	"medical conditions":           "ti-vaccine",
 	"covid symptoms":               "ti-virus",
 	"healthcare":                   "ti-building-hospital",
@@ -170,6 +171,7 @@
 	"vitamin and mineral":          "ti-pill",
 	"family history":               "ti-users-group",
 	"parental death":               "ti-users-group",
+	"children":                     "ti-baby-carriage",
 	"data collection information":  "ti-database",
 	"miscellaneous":                "ti-dots",
 	"specialist questionnaire":     "ti-file-text",
@@ -212,7 +214,6 @@
 	"myofit":                       "ti-barbell",
 	"raw data":                     "ti-file-spreadsheet",
 	"diet [5":                      "ti-salad",
-	"children":                     "ti-baby-carriage",
 /* ---- Browse by Category: cognitive sub-tests ---- */
 	"childhood cognition":              "ti-bulb",
 	"adult cognition":            		"ti-bulb",
@@ -283,7 +284,6 @@
 	"family history of neurological":   "ti-dna",
 
 	/* ---- Conditions / health history ---- */
-	"mental health":                	"ti-mental-health",
 	"self-rated health":                "ti-mood-smile",
 	"cancer":                           "ti-ribbon-health",
 	"musculoskeletal":                  "ti-bone",
