@@ -123,7 +123,7 @@ classes: home-page
 
           <div class="inner-item" id="gs-basket">
             <button class="inner-trigger" aria-expanded="false">
-              <span class="inner-icon">🧺</span>
+              <span class="inner-icon"><i class="ti ti-basket-check" aria-hidden="true"></i></span>
               <span class="inner-title">Basket Management</span>
               <span class="inner-chevron">▾</span>
             </button>
