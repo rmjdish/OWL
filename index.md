@@ -531,7 +531,8 @@ classes: home-page
 .sec-body {
   display: none;
   padding: 16px 20px;
-  background: #fff;
+  /* tinted pastel background, set per-row below — no more plain white */
+  background: hsl(var(--row-h) var(--row-s) 97%);
 }
 
 .sec-body.open {
@@ -659,7 +660,8 @@ classes: home-page
 .inner-body {
   display: none;
   padding: 12px 14px;
-  background: #fff;
+  /* tinted pastel background, set per-row — no more plain white */
+  background: hsl(var(--row-h) var(--row-s) 96%);
 }
 
 .inner-body.open {
@@ -744,26 +746,31 @@ classes: home-page
     }
 
     try {
-      function openOuter(id) {
+      function isOuterOpen(id) {
+        var row = document.getElementById(id);
+        if (!row) return false;
+        var trigger = row.querySelector('.sec-trigger');
+        return !!trigger && trigger.getAttribute('aria-expanded') === 'true';
+      }
+
+      function setOuter(id, open) {
         var row = document.getElementById(id);
         if (!row) return;
         var trigger = row.querySelector('.sec-trigger');
         var body = row.querySelector('.sec-body');
-        if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
-          trigger.setAttribute('aria-expanded', 'true');
-          body.classList.add('open');
-        }
+        if (!trigger || !body) return;
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        body.classList.toggle('open', open);
       }
 
-      function openInner(id) {
+      function setInner(id, open) {
         var item = document.getElementById(id);
         if (!item) return;
         var trigger = item.querySelector('.inner-trigger');
         var body = item.querySelector('.inner-body');
-        if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
-          trigger.setAttribute('aria-expanded', 'true');
-          body.classList.add('open');
-        }
+        if (!trigger || !body) return;
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        body.classList.toggle('open', open);
       }
 
       document.querySelectorAll('.sidebar-summary a[data-sec]').forEach(function (link) {
@@ -772,8 +779,19 @@ classes: home-page
           var secId = this.dataset.sec;
           var innerId = this.dataset.inner;
 
-          openOuter(secId);
-          if (innerId) openInner(innerId);
+          if (innerId) {
+            // Sub-item link: always ensure the parent is open, then
+            // toggle just the inner item (open/close on repeat clicks)
+            if (!isOuterOpen(secId)) setOuter(secId, true);
+            var item = document.getElementById(innerId);
+            var innerTrigger = item ? item.querySelector('.inner-trigger') : null;
+            var innerOpen = innerTrigger && innerTrigger.getAttribute('aria-expanded') === 'true';
+            setInner(innerId, !innerOpen);
+          } else {
+            // Top-level link: toggle the whole section open/closed
+            var open = isOuterOpen(secId);
+            setOuter(secId, !open);
+          }
 
           var targetId = innerId || secId;
           var target = document.getElementById(targetId);
