@@ -86,6 +86,7 @@
     "2019":                         "ti-calendar",
     "2020":                         "ti-calendar",
     "2022":                         "ti-calendar",
+    "2025":                         "ti-calendar",
     /* Topic pages */
     "explore topics":               "ti-tags",
     "childhood health":             "ti-baby-carriage",
@@ -168,6 +169,7 @@
 	"residential air pollution":    "ti-cloud-fog",
 	"vitamin and mineral":          "ti-pill",
 	"family history":               "ti-users-group",
+	"parental death":               "ti-users-group",
 	"data collection information":  "ti-database",
 	"miscellaneous":                "ti-dots",
 	"specialist questionnaire":     "ti-file-text",
@@ -210,8 +212,10 @@
 	"myofit":                       "ti-barbell",
 	"raw data":                     "ti-file-spreadsheet",
 	"diet [5":                      "ti-salad",
+	"children":                     "ti-baby-carriage",
 /* ---- Browse by Category: cognitive sub-tests ---- */
 	"childhood cognition":              "ti-bulb",
+	"Adult cognition":            		"ti-bulb",
 	"reading comprehension":            "ti-book",
 	"peg placement":                    "ti-puzzle",
 	"visual memory":                    "ti-eye",
@@ -279,6 +283,7 @@
 	"family history of neurological":   "ti-dna",
 
 	/* ---- Conditions / health history ---- */
+	"mental health":                	"ti-mental-health",
 	"self-rated health":                "ti-mood-smile",
 	"cancer":                           "ti-ribbon-health",
 	"musculoskeletal":                  "ti-bone",
