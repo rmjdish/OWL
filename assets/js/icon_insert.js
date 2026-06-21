@@ -32,7 +32,7 @@
     "getting started":              "ti-compass",
     "where should i start":         "ti-traffic-cone",
     "how the site is organised":    "ti-map",
-    "basket management":            "ti-basket-check",
+    "basket management":            "ti-basket-cog",
     "cohort jargon":                "ti-book-2",
     "search data dictionary":       "ti-search",
     "browse by category":           "ti-layout-grid",
