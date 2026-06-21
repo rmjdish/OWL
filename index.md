@@ -707,72 +707,87 @@ classes: home-page
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-
-  /* Outer accordion */
-  document.querySelectorAll('.sec-trigger').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var expanded = this.getAttribute('aria-expanded') === 'true';
-      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      this.nextElementSibling.classList.toggle('open', !expanded);
-    });
-  });
-
-  /* Inner accordion */
-  document.querySelectorAll('.inner-trigger').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var expanded = this.getAttribute('aria-expanded') === 'true';
-      this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-      this.nextElementSibling.classList.toggle('open', !expanded);
-    });
-  });
-
-  /* Sidebar links: expand the relevant accordion row (and inner item,
-     if present), then scroll smoothly to the target */
-  function openOuter(id) {
-    var row = document.getElementById(id);
-    if (!row) return;
-    var trigger = row.querySelector(':scope > .sec-trigger');
-    var body = row.querySelector(':scope > .sec-body');
-    if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
-      trigger.setAttribute('aria-expanded', 'true');
-      body.classList.add('open');
-    }
+(function () {
+  function ready(fn) {
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
   }
 
-  function openInner(id) {
-    var item = document.getElementById(id);
-    if (!item) return;
-    var trigger = item.querySelector(':scope > .inner-trigger');
-    var body = item.querySelector(':scope > .inner-body');
-    if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
-      trigger.setAttribute('aria-expanded', 'true');
-      body.classList.add('open');
+  ready(function () {
+
+    try {
+      /* Outer accordion */
+      document.querySelectorAll('.sections-accordion .sec-trigger').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var expanded = this.getAttribute('aria-expanded') === 'true';
+          this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+          var body = this.parentElement.querySelector('.sec-body');
+          if (body) body.classList.toggle('open', !expanded);
+        });
+      });
+    } catch (err) {
+      console.error('Outer accordion init failed:', err);
     }
-  }
 
-  document.querySelectorAll('.sidebar-summary a[data-sec]').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      var secId = this.dataset.sec;
-      var innerId = this.dataset.inner;
+    try {
+      /* Inner accordion */
+      document.querySelectorAll('.inner-accordion .inner-trigger').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var expanded = this.getAttribute('aria-expanded') === 'true';
+          this.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+          var body = this.parentElement.querySelector('.inner-body');
+          if (body) body.classList.toggle('open', !expanded);
+        });
+      });
+    } catch (err) {
+      console.error('Inner accordion init failed:', err);
+    }
 
-      openOuter(secId);
-      if (innerId) {
-        openInner(innerId);
+    try {
+      function openOuter(id) {
+        var row = document.getElementById(id);
+        if (!row) return;
+        var trigger = row.querySelector('.sec-trigger');
+        var body = row.querySelector('.sec-body');
+        if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
+          trigger.setAttribute('aria-expanded', 'true');
+          body.classList.add('open');
+        }
       }
 
-      var targetId = innerId || secId;
-      var target = document.getElementById(targetId);
-      if (!target) return;
+      function openInner(id) {
+        var item = document.getElementById(id);
+        if (!item) return;
+        var trigger = item.querySelector('.inner-trigger');
+        var body = item.querySelector('.inner-body');
+        if (trigger && body && trigger.getAttribute('aria-expanded') !== 'true') {
+          trigger.setAttribute('aria-expanded', 'true');
+          body.classList.add('open');
+        }
+      }
 
-      // give the browser time to actually reflow the newly-opened
-      // section before measuring its position
-      setTimeout(function () {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 50);
-    });
+      document.querySelectorAll('.sidebar-summary a[data-sec]').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+          e.preventDefault();
+          var secId = this.dataset.sec;
+          var innerId = this.dataset.inner;
+
+          openOuter(secId);
+          if (innerId) openInner(innerId);
+
+          var targetId = innerId || secId;
+          var target = document.getElementById(targetId);
+          if (!target) return;
+
+          setTimeout(function () {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 50);
+        });
+      });
+    } catch (err) {
+      console.error('Sidebar nav init failed:', err);
+    }
+
   });
-
-});
+})();
 </script>
