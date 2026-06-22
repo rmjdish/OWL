@@ -271,6 +271,7 @@
 	"stepper test":                     "ti-stairs",
 	"bradykinesia":                     "ti-hand-finger",
 	"body composition":                 "ti-scale",
+	"body size":  			            "ti-ruler-measure",
 
 	/* ---- Blood / biological samples ---- */
 	"blood biochemistry":               "ti-test-pipe",
