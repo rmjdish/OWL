@@ -30,7 +30,7 @@
     /* Top-level pages */
     "home":                         "ti-home",
     "getting started":              "ti-compass",
-    "where should i start":         "ti-traffic-cone",
+    "where should i start":         "ti-traffic-lights",
     "how the site is organised":    "ti-map",
     "basket management":            "ti-basket-cog",
 	"variable metadata":            "ti-file-description",
