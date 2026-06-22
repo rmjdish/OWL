@@ -269,7 +269,7 @@
 	"walk test":                        "ti-walk",
 	"updrs":                            "ti-activity",
 	"stepper test":                     "ti-stairs",
-	"brain tap test":                   "ti-hand-finger",
+	"bradykinesia":                     "ti-hand-finger",
 	"body composition":                 "ti-scale",
 
 	/* ---- Blood / biological samples ---- */
