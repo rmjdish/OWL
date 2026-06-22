@@ -216,7 +216,7 @@
 	"diet [5":                      "ti-salad",
 /* ---- Browse by Category: cognitive sub-tests ---- */
 	"childhood cognition":              "ti-bulb",
-	"adulthood cognition":              "ti-bulb",,
+	"adulthood cognition":              "ti-bulb",
 	"reading comprehension":            "ti-book",
 	"peg placement":                    "ti-puzzle",
 	"visual memory":                    "ti-eye",
