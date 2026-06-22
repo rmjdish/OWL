@@ -343,7 +343,7 @@
     "accessing insight":        "ti-database",
     "physical growth":          "ti-trending-up",
     "height and weight":        "ti-ruler",
-    "body size measures":       "ti-body-scan",
+    "anthropometry":            "ti-ruler-measure",
     "parental height":          "ti-users",
     "selected publications":    "ti-books",
     "blood":                    "ti-test-pipe",
