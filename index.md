@@ -47,7 +47,8 @@ classes: home-page
       <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where">Where should I start?</a></li>
       <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
       <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
-      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
+      <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata">Variable Metadata</a></li>
+	  <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
 
       <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
 
@@ -132,6 +133,18 @@ classes: home-page
               <a class="inner-link" href="/OWL/docs/getting-started/basket-management/">Go to Basket Management →</a>
             </div>
           </div>
+
+		  <div class="inner-item" id="gs-variable-metadata">
+			<button class="inner-trigger" aria-expanded="false">
+				<span class="inner-icon"><i class="ti ti-file-description" aria-hidden="true"></i></span>
+				<span class="inner-title">Variable Metadata</span>
+				<span class="inner-chevron">▾</span>
+			</button>
+			<div class="inner-body">
+				<p>Every variable in the OWL has its own metadata page, accessible by clicking the variable name in any results table. This page explains what each field on that page means — from the variable code and field ID through to derived status, units, and notes — and how to interpret the frequency distribution plots, including the exclusion rules that apply to both categorical (low cell count suppression) and continuous (5th–95th percentile trimming) variables.</p>
+				<a class="inner-link" href="/OWL/docs/getting-started/variable-metadata/">Go to Variable Metadata →</a>
+			</div>
+		  </div>
 
           <div class="inner-item" id="gs-jargon">
             <button class="inner-trigger" aria-expanded="false">
