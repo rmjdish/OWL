@@ -195,20 +195,6 @@ permalink: /docs/getting-started/cohort-jargon/
 <script>
 (function () {
 
-  var TERMS = {{ site.data.jargon | jsonify }};
-
-  /* Guard: if Jekyll data file is missing or empty, show a message and stop */
-  if (!TERMS || !Array.isArray(TERMS) || TERMS.length === 0) {
-    var body  = document.getElementById("jargBody");
-    var count = document.getElementById("jargCount");
-    if (body)  body.innerHTML = '<tr><td colspan="3" style="padding:20px;color:#777;text-align:center;">Glossary data could not be loaded. Make sure <code>_data/jargon.json</code> exists in the repository root.</td></tr>';
-    if (count) count.textContent = "";
-    return;
-  }
-
-  /* Sort alphabetically by term */
-  TERMS = TERMS.slice().sort(function (a, b) { return a.term.localeCompare(b.term); });
-
   var catColors = {
     "Study design":         "badge-study",
     "Variables & data":     "badge-var",
@@ -219,13 +205,20 @@ permalink: /docs/getting-started/cohort-jargon/
 
   var activeFilter = "";
   var searchVal    = "";
+  var TERMS        = [];
+
+  function escapeHtml(str) {
+    return (str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
 
   function render() {
     var body  = document.getElementById("jargBody");
     var noRes = document.getElementById("jargNoResults");
     var count = document.getElementById("jargCount");
-
-    /* Guard: DOM elements may not exist on first call */
     if (!body) return;
 
     var q       = searchVal.toLowerCase().trim();
@@ -251,14 +244,6 @@ permalink: /docs/getting-started/cohort-jargon/
 
     if (noRes) noRes.style.display = visible === 0 ? "block" : "none";
     if (count) count.textContent   = "Showing " + visible + " of " + TERMS.length + " terms";
-  }
-
-  function escapeHtml(str) {
-    return (str || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
   }
 
   /* Search input */
@@ -291,17 +276,29 @@ permalink: /docs/getting-started/cohort-jargon/
     a.addEventListener("click", function (e) {
       e.preventDefault();
       var cat   = this.getAttribute("data-cat");
-      var badge = document.querySelector('.jarg-badge[data-cat="' + CSS.escape(cat) + '"]');
+      var badge = document.querySelector('.jarg-badge[data-cat="' + cat + '"]');
       if (badge) setFilter(badge);
     });
   });
 
-  /* Initial render */
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", render);
-  } else {
-    render();
-  }
+  /* Load JSON then render */
+  fetch("/OWL/assets/data/jargon-terms.json")
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return res.json();
+    })
+    .then(function (data) {
+      if (!Array.isArray(data) || data.length === 0) throw new Error("Empty or invalid data");
+      TERMS = data.slice().sort(function (a, b) { return a.term.localeCompare(b.term); });
+      render();
+    })
+    .catch(function (err) {
+      var body  = document.getElementById("jargBody");
+      var count = document.getElementById("jargCount");
+      if (body)  body.innerHTML = '<tr><td colspan="3" style="padding:20px;color:#777;text-align:center;">' +
+        'Glossary data could not be loaded. Make sure <code>/OWL/assets/data/jargon-terms.json</code> exists and is valid JSON. (' + err.message + ')</td></tr>';
+      if (count) count.textContent = "";
+    });
 
 })();
 </script>
