@@ -13,16 +13,6 @@
 (function () {
   "use strict";
 
-  /* ── 1. Load Tabler Icons webfont ────────────────────────── */
-  var TABLER_CDN =
-    "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css";
-  if (!document.querySelector('link[href*="tabler-icons"]')) {
-    var link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = TABLER_CDN;
-    document.head.appendChild(link);
-  }
-
   /* ── 2. Nav icon map ─────────────────────────────────────── */
   /* Keys are lowercase fragments of the link text.
      Values are Tabler icon names (outline set). */
