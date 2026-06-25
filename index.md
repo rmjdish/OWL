@@ -48,9 +48,15 @@ classes: home-page
       <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
       <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
       <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata">Variable Metadata</a></li>
-	  <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
+      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
 
       <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
+
+      <li class="sb-parent"><a href="#sec-data-access" data-sec="sec-data-access">🗄️ Accessing NSHD Data</a></li>
+      <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview">Overview</a></li>
+      <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms">OWL, Showcase &amp; Condor</a></li>
+      <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm">Variable Metadata Pages</a></li>
+      <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep">Metadata Enhancement Project</a></li>
 
       <li class="sb-parent"><a href="#sec-search" data-sec="sec-search">🔍 Search Methods</a></li>
       <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd">Search Data Dictionary</a></li>
@@ -77,13 +83,13 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>The <strong>NSHD OWL</strong> — Online Wellbeing and Lifecourse Resource — is the central reference for the National Survey of Health and Development, 
-		Britain's longest-running birth cohort study. The study has followed over 5,000 individuals born in a single week of March 1946, now into 
+        <p>The <strong>NSHD OWL</strong> — Online Wellbeing and Lifecourse Resource — is the central reference for the National Survey of Health and Development,
+		Britain's longest-running birth cohort study. The study has followed over 5,000 individuals born in a single week of March 1946, now into
 		their eighties, generating one of the richest longitudinal datasets in the world.</p>
-        <p>Spanning physical health, cognitive development, mental wellbeing, lifestyle, and socioeconomic circumstance from birth through to older age, 
-		the NSHD offers unparalleled insight into how lives unfold across time. This resource gives researchers structured access to metadata — search 
-		thousands of variables by keyword, browse by topic area, explore the questionnaires used at each survey wave, and identify the measures most commonly 
-		used across research projects. Whether you are planning a new analysis, reviewing the study's scope, or tracking down a specific variable, 
+        <p>Spanning physical health, cognitive development, mental wellbeing, lifestyle, and socioeconomic circumstance from birth through to older age,
+		the NSHD offers unparalleled insight into how lives unfold across time. This resource gives researchers structured access to metadata — search
+		thousands of variables by keyword, browse by topic area, explore the questionnaires used at each survey wave, and identify the measures most commonly
+		used across research projects. Whether you are planning a new analysis, reviewing the study's scope, or tracking down a specific variable,
 		the OWL is designed to make navigating eighty years of data as straightforward as possible.</p>
       </div>
     </div>
@@ -134,17 +140,17 @@ classes: home-page
             </div>
           </div>
 
-		  <div class="inner-item" id="gs-variable-metadata">
-			<button class="inner-trigger" aria-expanded="false">
-				<span class="inner-icon"><i class="ti ti-file-description" aria-hidden="true"></i></span>
-				<span class="inner-title">Variable Metadata</span>
-				<span class="inner-chevron">▾</span>
-			</button>
-			<div class="inner-body">
-				<p>Every variable in the OWL has its own metadata page, accessible by clicking the variable name in any results table. This page explains what each field on that page means — from the variable code and field ID through to derived status, units, and notes — and how to interpret the frequency distribution plots, including the exclusion rules that apply to both categorical (low cell count suppression) and continuous (5th–95th percentile trimming) variables.</p>
-				<a class="inner-link" href="/OWL/docs/getting-started/variable-metadata/">Go to Variable Metadata →</a>
-			</div>
-		  </div>
+          <div class="inner-item" id="gs-variable-metadata">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-file-description" aria-hidden="true"></i></span>
+              <span class="inner-title">Variable Metadata</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Every variable in the OWL has its own metadata page, accessible by clicking the variable name in any results table. This page explains what each field on that page means — from the variable code and field ID through to derived status, units, and notes — and how to interpret the frequency distribution plots, including the exclusion rules that apply to both categorical (low cell count suppression) and continuous (5th–95th percentile trimming) variables.</p>
+              <a class="inner-link" href="/OWL/docs/accessing-nshd-data/variable-metadata/">Go to Variable Metadata →</a>
+            </div>
+          </div>
 
           <div class="inner-item" id="gs-jargon">
             <button class="inner-trigger" aria-expanded="false">
@@ -174,6 +180,68 @@ classes: home-page
         biological assays, lifestyle questionnaires, and socioeconomic measures. Variables are organised
         into categories and subcategories, making it straightforward to locate data from specific sweeps
         or topic areas across the cohort's history.</p>
+      </div>
+    </div>
+
+    <!-- ACCESSING NSHD DATA -->
+    <div class="sec-row" id="sec-data-access">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon"><i class="ti ti-database-share" aria-hidden="true"></i></span>
+        <span class="sec-title">Accessing NSHD Data</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <div class="inner-accordion">
+
+          <div class="inner-item" id="da-overview">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-database-share" aria-hidden="true"></i></span>
+              <span class="inner-title">Overview — the four platforms</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The NSHD data sharing infrastructure is made up of four complementary platforms. <strong>OWL</strong> is where you discover and explore variables — no registration required. The <strong>NSHD Showcase</strong> presents participant counts and sweep-by-sweep distributions for the same 28,000 cleaned variables — also without registration. <strong>Condor</strong> holds the full 35,000+ variable set and is where baskets are built, saved, and shared before a data request is submitted — registration is required. <strong>Skylark</strong> is the data access information and forms portal where the formal Data Access Request Form is submitted.</p>
+              <a class="inner-link" href="/OWL/docs/accessing-nshd-data/">Go to Accessing NSHD Data →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="da-platforms">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-circles-relation" aria-hidden="true"></i></span>
+              <span class="inner-title">OWL, the NSHD Showcase and Condor</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>OWL and the NSHD Showcase both cover around 28,000 cleaned variables — those processed as part of the Metadata Enhancement Project — and are designed to be used together, linked via the Field ID. Condor holds the full 35,000+ variable set including variables not yet cleaned. Use OWL to discover variables using questionnaires, topic pages, and metadata; check participant counts and distributions on the Showcase; upload your OWL basket to Condor to finalise and share it; then submit your formal application via Skylark. Baskets cannot be submitted directly from OWL or Condor — the Data Access Request Form is on Skylark.</p>
+              <a class="inner-link" href="/OWL/docs/accessing-nshd-data/owl-showcase-condor/">Go to OWL, the Showcase and Condor →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="da-vm">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-file-description" aria-hidden="true"></i></span>
+              <span class="inner-title">Variable Metadata Pages</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Every variable has a dedicated metadata page on both OWL and Condor — the same information is presented on both platforms. The <strong>NSHD Condor/OWL Metadata page</strong> covers questionnaire provenance (form, question number, year), linked longitudinal variables, multiple category memberships, value labels, sensitivity flags, and distribution plots. The <strong>NSHD Showcase Metadata page</strong> groups variables with identical Field ID and coding by sweep via Instances, showing participant counts and distributions across all equivalent sweeps on one page. Together they give a complete picture of any variable before including it in a data request.</p>
+              <a class="inner-link" href="/OWL/docs/accessing-nshd-data/variable-metadata/">Go to Variable Metadata Pages →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="da-mep">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-sparkles" aria-hidden="true"></i></span>
+              <span class="inner-title">Metadata Enhancement Project</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The Metadata Enhancement Project is an ongoing programme of work to transform the quality of variable metadata across the full NSHD repository. Around 28,000 variables have been cleaned so far — with expanded labels, age at collection, standardised longitudinal labels, a new hierarchical category structure, derived status flags, missing value codes, value label consistency, and new fields including Units, Notes, sensitive flags, and distribution plots. The remaining ~7,000 variables are available on Condor only while work continues. The project is due for completion at the end of 2026.</p>
+              <a class="inner-link" href="/OWL/docs/accessing-nshd-data/metadata-enhancement-project/">Go to Metadata Enhancement Project →</a>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
 
@@ -243,7 +311,7 @@ classes: home-page
       </div>
     </div>
 
-   <!-- EXPLORE DOCUMENTATION -->
+    <!-- EXPLORE DOCUMENTATION -->
     <div class="sec-row" id="sec-explore">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
@@ -266,7 +334,7 @@ classes: home-page
             </div>
           </div>
 
-         <div class="inner-item" id="doc-topics">
+          <div class="inner-item" id="doc-topics">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🗂️</span>
               <span class="inner-title">Topics</span>
@@ -287,7 +355,7 @@ classes: home-page
     <div class="sec-row" id="sec-access">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🔐</span>
-        <span class="sec-title">Access & Permissions</span>
+        <span class="sec-title">Access &amp; Permissions</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
