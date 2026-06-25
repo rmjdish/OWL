@@ -30,6 +30,8 @@
     "search data dictionary":       "ti-search",
     "browse by category":           "ti-layout-grid",
     "view popular variables":       "ti-star",
+	"accessing nshd data":          "ti-database-share",
+	"metadata enhancement project":     "ti-sparkles",
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
