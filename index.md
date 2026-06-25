@@ -41,34 +41,34 @@ classes: home-page
   <div class="sidebar-summary">
     <h3><i class="ti ti-list" aria-hidden="true"></i> On this page</h3>
     <ul>
-      <li><a href="#sec-about" data-sec="sec-about">📘 About This Resource</a></li>
+      <li><a href="#sec-about" data-sec="sec-about" style="color:#6a0dad;">📘 About This Resource</a></li>
 
-      <li class="sb-parent"><a href="#sec-getting-started" data-sec="sec-getting-started">🧭 Getting Started</a></li>
-      <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where">Where should I start?</a></li>
-      <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
-      <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
-      <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata">Variable Metadata</a></li>
-      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
+      <li class="sb-parent"><a href="#sec-getting-started" data-sec="sec-getting-started" style="color:hsl(180,45%,22%);">🧭 Getting Started</a></li>
+      <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where" style="color:hsl(180,45%,28%);">Where should I start?</a></li>
+      <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised" style="color:hsl(180,45%,28%);">How the site is organised</a></li>
+      <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket" style="color:hsl(180,45%,28%);">Basket Management</a></li>
+      <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata" style="color:hsl(180,45%,28%);">Variable Metadata</a></li>
+      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon" style="color:hsl(180,45%,28%);">Cohort study jargon</a></li>
 
-      <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
+      <li><a href="#sec-coverage" data-sec="sec-coverage" style="color:hsl(125,35%,22%);">📊 Data Coverage</a></li>
 
-      <li class="sb-parent"><a href="#sec-data-access" data-sec="sec-data-access">🗄️ Accessing NSHD Data</a></li>
-      <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview">Overview</a></li>
-      <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms">OWL, Showcase &amp; Condor</a></li>
-      <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm">Variable Metadata Pages</a></li>
-      <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep">Metadata Enhancement Project</a></li>
+      <li class="sb-parent"><a href="#sec-data-access" data-sec="sec-data-access" style="color:hsl(210,45%,22%);">🗄️ Accessing NSHD Data</a></li>
+      <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview" style="color:hsl(210,45%,28%);">Overview</a></li>
+      <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms" style="color:hsl(210,45%,28%);">OWL, Showcase &amp; Condor</a></li>
+      <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm" style="color:hsl(210,45%,28%);">Variable Metadata Pages</a></li>
+      <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep" style="color:hsl(210,45%,28%);">Metadata Enhancement Project</a></li>
 
-      <li class="sb-parent"><a href="#sec-search" data-sec="sec-search">🔍 Search Methods</a></li>
-      <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd">Search Data Dictionary</a></li>
-      <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat">Browse by Category</a></li>
-      <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
-      <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
+      <li class="sb-parent"><a href="#sec-search" data-sec="sec-search" style="color:hsl(35,60%,22%);">🔍 Search Methods</a></li>
+      <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd" style="color:hsl(35,60%,28%);">Search Data Dictionary</a></li>
+      <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat" style="color:hsl(35,60%,28%);">Browse by Category</a></li>
+      <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop" style="color:hsl(35,60%,28%);">View Popular Variables</a></li>
+      <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global" style="color:hsl(35,60%,28%);">Global Site Search</a></li>
 
-      <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore">🧭 Explore Documentation</a></li>
-      <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest">NSHD Questionnaires</a></li>
-      <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics">Topics</a></li>
+      <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore" style="color:hsl(340,45%,25%);">🧭 Explore Documentation</a></li>
+      <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest" style="color:hsl(340,45%,30%);">NSHD Questionnaires</a></li>
+      <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics" style="color:hsl(340,45%,30%);">Topics</a></li>
 
-      <li><a href="#sec-access" data-sec="sec-access">🔐 Access &amp; Permissions</a></li>
+      <li><a href="#sec-access" data-sec="sec-access" style="color:hsl(270,35%,28%);">🔐 Access &amp; Permissions</a></li>
     </ul>
   </div>
 
@@ -176,10 +176,8 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>The dictionary spans a wide range of domains including clinical assessments, cognitive testing,
-        biological assays, lifestyle questionnaires, and socioeconomic measures. Variables are organised
-        into categories and subcategories, making it straightforward to locate data from specific sweeps
-        or topic areas across the cohort's history.</p>
+        <p>OWL and the NSHD Showcase currently provide access to around <strong>28,000 cleaned variables</strong> — those processed as part of the Metadata Enhancement Project. The full NSHD repository contains 35,000+ variables; the remaining ~7,000 are available on Condor only while cleaning continues. New variables are added periodically as each questionnaire is deposited. Coverage spans clinical assessments, cognitive testing, biological assays, lifestyle questionnaires, and socioeconomic measures across 42 collection years from 1946 to 2025.</p>
+        <a class="inner-link" href="/OWL/docs/data-coverage/">View full data coverage metrics →</a>
       </div>
     </div>
 
