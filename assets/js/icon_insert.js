@@ -24,7 +24,7 @@
     "how the site is organised":    "ti-map",
     "basket management":            "ti-basket-cog",
 	"variable metadata":            "ti-file-description",
-	"nshd metadata page":     		"ti-file-description",
+	"nshd condor/owl metadata page": "ti-file-description",
 	"nshd showcase":            	"ti-presentation-analytics",
 	"cohort study jargon":      	"ti-vocabulary",
     "search data dictionary":       "ti-search",
