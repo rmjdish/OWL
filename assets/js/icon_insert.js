@@ -32,6 +32,7 @@
     "view popular variables":       "ti-star",
 	"accessing nshd data":          "ti-database-share",
 	"metadata enhancement project":     "ti-sparkles",
+	"data coverage": "ti-chart-histogram",
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
