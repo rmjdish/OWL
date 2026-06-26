@@ -41,34 +41,34 @@ classes: home-page
   <div class="sidebar-summary">
     <h3><i class="ti ti-list" aria-hidden="true"></i> On this page</h3>
     <ul>
-      <li><a href="#sec-about" data-sec="sec-about" style="color:#6a0dad;">📘 About This Resource</a></li>
+      <li><a href="#sec-about" data-sec="sec-about">📘 About This Resource</a></li>
 
-      <li class="sb-parent"><a href="#sec-getting-started" data-sec="sec-getting-started" style="color:hsl(180,45%,22%);">🧭 Getting Started</a></li>
-      <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where" style="color:hsl(180,45%,28%);">Where should I start?</a></li>
-      <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised" style="color:hsl(180,45%,28%);">How the site is organised</a></li>
-      <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket" style="color:hsl(180,45%,28%);">Basket Management</a></li>
-      <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata" style="color:hsl(180,45%,28%);">Variable Metadata</a></li>
-      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon" style="color:hsl(180,45%,28%);">Cohort study jargon</a></li>
+      <li class="sb-parent"><a href="#sec-getting-started" data-sec="sec-getting-started">🧭 Getting Started</a></li>
+      <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where">Where should I start?</a></li>
+      <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
+      <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
+      <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata">Variable Metadata</a></li>
+      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
 
-      <li><a href="#sec-coverage" data-sec="sec-coverage" style="color:hsl(125,35%,22%);">📊 Data Coverage</a></li>
+      <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
 
-      <li class="sb-parent"><a href="#sec-data-access" data-sec="sec-data-access" style="color:hsl(210,45%,22%);">🗄️ Accessing NSHD Data</a></li>
-      <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview" style="color:hsl(210,45%,28%);">Overview</a></li>
-      <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms" style="color:hsl(210,45%,28%);">OWL, Showcase &amp; Condor</a></li>
-      <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm" style="color:hsl(210,45%,28%);">Variable Metadata Pages</a></li>
-      <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep" style="color:hsl(210,45%,28%);">Metadata Enhancement Project</a></li>
+      <li class="sb-parent"><a href="#sec-data-access" data-sec="sec-data-access">🗄️ Accessing NSHD Data</a></li>
+      <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview">Overview</a></li>
+      <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms">OWL, Showcase &amp; Condor</a></li>
+      <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm">Variable Metadata Pages</a></li>
+      <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep">Metadata Enhancement Project</a></li>
 
-      <li class="sb-parent"><a href="#sec-search" data-sec="sec-search" style="color:hsl(35,60%,22%);">🔍 Search Methods</a></li>
-      <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd" style="color:hsl(35,60%,28%);">Search Data Dictionary</a></li>
-      <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat" style="color:hsl(35,60%,28%);">Browse by Category</a></li>
-      <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop" style="color:hsl(35,60%,28%);">View Popular Variables</a></li>
-      <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global" style="color:hsl(35,60%,28%);">Global Site Search</a></li>
+      <li class="sb-parent"><a href="#sec-search" data-sec="sec-search">🔍 Search Methods</a></li>
+      <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd">Search Data Dictionary</a></li>
+      <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat">Browse by Category</a></li>
+      <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
+      <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
 
-      <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore" style="color:hsl(340,45%,25%);">🧭 Explore Documentation</a></li>
-      <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest" style="color:hsl(340,45%,30%);">NSHD Questionnaires</a></li>
-      <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics" style="color:hsl(340,45%,30%);">Topics</a></li>
+      <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore">🧭 Explore Documentation</a></li>
+      <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest">NSHD Questionnaires</a></li>
+      <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics">Topics</a></li>
 
-      <li><a href="#sec-access" data-sec="sec-access" style="color:hsl(270,35%,28%);">🔐 Access &amp; Permissions</a></li>
+      <li><a href="#sec-access" data-sec="sec-access">🔐 Access &amp; Permissions</a></li>
     </ul>
   </div>
 
@@ -76,10 +76,10 @@ classes: home-page
   <div class="sections-accordion">
 
     <!-- ABOUT -->
-    <div class="sec-row" id="sec-about">
+    <div class="sec-row" id="sec-about" style="border-left:4px solid #6a0dad;border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">📘</span>
-        <span class="sec-title">About This Resource</span>
+        <span class="sec-title" style="color:#6a0dad;">About This Resource</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -95,10 +95,10 @@ classes: home-page
     </div>
 
     <!-- GETTING STARTED -->
-    <div class="sec-row" id="sec-getting-started">
+    <div class="sec-row" id="sec-getting-started" style="border-left:4px solid hsl(180,45%,45%);border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
-        <span class="sec-title">Getting Started</span>
+        <span class="sec-title" style="color:hsl(180,45%,18%);">Getting Started</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -169,10 +169,10 @@ classes: home-page
     </div>
 
     <!-- COVERAGE -->
-    <div class="sec-row" id="sec-coverage">
+    <div class="sec-row" id="sec-coverage" style="border-left:4px solid hsl(125,35%,45%);border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">📊</span>
-        <span class="sec-title">Data Coverage</span>
+        <span class="sec-title" style="color:hsl(125,35%,18%);">Data Coverage</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -182,10 +182,10 @@ classes: home-page
     </div>
 
     <!-- ACCESSING NSHD DATA -->
-    <div class="sec-row" id="sec-data-access">
+    <div class="sec-row" id="sec-data-access" style="border-left:4px solid hsl(210,45%,45%);border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon"><i class="ti ti-database-share" aria-hidden="true"></i></span>
-        <span class="sec-title">Accessing NSHD Data</span>
+        <span class="sec-title" style="color:hsl(210,45%,18%);">Accessing NSHD Data</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -244,10 +244,10 @@ classes: home-page
     </div>
 
     <!-- SEARCH METHODS -->
-    <div class="sec-row" id="sec-search">
+    <div class="sec-row" id="sec-search" style="border-left:4px solid hsl(35,60%,45%);border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🔍</span>
-        <span class="sec-title">Search Methods</span>
+        <span class="sec-title" style="color:hsl(35,60%,18%);">Search Methods</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -310,10 +310,10 @@ classes: home-page
     </div>
 
     <!-- EXPLORE DOCUMENTATION -->
-    <div class="sec-row" id="sec-explore">
+    <div class="sec-row" id="sec-explore" style="border-left:4px solid hsl(340,45%,50%);border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
-        <span class="sec-title">Explore Documentation</span>
+        <span class="sec-title" style="color:hsl(340,45%,20%);">Explore Documentation</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -350,10 +350,10 @@ classes: home-page
     </div>
 
     <!-- ACCESS -->
-    <div class="sec-row" id="sec-access">
+    <div class="sec-row" id="sec-access" style="border-left:4px solid hsl(270,35%,45%);border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🔐</span>
-        <span class="sec-title">Access &amp; Permissions</span>
+        <span class="sec-title" style="color:hsl(270,35%,20%);">Access &amp; Permissions</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
