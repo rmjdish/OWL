@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </td>
 
             <td class="name-col">
-              <a href="https://rmjdish.github.io/OWL/docs/variable_metadata/${row.name}"
+              <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${row.name}"
                  target="_blank"
                  class="field-link">
                  ${row.name}

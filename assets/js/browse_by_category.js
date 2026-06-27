@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </td>
           <td style="width:40px;">${row["Order"]}</td>
           <td style="width:95px;">
-            <a href="https://rmjdish.github.io/OWL/docs/variable_metadata/${name}.html"
+            <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${name}.html"
                target="_blank">${name}</a>
           </td>
           <td class="dt-center" style="width:55px;">

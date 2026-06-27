@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function () {
      existing <a> tag.
      ============================================================ */
   (function linkVariableCodes() {
-    const baseUrl = 'https://rmjdish.github.io/OWL/docs/variable_metadata/';
+    const baseUrl = 'https://rmjdish.github.io/OWL/assets/variable_metadata/';
     const cells = document.querySelectorAll('.topic-table tbody td');
 
     cells.forEach(function (cell) {
