@@ -116,7 +116,7 @@ window.addEventListener("load", function () {
 	const link = document.createElement("a");
 
 	link.textContent = item.varName;
-	link.href = `https://rmjdish.github.io/OWL/docs/variable_metadata/${item.varName}.html`;
+	link.href = `https://rmjdish.github.io/OWL/assets/variable_metadata/${item.varName}.html`;
 	link.target = "_blank";  // optional: open in new tab
 
 	tdName.appendChild(link);
