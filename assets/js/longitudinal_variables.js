@@ -1,9 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const SITE_BASEURL  = "/OWL";
-  const DICT_URL      = `${SITE_BASEURL}/docs/data_dictionary/NSHD_Data_Dictionary_Public.json`;
-  const SIDECAR_BASE  = `${SITE_BASEURL}/assets/variable_metadata/`;
-  const PAGE_SIZE     = 20;
+  const SITE_BASEURL = "/OWL";
+  const DICT_URL     = `${SITE_BASEURL}/docs/data_dictionary/NSHD_Data_Dictionary_Public.json`;
+  const SIDECAR_BASE = `${SITE_BASEURL}/assets/variable_metadata/`;
+  const PAGE_SIZE    = 20;
 
   let allFields      = [];
   let filteredFields = [];
@@ -11,8 +11,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const openPanels   = new Set();
   const loadedPanels = new Set();
   const chartRegistry = {};
+  let sortState = { col: 'fieldId', dir: 'asc' };
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────────────────
 
   function yearToSort(y) {
     const m = String(y || '').match(/(\d{4})/);
@@ -38,7 +39,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function cleanLabel(s) {
-    return (s || '').replace(/\s*-?\s*(?:at|aged?)\s+age\s+[\d–\-]+\s*(?:years?)?\s*\.?\s*$/gi, '').trim();
+    return (s || '')
+      .replace(/\s*-?\s*(?:at|aged?)\s+age\s+[\d–\-]+\s*(?:years?)?\s*\.?\s*$/gi, '')
+      .trim();
   }
 
   function fmt(n) {
@@ -46,20 +49,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return parseFloat(n.toFixed(1)).toLocaleString();
   }
 
-  // ── DOM refs ───────────────────────────────────────────────────────────────
+  // ── DOM refs ──────────────────────────────────────────────────────────────
 
-  const loadingScreen  = document.getElementById('loadingScreen');
-  const mainUI         = document.getElementById('mainUI');
-  const searchBox      = document.getElementById('globalSearch');
-  const typeFilter     = document.getElementById('typeFilter');
-  const sweepFilter    = document.getElementById('sweepFilter');
-  const topicFilter    = document.getElementById('topicFilter');
-  const resultsCount   = document.getElementById('resultsCount');
-  const tbody          = document.getElementById('mainTbody');
-  const paginationTop  = document.getElementById('paginationTop');
+  const loadingScreen    = document.getElementById('loadingScreen');
+  const mainUI           = document.getElementById('mainUI');
+  const searchBox        = document.getElementById('globalSearch');
+  const sweepFilter      = document.getElementById('sweepFilter');
+  const topicFilter      = document.getElementById('topicFilter');
+  const resultsCount     = document.getElementById('resultsCount');
+  const tbody            = document.getElementById('mainTbody');
+  const paginationTop    = document.getElementById('paginationTop');
   const paginationBottom = document.getElementById('paginationBottom');
 
-  // ── Load + group ───────────────────────────────────────────────────────────
+  // ── Load + group ──────────────────────────────────────────────────────────
 
   fetch(DICT_URL)
     .then(r => r.json())
@@ -70,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!fid) return;
         if (!groups[fid]) {
           groups[fid] = {
-            fieldId:  fid,
+            fieldId:  parseInt(fid),
             label:    cleanLabel(row['Variable Label'] || ''),
             topic:    stripId(row['Topic'] || ''),
             sweeps:   [],
@@ -91,7 +93,17 @@ document.addEventListener("DOMContentLoaded", () => {
           return g;
         });
 
-      // Populate topic dropdown
+      // ── Compute and display banner metrics ───────────────────────────────
+      const maxSweeps = Math.max(...allFields.map(f => f.sweeps.length));
+      const allYears  = allFields.flatMap(f => f.sweeps.map(s => s.year)).filter(Boolean);
+      const firstYear = allYears.reduce((a, b) => yearToSort(a) < yearToSort(b) ? a : b, allYears[0]);
+      const lastYear  = allYears.reduce((a, b) => yearToSort(a) > yearToSort(b) ? a : b, allYears[0]);
+
+      document.getElementById('metricCount').textContent  = allFields.length.toLocaleString();
+      document.getElementById('metricSweeps').textContent = `Up to ${maxSweeps} sweeps`;
+      document.getElementById('metricRange').textContent  = `${firstYear} – ${lastYear}`;
+
+      // ── Populate topic dropdown ──────────────────────────────────────────
       const topics = [...new Set(allFields.map(f => f.topic).filter(Boolean))].sort();
       topics.forEach(t => {
         const opt = document.createElement('option');
@@ -100,24 +112,20 @@ document.addEventListener("DOMContentLoaded", () => {
         topicFilter.appendChild(opt);
       });
 
-      // Update hero stat
-      document.getElementById('fieldCount').textContent =
-        allFields.length.toLocaleString();
-
       loadingScreen.style.display = 'none';
       mainUI.style.display        = 'block';
       applyFilters();
     })
     .catch(err => {
       loadingScreen.innerHTML =
-        '<p style="color:#A32D2D;padding:20px;">Failed to load data dictionary.</p>';
+        '<p style="color:#A32D2D;padding:20px;">Failed to load data dictionary. Check the console for details.</p>';
       console.error(err);
     });
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
+  // ── Filters ───────────────────────────────────────────────────────────────
 
   function applyFilters() {
-    const q         = searchBox.value.toLowerCase();
+    const q         = (searchBox.value || '').toLowerCase().trim();
     const minSweeps = parseInt(sweepFilter.value) || 2;
     const topic     = topicFilter.value;
 
@@ -125,24 +133,69 @@ document.addEventListener("DOMContentLoaded", () => {
       if (f.sweeps.length < minSweeps) return false;
       if (topic && f.topic !== topic) return false;
       if (q) {
-        const inLabel    = f.label.toLowerCase().includes(q);
-        const inFieldId  = String(f.fieldId).includes(q);
-        const inVarnames = f.varnames.some(v => v.toLowerCase().includes(q));
-        if (!inLabel && !inFieldId && !inVarnames) return false;
+        const inLabel   = f.label.toLowerCase().includes(q);
+        const inFieldId = String(f.fieldId).includes(q);
+        const inVars    = f.varnames.some(v => v.toLowerCase().includes(q));
+        if (!inLabel && !inFieldId && !inVars) return false;
       }
       return true;
     });
 
-    currentPage = 1;
-    renderTable();
+    applySort();
   }
 
-  searchBox.oninput   = applyFilters;
-  typeFilter.onchange = applyFilters;
-  sweepFilter.onchange = applyFilters;
-  topicFilter.onchange = applyFilters;
+  searchBox.addEventListener('input', applyFilters);
+  sweepFilter.addEventListener('change', applyFilters);
+  topicFilter.addEventListener('change', applyFilters);
 
-  // ── Render table ───────────────────────────────────────────────────────────
+  // ── Sorting ───────────────────────────────────────────────────────────────
+
+  function applySort() {
+    const { col, dir } = sortState;
+    filteredFields.sort((a, b) => {
+      let av, bv;
+      if (col === 'fieldId') { av = a.fieldId;  bv = b.fieldId; }
+      if (col === 'label')   { av = a.label.toLowerCase();  bv = b.label.toLowerCase(); }
+      if (col === 'topic')   { av = a.topic.toLowerCase();  bv = b.topic.toLowerCase(); }
+      if (col === 'sweeps')  { av = a.sweeps.length; bv = b.sweeps.length; }
+      if (av < bv) return dir === 'asc' ? -1 :  1;
+      if (av > bv) return dir === 'asc' ?  1 : -1;
+      return 0;
+    });
+    currentPage = 1;
+    renderTable();
+    updateSortIcons();
+  }
+
+  function updateSortIcons() {
+    document.querySelectorAll('#mainTable thead th[data-sort]').forEach(th => {
+      const icon = th.querySelector('.sort-icon');
+      if (!icon) return;
+      if (th.dataset.sort === sortState.col) {
+        icon.textContent  = sortState.dir === 'asc' ? ' ▲' : ' ▼';
+        icon.style.opacity = '1';
+      } else {
+        icon.textContent  = ' ⇅';
+        icon.style.opacity = '0.4';
+      }
+    });
+  }
+
+  document.querySelectorAll('#mainTable thead th[data-sort]').forEach(th => {
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', () => {
+      const col = th.dataset.sort;
+      if (sortState.col === col) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortState.col = col;
+        sortState.dir = 'asc';
+      }
+      applySort();
+    });
+  });
+
+  // ── Render table ──────────────────────────────────────────────────────────
 
   function renderTable() {
     const total      = filteredFields.length;
@@ -154,39 +207,35 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.innerHTML = '';
 
     pageRows.forEach(f => {
-      const firstYear = f.sweeps[0]?.year || '';
-      const lastYear  = f.sweeps[f.sweeps.length - 1]?.year || '';
-      const yearRange = firstYear === lastYear
-        ? firstYear
-        : `${firstYear} → ${lastYear}`;
-      const topicShort = f.topic.length > 24 ? f.topic.slice(0, 22) + '…' : f.topic;
-      const namesPreview = f.varnames.slice(0, 5).join(' · ') +
-        (f.varnames.length > 5 ? ` +${f.varnames.length - 5} more` : '');
-      const panelId = `panel-${f.fieldId}`;
+      const firstYear  = f.sweeps[0]?.year || '';
+      const lastYear   = f.sweeps[f.sweeps.length - 1]?.year || '';
+      const yearRange  = firstYear === lastYear ? firstYear : `${firstYear} → ${lastYear}`;
+      const allNames   = f.varnames.join(' · ');
+      const panelId    = `panel-${f.fieldId}`;
 
-      // Main row
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="text-align:center;padding:8px 6px;">
+        <td class="col-check">
           <input type="checkbox" class="row-check"
                  data-varnames="${f.varnames.join(',')}"
-                 data-label="${f.label.replace(/"/g,'&quot;')}"
+                 data-label="${f.label.replace(/"/g, '&quot;')}"
                  style="accent-color:#534AB7;width:14px;height:14px;">
         </td>
-        <td style="color:#534AB7;font-weight:500;font-size:12px;padding:8px 10px;">${f.fieldId}</td>
-        <td style="padding:8px 10px;">
+        <td class="col-fid">${f.fieldId}</td>
+        <td class="col-label">
           <div style="font-size:12px;font-weight:500;color:var(--text-primary);">${f.label}</div>
-          <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">${namesPreview}</div>
+          <div style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;line-height:1.6;">${allNames}</div>
         </td>
-        <td style="font-size:11px;color:var(--text-secondary);padding:8px 10px;">${topicShort}</td>
-        <td style="padding:8px 10px;">
+        <td class="col-topic">${f.topic}</td>
+        <td class="col-sweeps">
           <span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:6px;
                        background:#E1F5EE;color:#085041;">${f.sweeps.length} sweeps</span>
           <div style="font-size:10px;color:var(--text-muted);margin-top:3px;">${yearRange}</div>
         </td>
-        <td style="padding:8px 10px;">
+        <td class="col-view">
           <button class="view-btn" data-fid="${f.fieldId}"
-                  style="font-size:11px;height:26px;padding:0 10px;display:inline-flex;align-items:center;gap:4px;">
+                  style="font-size:11px;height:26px;padding:0 10px;
+                         display:inline-flex;align-items:center;gap:4px;">
             <i class="ti ti-chart-line" aria-hidden="true" style="font-size:11px;"></i> View
           </button>
         </td>`;
@@ -194,14 +243,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Panel row
       const panelRow = document.createElement('tr');
-      panelRow.id           = panelId;
+      panelRow.id            = panelId;
       panelRow.style.display = 'none';
       panelRow.innerHTML = `
         <td colspan="6" style="padding:0;background:#F8F6FF;border-bottom:2px solid #534AB7;">
-          <div id="panel-content-${f.fieldId}" style="padding:16px;">
-            <div style="color:var(--text-muted);font-size:12px;display:flex;align-items:center;gap:8px;">
-              <span style="width:16px;height:16px;border:2px solid #534AB7;border-top-color:transparent;
-                           border-radius:50%;display:inline-block;animation:spin .8s linear infinite;"></span>
+          <div id="panel-content-${f.fieldId}" style="padding:16px 20px;">
+            <div style="color:var(--text-muted);font-size:12px;display:flex;
+                        align-items:center;gap:8px;">
+              <span style="width:14px;height:14px;border:2px solid #534AB7;
+                           border-top-color:transparent;border-radius:50%;display:inline-block;
+                           animation:spin .8s linear infinite;flex-shrink:0;"></span>
               Loading sweep data…
             </div>
           </div>
@@ -220,10 +271,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     tbody.querySelectorAll('.row-check').forEach(cb => {
       cb.onchange = () => {
-        const names = cb.dataset.varnames.split(',');
+        const names = cb.dataset.varnames.split(',').filter(Boolean);
         const label = cb.dataset.label;
-        if (cb.checked) names.forEach(n => { if (n) addToBasket(n, label); });
-        else            names.forEach(n => { if (n) removeFromBasket(n); });
+        if (cb.checked) names.forEach(n => addToBasket(n, label));
+        else            names.forEach(n => removeFromBasket(n));
         updateBasketCountUI();
       };
     });
@@ -231,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderPagination(totalPages);
   }
 
-  // ── Panel toggle ───────────────────────────────────────────────────────────
+  // ── Panel toggle ──────────────────────────────────────────────────────────
 
   function togglePanel(fid, field, btn) {
     const panelRow = document.getElementById(`panel-${fid}`);
@@ -241,17 +292,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isOpen) {
       panelRow.style.display = 'none';
       openPanels.delete(fid);
-      btn.innerHTML          = '<i class="ti ti-chart-line" aria-hidden="true" style="font-size:11px;"></i> View';
-      btn.style.background   = '';
-      btn.style.borderColor  = '';
-      btn.style.color        = '';
+      btn.innerHTML         = '<i class="ti ti-chart-line" aria-hidden="true" style="font-size:11px;"></i> View';
+      btn.style.background  = '';
+      btn.style.borderColor = '';
+      btn.style.color       = '';
     } else {
       panelRow.style.display = '';
       openPanels.add(fid);
-      btn.innerHTML          = '<i class="ti ti-x" aria-hidden="true" style="font-size:11px;"></i> Close';
-      btn.style.background   = '#EEEDFE';
-      btn.style.borderColor  = '#534AB7';
-      btn.style.color        = '#3C3489';
+      btn.innerHTML         = '<i class="ti ti-x" aria-hidden="true" style="font-size:11px;"></i> Close';
+      btn.style.background  = '#EEEDFE';
+      btn.style.borderColor = '#534AB7';
+      btn.style.color       = '#3C3489';
       if (!loadedPanels.has(fid)) {
         loadedPanels.add(fid);
         loadPanelData(fid, field);
@@ -259,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ── Load sidecar data + render panel ──────────────────────────────────────
+  // ── Sidecar fetch + panel render ──────────────────────────────────────────
 
   function loadPanelData(fid, field) {
     const contentDiv = document.getElementById(`panel-content-${fid}`);
@@ -273,45 +324,46 @@ document.addEventListener("DOMContentLoaded", () => {
     ).then(sidecars => {
 
       const sweepData = field.sweeps.map((s, i) => ({
-        varname:  s.varname,
-        year:     s.year,
-        age:      yearToAge(s.year),
-        mean:     sidecars[i]?.mean     ?? null,
-        sd:       sidecars[i]?.sd       ?? null,
-        min:      sidecars[i]?.minimum  ?? null,
-        max:      sidecars[i]?.maximum  ?? null,
-        n:        sidecars[i]?.series_size ?? null,
-        distType: sidecars[i]?.dist_type   ?? 'continuous',
+        varname:   s.varname,
+        year:      s.year,
+        age:       yearToAge(s.year),
+        mean:      sidecars[i]?.mean        ?? null,
+        sd:        sidecars[i]?.sd          ?? null,
+        min:       sidecars[i]?.minimum     ?? null,
+        max:       sidecars[i]?.maximum     ?? null,
+        n:         sidecars[i]?.series_size ?? null,
+        distType:  sidecars[i]?.dist_type   ?? 'continuous',
         valLabels: sidecars[i]?.value_labels ?? []
       }));
 
-      const isContinuous = sweepData.some(s => s.distType === 'continuous' && s.mean !== null);
-      const sharedForm    = sidecars.find(s => s?.form)?.form    || '';
-      const sharedUnits   = sidecars.find(s => s?.units)?.units  || '';
+      const isContinuous  = sweepData.some(s => s.distType === 'continuous' && s.mean !== null);
+      const sharedForm    = sidecars.find(s => s?.form)?.form   || '';
+      const sharedUnits   = sidecars.find(s => s?.units)?.units || '';
       const sharedDerived = sidecars.find(s => s?.derived != null)?.derived ?? '';
       const valLabels     = sweepData.find(s => s.valLabels?.length)?.valLabels || [];
       const units         = sharedUnits && sharedUnits !== 'Not applicable' ? sharedUnits : '';
 
-      // Shared metadata chips
       const metaItems = [
         sharedForm    ? `<div><div class="sh-lbl">Form</div><div class="sh-val">${sharedForm}</div></div>` : '',
         units         ? `<div><div class="sh-lbl">Units</div><div class="sh-val">${units}</div></div>` : '',
         sharedDerived !== '' ? `<div><div class="sh-lbl">Derived</div>
           <div class="sh-val" style="color:${sharedDerived==='1'?'#854F0B':'#085041'}">
             ${sharedDerived==='1'?'Yes':'No'}</div></div>` : '',
-        `<div><div class="sh-lbl">Type</div><div class="sh-val">${isContinuous?'Continuous':'Categorical'}</div></div>`
+        `<div><div class="sh-lbl">Type</div>
+          <div class="sh-val">${isContinuous?'Continuous':'Categorical'}</div></div>`
       ].filter(Boolean).join('');
 
-      // Detail table rows
-      const tableRows = sweepData.map(s => {
+      const chartId = `chart-${fid}`;
+
+      const tableRows = sweepData.map((s, i) => {
+        const bg = i % 2 === 0 ? 'background:hsl(180 45% 97%);' : 'background:hsl(35 60% 97%);';
         if (isContinuous) {
           const range  = (s.max !== null && s.min !== null) ? s.max - s.min : 1;
           const barPct = (s.mean !== null && range > 0)
-            ? Math.round(((s.mean - (s.min || 0)) / range) * 100) : 0;
-          return `<tr>
+            ? Math.min(100, Math.round(((s.mean - (s.min || 0)) / range) * 100)) : 0;
+          return `<tr style="${bg}">
             <td style="color:#534AB7;font-weight:500;">${s.varname}</td>
-            <td>${s.year}</td>
-            <td>${s.age}</td>
+            <td>${s.year}</td><td>${s.age}</td>
             <td>${s.mean !== null
               ? `${fmt(s.mean)}<div class="bar-wrap"><div class="bar-fill" style="width:${barPct}%"></div></div>`
               : '—'}</td>
@@ -321,69 +373,76 @@ document.addEventListener("DOMContentLoaded", () => {
             <td>${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         } else {
-          return `<tr>
+          return `<tr style="${bg}">
             <td style="color:#534AB7;font-weight:500;">${s.varname}</td>
-            <td>${s.year}</td>
-            <td>${s.age}</td>
-            <td colspan="4" style="color:var(--text-muted);font-style:italic;font-size:11px;">Categorical — see value labels below</td>
+            <td>${s.year}</td><td>${s.age}</td>
+            <td colspan="4" style="color:var(--text-muted);font-style:italic;font-size:11px;">
+              Categorical — see value labels below</td>
             <td>${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         }
       }).join('');
 
       const theadCols = isContinuous
-        ? `<th>Variable</th><th>Year</th><th>Age</th><th>Mean${units?' ('+units+')':''}</th><th>SD</th><th>Min</th><th>Max</th><th>n</th>`
-        : `<th>Variable</th><th>Year</th><th>Age</th><th colspan="4"></th><th>n</th>`;
+        ? `<th>Variable</th><th>Year</th><th>Age</th>
+           <th>Mean${units?' ('+units+')':''}</th><th>SD</th>
+           <th>Min</th><th>Max</th><th>n</th>`
+        : `<th>Variable</th><th>Year</th><th>Age</th>
+           <th colspan="4"></th><th>n</th>`;
 
       const valLabelHtml = valLabels.length ? `
-        <div style="margin-top:10px;">
-          <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;
-                      color:var(--text-muted);margin-bottom:5px;">
-            Value labels (shared across all sweeps)
+        <div style="margin-top:12px;">
+          <div style="font-size:10px;font-weight:500;text-transform:uppercase;
+                      letter-spacing:.05em;color:var(--text-muted);margin-bottom:5px;">
+            Value labels — identical across all sweeps
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:5px;">
-            ${valLabels.slice(0, 25).map(vl =>
-              `<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:#EEEDFE;color:#3C3489;">
+            ${valLabels.slice(0, 30).map(vl =>
+              `<span style="font-size:11px;padding:2px 8px;border-radius:6px;
+                            background:#EEEDFE;color:#3C3489;">
                 <strong>${vl.value}</strong> = ${vl.label}
               </span>`).join('')}
-            ${valLabels.length > 25
-              ? `<span style="font-size:11px;color:var(--text-muted);">+${valLabels.length-25} more</span>`
-              : ''}
+            ${valLabels.length > 30
+              ? `<span style="font-size:11px;color:var(--text-muted);">
+                   +${valLabels.length - 30} more
+                 </span>` : ''}
           </div>
         </div>` : '';
 
-      const chartId = `chart-${fid}`;
-
       contentDiv.innerHTML = `
         <div style="display:flex;align-items:flex-start;justify-content:space-between;
-                    margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                    margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <div>
-            <span style="font-size:14px;font-weight:500;color:#085041;">${field.label}</span>
+            <span style="font-size:15px;font-weight:500;color:#085041;">${field.label}</span>
             <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">
-              Field ID ${fid} · ${field.sweeps.length} sweeps
+              Field ID ${fid} &middot; ${field.sweeps.length} sweeps
             </span>
           </div>
           <button onclick="addAllFromPanel(${fid})"
-                  style="font-size:11px;height:26px;padding:0 12px;">
-            Add all to basket
+                  style="font-size:11px;height:28px;padding:0 12px;">
+            Add all ${field.sweeps.length} variables to basket
           </button>
         </div>
 
         <div style="background:var(--surface-1);border:0.5px solid var(--border);
                     border-radius:8px;padding:10px 14px;margin-bottom:12px;">
-          <div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;
-                      color:var(--text-muted);margin-bottom:6px;">Shared across all sweeps</div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">${metaItems}</div>
+          <div style="font-size:10px;font-weight:500;text-transform:uppercase;
+                      letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px;">
+            Shared across all sweeps
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+            ${metaItems}
+          </div>
         </div>
 
-        ${isContinuous
-          ? `<div style="position:relative;height:180px;margin-bottom:10px;">
-               <canvas id="${chartId}"></canvas>
-             </div>
-             <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;font-style:italic;">
-               Line = mean · Shaded band = min–max (5th–95th percentile)
-             </div>`
-          : ''}
+        ${isContinuous ? `
+          <div style="position:relative;height:180px;margin-bottom:6px;">
+            <canvas id="${chartId}"></canvas>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;
+                    font-style:italic;">
+            Line = mean &middot; Shaded band = min–max (5th–95th percentile)
+          </p>` : ''}
 
         <div style="border:0.5px solid var(--border);border-radius:8px;overflow:hidden;">
           <table class="dtable">
@@ -391,76 +450,50 @@ document.addEventListener("DOMContentLoaded", () => {
             <tbody>${tableRows}</tbody>
           </table>
         </div>
-        ${valLabelHtml}
-      `;
+        ${valLabelHtml}`;
 
-      // Chart for continuous variables
       if (isContinuous) {
-        const validSweeps = sweepData.filter(s => s.mean !== null);
+        const valid = sweepData.filter(s => s.mean !== null);
         if (chartRegistry[fid]) {
           try { chartRegistry[fid].destroy(); } catch (e) {}
         }
         chartRegistry[fid] = new Chart(document.getElementById(chartId), {
           type: 'line',
           data: {
-            labels: validSweeps.map(s => s.year),
+            labels: valid.map(s => s.year),
             datasets: [
               {
-                label:           'Mean',
-                data:            validSweeps.map(s => parseFloat(s.mean.toFixed(2))),
-                borderColor:     '#1D9E75',
-                backgroundColor: '#1D9E75',
-                pointRadius:     4,
-                pointHoverRadius: 6,
-                borderWidth:     2,
-                tension:         0.3,
-                order:           1
+                label: 'Mean', data: valid.map(s => parseFloat(s.mean.toFixed(2))),
+                borderColor: '#1D9E75', backgroundColor: '#1D9E75',
+                pointRadius: 4, pointHoverRadius: 6, borderWidth: 2, tension: 0.3, order: 1
               },
               {
-                label:           'Max',
-                data:            validSweeps.map(s => s.max !== null ? parseFloat(s.max.toFixed(2)) : null),
-                borderColor:     'rgba(29,158,117,0.2)',
-                backgroundColor: 'rgba(29,158,117,0.08)',
-                pointRadius:     0,
-                borderWidth:     1,
-                borderDash:      [4, 3],
-                fill:            '+1',
-                tension:         0.3,
-                order:           2
+                label: 'Max', data: valid.map(s => s.max !== null ? parseFloat(s.max.toFixed(2)) : null),
+                borderColor: 'rgba(29,158,117,0.2)', backgroundColor: 'rgba(29,158,117,0.08)',
+                pointRadius: 0, borderWidth: 1, borderDash: [4,3], fill: '+1', tension: 0.3, order: 2
               },
               {
-                label:           'Min',
-                data:            validSweeps.map(s => s.min !== null ? parseFloat(s.min.toFixed(2)) : null),
-                borderColor:     'rgba(29,158,117,0.2)',
-                pointRadius:     0,
-                borderWidth:     1,
-                borderDash:      [4, 3],
-                fill:            false,
-                tension:         0.3,
-                order:           2
+                label: 'Min', data: valid.map(s => s.min !== null ? parseFloat(s.min.toFixed(2)) : null),
+                borderColor: 'rgba(29,158,117,0.2)', pointRadius: 0,
+                borderWidth: 1, borderDash: [4,3], fill: false, tension: 0.3, order: 2
               }
             ]
           },
           options: {
-            responsive:          true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             plugins: {
               legend: { display: false },
               tooltip: {
-                filter:    i  => i.datasetIndex === 0,
+                filter: i => i.datasetIndex === 0,
                 callbacks: { label: c => ` Mean ${c.raw}${units ? ' ' + units : ''}` }
               }
             },
             scales: {
-              x: {
-                ticks: { font: { size: 10 }, color: '#888', maxRotation: 45 },
-                grid:  { color: 'rgba(0,0,0,0.05)' }
-              },
-              y: {
-                ticks: { font: { size: 10 }, color: '#888',
-                         callback: v => v + (units ? ' ' + units : '') },
-                grid:  { color: 'rgba(0,0,0,0.05)' }
-              }
+              x: { ticks: { font:{size:10}, color:'#888', maxRotation:45 },
+                   grid:  { color:'rgba(0,0,0,0.05)' } },
+              y: { ticks: { font:{size:10}, color:'#888',
+                            callback: v => v + (units ? ' '+units : '') },
+                   grid:  { color:'rgba(0,0,0,0.05)' } }
             }
           }
         });
@@ -468,25 +501,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Global helpers called from inline onclick ──────────────────────────────
+  // ── Global helper for inline onclick ─────────────────────────────────────
 
   window.addAllFromPanel = function(fid) {
     const field = allFields.find(f => f.fieldId === fid);
     if (!field) return;
-    field.varnames.forEach(n => { if (n) addToBasket(n, field.label); });
+    field.varnames.filter(Boolean).forEach(n => addToBasket(n, field.label));
     updateBasketCountUI();
   };
 
-  // ── Pagination ─────────────────────────────────────────────────────────────
+  // ── Pagination ────────────────────────────────────────────────────────────
 
   function renderPagination(totalPages) {
     const html = `
-      <button ${currentPage === 1          ? 'disabled' : ''} data-dir="-1">← Prev</button>
-      <span style="font-size:12px;color:var(--text-muted);">
-        Page ${currentPage} of ${totalPages}
-      </span>
-      <button ${currentPage === totalPages ? 'disabled' : ''} data-dir="1">Next →</button>`;
-
+      <button ${currentPage===1?'disabled':''} data-dir="-1" style="font-size:12px;height:28px;padding:0 10px;">← Prev</button>
+      <span style="font-size:12px;color:var(--text-muted);">Page ${currentPage} of ${totalPages}</span>
+      <button ${currentPage===totalPages?'disabled':''} data-dir="1" style="font-size:12px;height:28px;padding:0 10px;">Next →</button>`;
     [paginationTop, paginationBottom].forEach(el => {
       el.innerHTML = html;
       el.querySelectorAll('button').forEach(btn => {
@@ -499,36 +529,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Download CSV ───────────────────────────────────────────────────────────
+  // ── Download CSV ──────────────────────────────────────────────────────────
 
   document.getElementById('downloadCsvBtn').addEventListener('click', () => {
     const rows = filteredFields.map(f => [
       f.fieldId,
-      `"${f.label.replace(/"/g, '""')}"`,
+      `"${f.label.replace(/"/g,'""')}"`,
       `"${f.topic}"`,
       f.sweeps.length,
       f.sweeps[0]?.year || '',
-      f.sweeps[f.sweeps.length - 1]?.year || '',
+      f.sweeps[f.sweeps.length-1]?.year || '',
       `"${f.varnames.join(', ')}"`
     ].join(','));
-    const csv = [
-      'Field ID,Label,Topic,Sweep count,First year,Last year,Variable names',
-      ...rows
-    ].join('\n');
-    const url  = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    const csv  = ['Field ID,Label,Topic,Sweep count,First year,Last year,Variable names',...rows].join('\n');
+    const url  = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
     const link = document.createElement('a');
-    link.href = url;
-    link.download = 'NSHD_Longitudinal_Variables.csv';
-    link.click();
+    link.href = url; link.download = 'NSHD_Longitudinal_Variables.csv'; link.click();
     URL.revokeObjectURL(url);
   });
 
-  // ── Add selected to basket ─────────────────────────────────────────────────
+  // ── Add selected ──────────────────────────────────────────────────────────
 
   document.getElementById('addSelectedBtn').addEventListener('click', () => {
     tbody.querySelectorAll('.row-check:checked').forEach(cb => {
       const label = cb.dataset.label;
-      cb.dataset.varnames.split(',').forEach(n => { if (n) addToBasket(n, label); });
+      cb.dataset.varnames.split(',').filter(Boolean).forEach(n => addToBasket(n, label));
     });
     updateBasketCountUI();
   });
