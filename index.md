@@ -198,7 +198,7 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>The NSHD data sharing infrastructure is made up of four complementary platforms. <strong>OWL</strong> is where you discover and explore variables — no registration required. The <strong>NSHD Showcase</strong> presents participant counts and sweep-by-sweep distributions for the same 28,000 cleaned variables — also without registration. <strong>Condor</strong> holds the full 35,000+ variable set and is where baskets are built, saved, and shared before a data request is submitted — registration is required. <strong>Skylark</strong> is the data access information and forms portal where the formal Data Access Request Form is submitted.</p>
+              <p>The NSHD data sharing infrastructure is made up of four complementary platforms. <strong>OWL</strong> is where you discover and explore variables — no registration required. The <strong>NSHD Showcase</strong> presents participant counts and sweep-by-sweep distributions for the same 28,000 cleaned variables — also without registration. Built on the same platform as the UK Biobank Data Showcase, it will be immediately familiar to researchers with UK Biobank experience. <strong>Condor</strong> holds the full 35,000+ variable set and is where baskets are built, saved, and shared before a data request is submitted — registration is required. <strong>Skylark</strong> is the data access information and forms portal where the formal Data Access Request Form is submitted.</p>
               <a class="inner-link" href="/OWL/docs/accessing-nshd-data/">Go to Accessing NSHD Data →</a>
             </div>
           </div>
@@ -210,7 +210,7 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>OWL and the NSHD Showcase both cover around 28,000 cleaned variables — those processed as part of the Metadata Enhancement Project — and are designed to be used together, linked via the Field ID. Condor holds the full 35,000+ variable set including variables not yet cleaned. Use OWL to discover variables using questionnaires, topic pages, and metadata; check participant counts and distributions on the Showcase; upload your OWL basket to Condor to finalise and share it; then submit your formal application via Skylark. Baskets cannot be submitted directly from OWL or Condor — the Data Access Request Form is on Skylark.</p>
+              <p>OWL and the NSHD Showcase both cover around 28,000 cleaned variables — those processed as part of the Metadata Enhancement Project — and are designed to be used together, linked via the Field ID. The Showcase is built on the same platform as the UK Biobank Data Showcase, making it a particularly efficient starting point for researchers already familiar with UK Biobank variable discovery. Condor holds the full 35,000+ variable set including variables not yet cleaned. Use OWL to discover variables using questionnaires, topic pages, and metadata; check participant counts and distributions on the Showcase; upload your OWL basket to Condor to finalise and share it; then submit your formal application via Skylark. Baskets cannot be submitted directly from OWL or Condor — the Data Access Request Form is on Skylark.</p>
               <a class="inner-link" href="/OWL/docs/accessing-nshd-data/owl-showcase-condor/">Go to OWL, the Showcase and Condor →</a>
             </div>
           </div>
