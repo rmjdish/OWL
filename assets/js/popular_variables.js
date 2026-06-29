@@ -13,20 +13,24 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("popularUI").style.display = "block";
 
-    // Build label lookup
-    const labelMap = {};
+    // Build label + Field ID lookups
+    const labelMap   = {};
+    const fieldIdMap = {};
     labels.forEach(row => {
-      labelMap[row["NSHD Variable Name"]] = row["Variable Label"];
+      const vn = row["NSHD Variable Name"];
+      labelMap[vn]   = row["Variable Label"];
+      fieldIdMap[vn] = row["Showcase Field ID"];   // numeric or undefined
     });
 
     // ⭐ Build a fast lookup set of valid NSHD variable names
     const dictionaryNames = new Set(labels.map(r => r["NSHD Variable Name"]));
 
-    // Merge popular vars with labels
+    // Merge popular vars with labels + Field IDs
     const merged = popular.map(row => ({
-      name: row.name,
-      label: labelMap[row.name] || "(no label found)",
-      count: row.count
+      name:    row.name,
+      label:   labelMap[row.name]   || "(no label found)",
+      fieldId: fieldIdMap[row.name] || null,
+      count:   row.count
     }));
 
     // ⭐ Only show variables with count > 15 AND that exist in the Data Dictionary
@@ -48,15 +52,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // ⭐ MAIN UI SETUP
   function initUI(data) {
     let sortColumn = null;
-    let sortAsc = true;
-    let pageSize = 15;
+    let sortAsc    = true;
+    let pageSize   = 15;
     let currentPage = 1;
 
-    const tbody = document.querySelector("#vars-table tbody");
-    const resultsCount = document.getElementById("resultsCount");
+    const tbody          = document.querySelector("#vars-table tbody");
+    const resultsCount   = document.getElementById("resultsCount");
     const pageSizeControl = document.getElementById("pageSize");
-    const searchBox = document.getElementById("globalSearch");
-    const addAllBtn = document.getElementById("addAllBtn");
+    const searchBox      = document.getElementById("globalSearch");
+    const addAllBtn      = document.getElementById("addAllBtn");
 
     let filteredData = [...data];
 
@@ -64,8 +68,9 @@ document.addEventListener("DOMContentLoaded", () => {
     searchBox.oninput = () => {
       const q = searchBox.value.toLowerCase();
       filteredData = data.filter(row =>
-        row.name.toLowerCase().includes(q) ||
-        row.label.toLowerCase().includes(q)
+        row.name.toLowerCase().includes(q)    ||
+        row.label.toLowerCase().includes(q)   ||
+        String(row.fieldId || "").includes(q)
       );
       currentPage = 1;
       renderTable();
@@ -81,18 +86,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // ⭐ CHECK IF ALL VISIBLE ARE SELECTED
     function allVisibleRowsSelected() {
       const start = (currentPage - 1) * pageSize;
-      const end = start + pageSize;
+      const end   = start + pageSize;
       const visibleRows = filteredData.slice(start, end);
-
       if (visibleRows.length === 0) return false;
-
       return visibleRows.every(row => isInBasket(row.name));
     }
 
     // ⭐ UPDATE BUTTON LABEL
     function updateAddAllButtonLabel() {
       const start = (currentPage - 1) * pageSize;
-      const end = start + pageSize;
+      const end   = start + pageSize;
       const visibleRows = filteredData.slice(start, end);
 
       if (visibleRows.length === 0) {
@@ -116,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ⭐ ADD / REMOVE ALL BUTTON
     addAllBtn.onclick = () => {
       const start = (currentPage - 1) * pageSize;
-      const end = start + pageSize;
+      const end   = start + pageSize;
       const visibleRows = filteredData.slice(start, end);
 
       if (allVisibleRowsSelected()) {
@@ -133,26 +136,34 @@ document.addEventListener("DOMContentLoaded", () => {
     function renderTable() {
       let sorted = [...filteredData];
 
-      // Sorting
       if (sortColumn) {
         sorted.sort((a, b) => {
-          if (a[sortColumn] < b[sortColumn]) return sortAsc ? -1 : 1;
-          if (a[sortColumn] > b[sortColumn]) return sortAsc ? 1 : -1;
+          const av = a[sortColumn] ?? "";
+          const bv = b[sortColumn] ?? "";
+          if (av < bv) return sortAsc ? -1 : 1;
+          if (av > bv) return sortAsc ?  1 : -1;
           return 0;
         });
       }
 
-      const totalRows = sorted.length;
+      const totalRows  = sorted.length;
       const totalPages = Math.ceil(totalRows / pageSize);
-
-      const start = (currentPage - 1) * pageSize;
-      const pageRows = sorted.slice(start, start + pageSize);
+      const start      = (currentPage - 1) * pageSize;
+      const pageRows   = sorted.slice(start, start + pageSize);
 
       resultsCount.textContent = `Showing ${totalRows} results`;
 
       // Build rows
       tbody.innerHTML = pageRows.map(row => {
         const checked = isInBasket(row.name);
+
+        // Field ID cell — link to Showcase if available, otherwise "Not available"
+        const fieldIdCell = row.fieldId
+          ? `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row.fieldId}"
+                target="_blank"
+                class="field-link">${row.fieldId}</a>`
+          : `<span class="not-available">Not available</span>`;
+
         return `
           <tr>
             <td class="check-col">
@@ -171,6 +182,8 @@ document.addEventListener("DOMContentLoaded", () => {
               </a>
             </td>
 
+            <td class="fieldid-col">${fieldIdCell}</td>
+
             <td class="label-col">${row.label}</td>
             <td class="count-col">${row.count}</td>
           </tr>
@@ -185,23 +198,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ⭐ PAGINATION
     function renderPagination(totalPages) {
-      const top = document.getElementById("paginationTop");
+      const top    = document.getElementById("paginationTop");
       const bottom = document.getElementById("paginationBottom");
 
       const html = `
-        <button ${currentPage === 1 ? "disabled" : ""} data-dir="-1">Prev</button>
+        <button ${currentPage === 1         ? "disabled" : ""} data-dir="-1">Prev</button>
         <span>Page ${currentPage} of ${totalPages}</span>
         <button ${currentPage === totalPages ? "disabled" : ""} data-dir="1">Next</button>
       `;
 
-      top.innerHTML = html;
+      top.innerHTML    = html;
       bottom.innerHTML = html;
 
       document.querySelectorAll("#paginationTop button, #paginationBottom button")
         .forEach(btn => {
           btn.onclick = () => {
-            const delta = parseInt(btn.dataset.dir);
-            currentPage += delta;
+            currentPage += parseInt(btn.dataset.dir);
             renderTable();
           };
         });
@@ -218,14 +230,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       th.onclick = () => {
         const col = th.dataset.sort;
-
         if (sortColumn === col) {
           sortAsc = !sortAsc;
         } else {
           sortColumn = col;
-          sortAsc = true;
+          sortAsc    = true;
         }
-
         currentPage = 1;
         renderTable();
       };
@@ -234,17 +244,15 @@ document.addEventListener("DOMContentLoaded", () => {
     // ⭐ UPDATE SORT ICONS
     function updateSortIcons() {
       document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
-        const col = th.dataset.sort;
+        const col  = th.dataset.sort;
         const icon = th.querySelector(".sort-icon");
-
         if (col !== sortColumn) {
           icon.textContent = "⇅";
           icon.style.opacity = 0.4;
           return;
         }
-
         icon.style.opacity = 1;
-        icon.textContent = sortAsc ? "▲" : "▼";
+        icon.textContent   = sortAsc ? "▲" : "▼";
       });
     }
 
@@ -252,57 +260,51 @@ document.addEventListener("DOMContentLoaded", () => {
     function attachBasketEvents() {
       document.querySelectorAll(".add-to-basket").forEach(cb => {
         cb.onclick = () => {
-          const name = cb.dataset.name;
+          const name  = cb.dataset.name;
           const label = cb.dataset.label;
-
           if (cb.checked) addToBasket(name, label);
-          else removeFromBasket(name);
-
+          else            removeFromBasket(name);
           updateBasketCountUI();
           updateAddAllButtonLabel();
         };
       });
     }
 
-	// ============================================================
-	// Download filtered CSV
-	// ============================================================
+    // ============================================================
+    // Download filtered CSV
+    // ============================================================
+    function downloadFilteredCSV() {
+      if (!filteredData || filteredData.length === 0) {
+        alert("No data to download");
+        return;
+      }
 
-	function downloadFilteredCSV() {
-	  if (!filteredData || filteredData.length === 0) {
-		alert("No data to download");
-		return;
-	  }
+      const headers = ["name", "fieldId", "label", "count"];
+      const displayHeaders = ["NSHD Variable Name", "Showcase Field ID", "Variable Label", "Count"];
 
-	  const headers = Object.keys(filteredData[0]);
-	  let csvContent = headers.join(",") + "\n";
+      let csvContent = displayHeaders.join(",") + "\n";
 
-	  filteredData.forEach(row => {
-		const line = headers.map(h => {
-		  const value = row[h] ?? "";
-		  return `"${String(value).replace(/"/g, '""')}"`;
-		}).join(",");
-		csvContent += line + "\n";
-	  });
+      filteredData.forEach(row => {
+        const line = headers.map(h => {
+          const value = row[h] ?? "Not available";
+          return `"${String(value).replace(/"/g, '""')}"`;
+        }).join(",");
+        csvContent += line + "\n";
+      });
 
-	  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-	  const url = URL.createObjectURL(blob);
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href     = url;
+      link.download = "Popular_Variables_filtered_results.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
 
-	  const link = document.createElement("a");
-	  link.href = url;
-	  link.download = "Popular_Variables_filtered_results.csv";
-	  link.click();
-
-	  URL.revokeObjectURL(url);
-	}
-
-	document.getElementById("downloadCsvBtn")
-	  .addEventListener("click", downloadFilteredCSV);
-
+    document.getElementById("downloadCsvBtn")
+      .addEventListener("click", downloadFilteredCSV);
 
     renderTable();
   } // end initUI
-
-
 
 }); // end DOMContentLoaded
