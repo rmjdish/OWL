@@ -514,11 +514,11 @@ document.addEventListener("DOMContentLoaded", () => {
           { width: 24,  header: 'N' },
         ],
         categorical: [
-          { width: 22,  header: 'Add' },
+          { width: 60,  header: 'Add' },
           { width: 80,  header: 'Variable' },
           { width: 34,  header: 'Year' },
           { width: 28,  header: 'Age' },
-          { width: 250, header: 'Distribution', colspan: 4 },
+          { width: 150, header: 'Distribution', colspan: 4 },
           { width: 24,  header: 'N' },
         ],
       };
