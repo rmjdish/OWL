@@ -46,7 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function fmt(n) {
     if (n === null || n === undefined) return '—';
-    return parseFloat(n.toFixed(1)).toLocaleString();
+    return parseFloat(n.toFixed(2)).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
   }
 
   // ── DOM refs ──────────────────────────────────────────────────────────────
