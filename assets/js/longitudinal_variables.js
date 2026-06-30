@@ -499,7 +499,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // stat columns (continuous) vs Distribution column (categorical)
       // differ in count/width to fit their respective content.
       const TABLE_WIDTH_CONTINUOUS  = 352; // 22+80+34+28+64+64+38+38+24
-      const TABLE_WIDTH_CATEGORICAL = 438; // 22+80+34+28+250+24
+      const TABLE_WIDTH_CATEGORICAL = 446; // 30+80+34+28+250+24
 
       const colgroup = isContinuous
         ? `<colgroup>
@@ -510,9 +510,9 @@ document.addEventListener("DOMContentLoaded", () => {
              <col style="width:24px;">
            </colgroup>`
         : `<colgroup>
-             <col style="width:22px;"><col style="width:80px;">
+             <col style="width:30px;"><col style="width:80px;">
              <col style="width:34px;"><col style="width:28px;">
-             <col style="width:250px;"><col style="width:24px;">
+             <col style="width:150px;"><col style="width:24px;">
            </colgroup>`;
 
       const tableWidthPx = isContinuous ? TABLE_WIDTH_CONTINUOUS : TABLE_WIDTH_CATEGORICAL;
