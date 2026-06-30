@@ -413,45 +413,46 @@ document.addEventListener("DOMContentLoaded", () => {
       const chartId = `chart-${fid}`;
 
       const tableRows = sweepData.map((s, i) => {
-        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:#EFEAFB;';
+        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:#E5DEF7;';
         const inBasket = s.varname && isInBasket(s.varname);
-        const checkCell = `<td class="sweep-add-col">
+        const checkCell = `<td class="sweep-add-col" style="border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;">
           <input type="checkbox" class="sweep-check"
                  data-varname="${s.varname}"
                  data-label="${field.label.replace(/"/g,'&quot;')}"
                  data-fid="${fid}"
                  ${inBasket ? 'checked' : ''}>
         </td>`;
+        const B = 'border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;padding:7px 10px;';
         if (isContinuous) {
           const range  = (s.max !== null && s.min !== null) ? s.max - s.min : 1;
           const barPct = (s.mean !== null && range > 0)
             ? Math.min(100, Math.round(((s.mean - (s.min || 0)) / range) * 100)) : 0;
           return `<tr style="${bg}">
             ${checkCell}
-            <td style="color:#534AB7;font-weight:500;">
+            <td style="${B}color:#534AB7;font-weight:500;">
               <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${s.varname}" target="_blank" rel="noopener"
                  style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${s.varname}</a>
             </td>
-            <td>${s.year}</td><td>${s.age}</td>
-            <td>${s.mean !== null
+            <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
+            <td style="${B}">${s.mean !== null
               ? `${fmt(s.mean)}<div class="bar-wrap"><div class="bar-fill" style="width:${barPct}%"></div></div>`
               : '—'}</td>
-            <td>${fmt(s.sd)}</td>
-            <td>${fmt(s.min)}</td>
-            <td>${fmt(s.max)}</td>
-            <td>${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="${B}">${fmt(s.sd)}</td>
+            <td style="${B}">${fmt(s.min)}</td>
+            <td style="${B}">${fmt(s.max)}</td>
+            <td style="border-bottom:1px solid #B9ACE8;padding:7px 10px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         } else {
           return `<tr style="${bg}">
             ${checkCell}
-            <td style="color:#534AB7;font-weight:500;">
+            <td style="${B}color:#534AB7;font-weight:500;">
               <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${s.varname}" target="_blank" rel="noopener"
                  style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${s.varname}</a>
             </td>
-            <td>${s.year}</td><td>${s.age}</td>
-            <td colspan="4" style="color:var(--text-muted);font-style:italic;font-size:11px;">
+            <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
+            <td colspan="4" style="${B}color:var(--text-muted);font-style:italic;font-size:11px;">
               Categorical — see value labels below</td>
-            <td>${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #B9ACE8;padding:7px 10px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         }
       }).join('');
@@ -493,7 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
               &middot; ${field.sweeps.length} sweeps
             </span>
           </div>
-          <button id="addAllBtn-${fid}" onclick="addAllFromPanel(${fid})"
+          <button id="addAllBtn-${fid}" onclick="toggleAllInPanel(${fid})"
                   style="font-size:11px;height:28px;padding:0 12px;">
             Add all ${field.sweeps.length} sweeps to basket
           </button>
@@ -593,22 +594,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Global helper for inline onclick ─────────────────────────────────────
 
-  window.addAllFromPanel = function(fid) {
+  window.toggleAllInPanel = function(fid) {
     const field = allFields.find(f => f.fieldId === fid);
     if (!field) return;
+    const validNames    = field.varnames.filter(Boolean);
+    const inBasketCount = validNames.filter(n => isInBasket(n)).length;
+    const allIn          = validNames.length > 0 && inBasketCount === validNames.length;
 
-    // Add every sweep to the basket
-    field.varnames.filter(Boolean).forEach(n => addToBasket(n, field.label));
+    if (allIn) {
+      // Currently full — remove every sweep
+      validNames.forEach(n => removeFromBasket(n));
+      document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
+        .forEach(cb => { cb.checked = false; });
+    } else {
+      // Not full — add every sweep
+      validNames.forEach(n => addToBasket(n, field.label));
+      document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
+        .forEach(cb => { cb.checked = true; });
+    }
+
     updateBasketCountUI();
-
-    // Tick every sweep checkbox inside the open panel — panel stays open
-    document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
-      .forEach(cb => { cb.checked = true; });
-
-    // Turn the panel's "Add all" button purple/filled to show completion
     updateMainAddButton(fid);
-
-    // Turn the main row checkbox purple (full) without collapsing the panel
     syncRowCheckbox(fid);
   };
 
@@ -652,15 +658,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const allIn          = validNames.length > 0 && inBasketCount === validNames.length;
 
     if (allIn) {
-      btn.innerHTML        = `<i class="ti ti-check" aria-hidden="true" style="font-size:11px;margin-right:3px;"></i> All ${validNames.length} sweeps in basket`;
-      btn.style.background = '#534AB7';
-      btn.style.color      = '#fff';
-      btn.style.borderColor = '#534AB7';
+      btn.innerHTML          = `<i class="ti ti-x" aria-hidden="true" style="font-size:11px;margin-right:3px;"></i> Remove all ${validNames.length} sweeps from basket`;
+      btn.style.background   = '#D32F2F';
+      btn.style.color        = '#fff';
+      btn.style.borderColor  = '#D32F2F';
     } else {
-      btn.innerHTML         = `Add all ${validNames.length} sweeps to basket`;
-      btn.style.background  = '';
-      btn.style.color       = '';
-      btn.style.borderColor = '';
+      btn.innerHTML          = `Add all ${validNames.length} sweeps to basket`;
+      btn.style.background   = '';
+      btn.style.color        = '';
+      btn.style.borderColor  = '';
     }
   }
 
