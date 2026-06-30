@@ -413,16 +413,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const chartId = `chart-${fid}`;
 
       const tableRows = sweepData.map((s, i) => {
-        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:#E5DEF7;';
+        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:#D7F0E8;';
         const inBasket = s.varname && isInBasket(s.varname);
-        const checkCell = `<td class="sweep-add-col" style="border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;">
+        const checkCell = `<td class="sweep-add-col" style="border-bottom:1px solid #9AD4BE;border-right:1px solid #9AD4BE;">
           <input type="checkbox" class="sweep-check"
                  data-varname="${s.varname}"
                  data-label="${field.label.replace(/"/g,'&quot;')}"
                  data-fid="${fid}"
                  ${inBasket ? 'checked' : ''}>
         </td>`;
-        const B = 'border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;padding:6px 8px;';
+        const B = 'border-bottom:1px solid #9AD4BE;border-right:1px solid #9AD4BE;padding:6px 8px;';
         if (isContinuous) {
           return `<tr style="${bg}">
             ${checkCell}
@@ -435,7 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="${B}">${fmt(s.sd)}</td>
             <td style="${B}">${fmt(s.min)}</td>
             <td style="${B}">${fmt(s.max)}</td>
-            <td style="border-bottom:1px solid #B9ACE8;padding:6px 8px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #9AD4BE;padding:6px 8px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         } else {
           return `<tr style="${bg}">
@@ -447,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
             <td colspan="4" style="${B}color:var(--text-muted);font-style:italic;font-size:11px;">
               Categorical — see value labels below</td>
-            <td style="border-bottom:1px solid #B9ACE8;padding:6px 8px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #9AD4BE;padding:6px 8px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         }
       }).join('');
