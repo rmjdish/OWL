@@ -62,6 +62,7 @@ classes: home-page
       <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd">Search Data Dictionary</a></li>
       <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat">Browse by Category</a></li>
       <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
+      <li class="sb-sub"><a href="#search-long" data-sec="sec-search" data-inner="search-long">Longitudinal Search</a></li>
       <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
 
       <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore">🧭 Explore Documentation</a></li>
@@ -293,10 +294,23 @@ classes: home-page
             </div>
           </div>
 
+          <div class="inner-item" id="search-long">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-repeat" aria-hidden="true"></i></span>
+              <span class="inner-title">4. Longitudinal Search</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Longitudinal Search finds only variables collected with <strong>identical question text and coding</strong> across two or more sweeps — grouped by Showcase Field ID, the same strict linkage standard used by the NSHD Showcase. This is a narrower, stricter set than OWL's general Linked &amp; Longitudinal feature, which connects variables for any reason even where coding changed between sweeps.</p>
+              <p>Each result expands into a sweep-by-sweep view: a trajectory chart — a line with a min–max band for continuous variables, or a stacked bar showing the full response distribution for categorical variables — plus a detail table with year, age, and summary statistics for every sweep. Variables can be added to the basket individually per sweep or all at once.</p>
+              <a class="inner-link" href="/OWL/docs/longitudinal_variables/longitudinal-variables/">Go to Longitudinal Search →</a>
+            </div>
+          </div>
+
           <div class="inner-item" id="search-global">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🌐</span>
-              <span class="inner-title">4. Global Site Search</span>
+              <span class="inner-title">5. Global Site Search</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
