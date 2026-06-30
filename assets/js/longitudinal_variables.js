@@ -52,6 +52,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ── Categorical colour palette ────────────────────────────────────────────
+  // Fixed order, never cycled per-render — same colour always means the same
+  // category across the chart, legend, and detail table rows.
+  const CAT_PALETTE = [
+    '#1baf7a', '#2a78d6', '#eda100', '#eb6834',
+    '#e34948', '#9085e9', '#d55181', '#008300'
+  ];
+
+  function buildCategoryColorMap(sweepData) {
+    const seen = [];
+    sweepData.forEach(s => {
+      (s.catCounts || []).forEach(c => {
+        if (!seen.includes(c.label)) seen.push(c.label);
+      });
+    });
+    const map = {};
+    seen.forEach((label, i) => {
+      map[label] = CAT_PALETTE[i % CAT_PALETTE.length];
+    });
+    return map;
+  }
+
   // ── DOM refs ──────────────────────────────────────────────────────────────
 
   const loadingScreen    = document.getElementById('loadingScreen');
@@ -392,7 +414,8 @@ document.addEventListener("DOMContentLoaded", () => {
         max:       sidecars[i]?.maximum     ?? null,
         n:         sidecars[i]?.series_size ?? null,
         distType:  sidecars[i]?.dist_type   ?? 'continuous',
-        valLabels: sidecars[i]?.value_labels ?? []
+        valLabels: sidecars[i]?.value_labels ?? [],
+        catCounts: sidecars[i]?.category_counts ?? []
       }));
 
       const isContinuous  = sweepData.some(s => s.distType === 'continuous' && s.mean !== null);
@@ -410,7 +433,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="sh-val">${isContinuous?'Continuous':'Categorical'}</div></div>`
       ].filter(Boolean).join('');
 
-      const chartId = `chart-${fid}`;
+      const chartId  = `chart-${fid}`;
+      const catColorMap = isContinuous ? {} : buildCategoryColorMap(sweepData);
 
       const tableRows = sweepData.map((s, i) => {
         const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:#D7F0E8;';
@@ -438,6 +462,21 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="border-bottom:1px solid #9AD4BE;padding:5px 6px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         } else {
+          const counts = s.catCounts || [];
+          const segments = counts.map(c =>
+            `<div style="width:${c.pct}%;background:${catColorMap[c.label] || '#888780'};height:100%;" title="${c.label}: ${c.pct}%"></div>`
+          ).join('');
+          const distBar = counts.length
+            ? `<div style="display:flex;height:10px;border-radius:3px;overflow:hidden;background:var(--surface-1);border:0.5px solid var(--border);margin-bottom:3px;">${segments}</div>`
+            : '';
+          const pctLabels = counts.length
+            ? `<div style="font-size:9.5px;color:var(--text-secondary);line-height:1.5;">
+                 ${counts.map(c =>
+                   `<span style="color:${catColorMap[c.label] || '#888780'};font-weight:500;">${c.pct}%</span>`
+                 ).join(' &middot; ')}
+               </div>`
+            : `<span style="color:var(--text-muted);font-style:italic;font-size:11px;">No distribution data</span>`;
+
           return `<tr style="${bg}">
             ${checkCell}
             <td style="${B}color:#534AB7;font-weight:500;">
@@ -445,8 +484,9 @@ document.addEventListener("DOMContentLoaded", () => {
                  style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${s.varname}</a>
             </td>
             <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
-            <td colspan="4" style="${B}color:var(--text-muted);font-style:italic;font-size:11px;">
-              Categorical — see value labels below</td>
+            <td colspan="4" style="${B}">
+              ${distBar}${pctLabels}
+            </td>
             <td style="border-bottom:1px solid #9AD4BE;padding:5px 6px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         }
@@ -463,7 +503,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<colgroup>
              <col style="width:26px;"><col style="width:80px;">
              <col style="width:38px;"><col style="width:32px;">
-             <col style="width:260px;"><col style="width:28px;">
+             <col style="width:310px;"><col style="width:28px;">
            </colgroup>`;
 
       const theadCols = isContinuous
@@ -471,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
            <th>Mean${units?' ('+units+')':''}</th><th>Standard Deviation</th>
            <th>Minimum</th><th>Maximum</th><th>N</th>`
         : `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
-           <th colspan="4"></th><th>N</th>`;
+           <th colspan="4">Distribution</th><th>N</th>`;
 
       const valLabelHtml = valLabels.length ? `
         <div style="margin-top:12px;">
@@ -527,7 +567,22 @@ document.addEventListener("DOMContentLoaded", () => {
           <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;
                     font-style:italic;">
             Line = mean &middot; Shaded band = min–max (5th–95th percentile)
-          </p>` : ''}
+          </p>` : (Object.keys(catColorMap).length ? `
+          <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+            ${Object.entries(catColorMap).map(([label, color]) =>
+              `<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary);">
+                 <span style="width:10px;height:10px;border-radius:2px;background:${color};flex-shrink:0;"></span>
+                 ${label}
+               </span>`
+            ).join('')}
+          </div>
+          <div style="position:relative;height:200px;margin-bottom:6px;">
+            <canvas id="${chartId}"></canvas>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px;
+                    font-style:italic;">
+            Stacked bars show the response distribution at each sweep
+          </p>` : '')}
 
         <div class="dtable-wrap">
           <table class="dtable">
@@ -594,6 +649,43 @@ document.addEventListener("DOMContentLoaded", () => {
                    grid:  { color:'rgba(0,0,0,0.05)' } },
               y: { ticks: { font:{size:10}, color:'#888',
                             callback: v => v + (units ? ' '+units : '') },
+                   grid:  { color:'rgba(0,0,0,0.05)' } }
+            }
+          }
+        });
+      } else if (Object.keys(catColorMap).length) {
+        const catLabels = Object.keys(catColorMap);
+        const validCat  = sweepData.filter(s => (s.catCounts || []).length);
+        if (chartRegistry[fid]) {
+          try { chartRegistry[fid].destroy(); } catch (e) {}
+        }
+        chartRegistry[fid] = new Chart(document.getElementById(chartId), {
+          type: 'bar',
+          data: {
+            labels: validCat.map(s => s.year),
+            datasets: catLabels.map(label => ({
+              label,
+              data: validCat.map(s => {
+                const match = (s.catCounts || []).find(c => c.label === label);
+                return match ? match.pct : 0;
+              }),
+              backgroundColor: catColorMap[label]
+            }))
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: { label: c => ` ${c.dataset.label}: ${c.raw}%` }
+              }
+            },
+            scales: {
+              x: { stacked: true,
+                   ticks: { font:{size:10}, color:'#888', maxRotation:45 },
+                   grid:  { display:false } },
+              y: { stacked: true, max: 100,
+                   ticks: { font:{size:10}, color:'#888', callback: v => v + '%' },
                    grid:  { color:'rgba(0,0,0,0.05)' } }
             }
           }
