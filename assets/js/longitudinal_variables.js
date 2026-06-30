@@ -696,7 +696,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Download CSV ──────────────────────────────────────────────────────────
 
-  document.getElementById('downloadCsvBtn').addEventListener('click', () => {
+  document.getElementById('downloadCsvBtn')?.addEventListener('click', () => {
     const rows = filteredFields.map(f => [
       f.fieldId,
       `"${f.label.replace(/"/g,'""')}"`,
@@ -715,7 +715,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── Reset filters ────────────────────────────────────────────────────────
 
-  document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+  document.getElementById('resetFiltersBtn')?.addEventListener('click', () => {
     searchBox.value     = '';
     sweepFilter.value   = '2';
     topicFilter.value   = '';
