@@ -494,35 +494,45 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }).join('');
 
-      // Column widths kept tight and IDENTICAL in spirit for both table
-      // types — Add/Year/Age/N are fixed narrow widths in both, only the
-      // stat columns (continuous) vs Distribution column (categorical)
-      // differ in count/width to fit their respective content.
-      const TABLE_WIDTH_CONTINUOUS  = 311; // 22+80+34+28+64+64+38+38+24
-      const TABLE_WIDTH_CATEGORICAL = 376; // 30+80+34+28+250+24
+      // ───────────────────────────────────────────────────────────────────
+      // SINGLE SOURCE OF TRUTH for detail-table column widths.
+      // Edit ONLY this block to resize any column — nothing else in the
+      // file or CSS needs to change. width = px, colspan only needed on
+      // the Distribution column (categorical), header text is what
+      // renders in the <th>.
+      // ───────────────────────────────────────────────────────────────────
+      const DTABLE_COLUMNS = {
+        continuous: [
+          { width: 22,  header: 'Add' },
+          { width: 80,  header: 'Variable' },
+          { width: 34,  header: 'Year' },
+          { width: 28,  header: 'Age' },
+          { width: 64,  header: `Mean${units ? ' (' + units + ')' : ''}` },
+          { width: 64,  header: 'Standard Deviation' },
+          { width: 38,  header: 'Minimum' },
+          { width: 38,  header: 'Maximum' },
+          { width: 24,  header: 'N' },
+        ],
+        categorical: [
+          { width: 22,  header: 'Add' },
+          { width: 80,  header: 'Variable' },
+          { width: 34,  header: 'Year' },
+          { width: 28,  header: 'Age' },
+          { width: 250, header: 'Distribution', colspan: 4 },
+          { width: 24,  header: 'N' },
+        ],
+      };
 
-      const colgroup = isContinuous
-        ? `<colgroup>
-             <col style="width:22px;"><col style="width:80px;">
-             <col style="width:28px;"><col style="width:26px;">
-             <col style="width:30px;"><col style="width:45px;">
-             <col style="width:28px;"><col style="width:28px;">
-             <col style="width:24px;">
-           </colgroup>`
-        : `<colgroup>
-             <col style="width:60px;"><col style="width:100px;">
-             <col style="width:70px;"><col style="width:70px;">
-             <col style="width:150px;"><col style="width:8px;">
-           </colgroup>`;
+      const cols         = isContinuous ? DTABLE_COLUMNS.continuous : DTABLE_COLUMNS.categorical;
+      const tableWidthPx = cols.reduce((sum, c) => sum + c.width, 0);
 
-      const tableWidthPx = isContinuous ? TABLE_WIDTH_CONTINUOUS : TABLE_WIDTH_CATEGORICAL;
+      const colgroup = `<colgroup>${
+        cols.map(c => `<col style="width:${c.width}px;">`).join('')
+      }</colgroup>`;
 
-      const theadCols = isContinuous
-        ? `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
-           <th>Mean${units?' ('+units+')':''}</th><th>Standard Deviation</th>
-           <th>Minimum</th><th>Maximum</th><th>N</th>`
-        : `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
-           <th colspan="4">Distribution</th><th>N</th>`;
+      const theadCols = cols.map(c =>
+        `<th${c.colspan ? ` colspan="${c.colspan}"` : ''}>${c.header}</th>`
+      ).join('');
 
       const valLabelHtml = valLabels.length ? `
         <div style="margin-top:12px;">
