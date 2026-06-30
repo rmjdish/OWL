@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function cleanLabel(s) {
     return (s || '')
-      .replace(/\s*-?\s*(?:at|aged?)\s+age\s+[\d–\-]+\s*(?:years?)?\s*\.?\s*$/gi, '')
+      .replace(/\s*[-–]?\s*(?:at|by|aged?)\s+age\s+[\d–\-]+(?:\s*[-–]\s*\d+)?\s*(?:years?|yars?)?\s*(?:[-–]\s*(?:first|second|third)\s+measure)?\s*\.?\s*$/gi, '')
       .trim();
   }
 
@@ -72,11 +72,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!fid) return;
         if (!groups[fid]) {
           groups[fid] = {
-            fieldId:  parseInt(fid),
-            label:    cleanLabel(row['Variable Label'] || ''),
-            topic:    stripId(row['Topic'] || ''),
-            sweeps:   [],
-            varnames: []
+            fieldId:    parseInt(fid),
+            topic:      stripId(row['Topic'] || ''),
+            sweeps:     [],
+            varnames:   [],
+            rawLabels:  []   // collected so we can pick the cleanest one below
           };
         }
         groups[fid].sweeps.push({
@@ -84,12 +84,25 @@ document.addEventListener("DOMContentLoaded", () => {
           year:    row['Year of collection']  || ''
         });
         groups[fid].varnames.push(row['NSHD Variable Name'] || '');
+        groups[fid].rawLabels.push(row['Variable Label'] || '');
       });
 
       allFields = Object.values(groups)
         .filter(g => g.sweeps.length > 1)
         .map(g => {
           g.sweeps.sort((a, b) => yearToSort(a.year) - yearToSort(b.year));
+
+          // Clean every sweep's label and use the shortest result — this is the
+          // one most likely to have had the "- at age N years" suffix fully
+          // stripped, since sweep-specific wording variations (typos, "first
+          // measure" suffixes, etc.) tend to produce longer leftover text.
+          const cleaned = g.rawLabels.map(cleanLabel).filter(Boolean);
+          g.label = cleaned.length
+            ? cleaned.reduce((shortest, cur) =>
+                cur.length < shortest.length ? cur : shortest)
+            : '';
+          delete g.rawLabels;
+
           return g;
         });
 
