@@ -257,7 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td class="col-fid">${f.fieldId}</td>
         <td class="col-label">
-          <div style="font-size:12px;font-weight:500;color:var(--text-primary);">${f.label}</div>
+          <div class="label-text">${f.label}</div>
           <div style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;line-height:1.6;">${allNames}</div>
         </td>
         <td class="col-topic">${f.topic}</td>
