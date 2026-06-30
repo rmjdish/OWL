@@ -508,10 +508,10 @@ document.addEventListener("DOMContentLoaded", () => {
           { width: 80,  header: 'Variable' },
           { width: 34,  header: 'Year' },
           { width: 28,  header: 'Age' },
-          { width: 64,  header: `Mean${units ? ' (' + units + ')' : ''}` },
-          { width: 64,  header: 'Standard Deviation' },
-          { width: 38,  header: 'Minimum' },
-          { width: 38,  header: 'Maximum' },
+          { width: 45,  header: `Mean${units ? ' (' + units + ')' : ''}` },
+          { width: 55,  header: 'Standard Deviation' },
+          { width: 34,  header: 'Minimum' },
+          { width: 34,  header: 'Maximum' },
           { width: 24,  header: 'N' },
         ],
         categorical: [
@@ -519,7 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
           { width: 80,  header: 'Variable' },
           { width: 34,  header: 'Year' },
           { width: 28,  header: 'Age' },
-          { width: 250, header: 'Distribution' },
+          { width: 175, header: 'Distribution' },
           { width: 24,  header: 'N' },
         ],
       };
