@@ -1,6 +1,6 @@
 /* ============================================================
    OWL — Explore Topics
-   /OWL/assets/js/topics.js
+   /OWL/assets/js/icon_insert.js
 
    1. Loads Tabler Icons webfont from CDN
    2. Injects data-nav-icon on every sidebar nav link by
@@ -438,20 +438,30 @@
     injectHeroIcon();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
+  /* ── 8. Re-run if JtD loads content dynamically ──────────── */
+  /* IMPORTANT: document.body does not exist yet if this script
+     is loaded in <head> (e.g. via head_custom). The observer
+     must only be created once the DOM — and therefore
+     document.body — is guaranteed to exist. */
+  function startObserver() {
+    var obs = new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        if (m.addedNodes.length) {
+          injectNavIcons();
+          injectHeadingIcons();
+        }
+      });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
   }
 
-  /* Re-run if JtD loads content dynamically */
-  var obs = new MutationObserver(function (muts) {
-    muts.forEach(function (m) {
-      if (m.addedNodes.length) {
-        injectNavIcons();
-        injectHeadingIcons();
-      }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      run();
+      startObserver();
     });
-  });
-  obs.observe(document.body, { childList: true, subtree: true });
+  } else {
+    run();
+    startObserver();
+  }
 })();
