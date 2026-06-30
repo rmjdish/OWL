@@ -510,8 +510,8 @@ document.addEventListener("DOMContentLoaded", () => {
              <col style="width:24px;">
            </colgroup>`
         : `<colgroup>
-             <col style="width:60px;"><col style="width:80px;">
-             <col style="width:34px;"><col style="width:28px;">
+             <col style="width:60px;"><col style="width:100px;">
+             <col style="width:70px;"><col style="width:70px;">
              <col style="width:150px;"><col style="width:24px;">
            </colgroup>`;
 
