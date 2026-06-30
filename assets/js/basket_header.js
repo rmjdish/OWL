@@ -1,6 +1,7 @@
 // ============================================================
 // GLOBAL basket logic — loads on ALL pages
 // ============================================================
+
 const BASKET_KEY = "nshd_variable_basket";
 
 function loadBasket() {
@@ -19,6 +20,7 @@ function updateBasketCountUI() {
   const basket = loadBasket();
   const elMain = document.getElementById("basketCount");
   const basketTop = document.getElementById("basketTop");
+
   if (elMain) elMain.textContent = basket.length;
 
   // ⭐ Glow when basket is non-empty
@@ -41,6 +43,7 @@ function addToBasket(varName, label) {
     basket.push({ varName, label });
     saveBasket(basket);
   }
+
   updateBasketCountUI();
 
   // ⭐ Pulse animation on count
@@ -62,6 +65,7 @@ function removeFromBasket(varName) {
   let basket = loadBasket();
   basket = basket.filter(item => item.varName !== varName);
   saveBasket(basket);
+
   updateBasketCountUI();
 
   // ⭐ Shake animation on removal
@@ -76,31 +80,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("basketWrapper");
   const basket = document.getElementById("basketTop");
   const dropdown = document.getElementById("basketDropdown");
+
   if (!wrapper || !basket || !dropdown) return;
 
-  // ── Move basket icon to the TOP-LEFT of the sidebar nav ───────────────────
-  // Previously inserted next to the search bar in the top header (right side).
-  // Now placed as the very first element inside the left sidebar navigation,
-  // so it sits above all nav links and stays visible while scrolling — the
-  // sidebar nav itself is what needs `position: sticky` (see baskets.css).
-  const siteNav = document.querySelector(".site-nav");
+  // Move basket icon next to search bar
+  let searchBox = document.querySelector(".search");
+  if (!searchBox) {
+    const searchInput = document.querySelector("input[type='search']");
+    if (searchInput) searchBox = searchInput.parentElement;
+  }
 
-  if (siteNav) {
-    wrapper.style.display = "flex";
-    wrapper.classList.add("basket-sidebar-pinned");
-    siteNav.insertAdjacentElement("afterbegin", wrapper);
-  } else {
-    // Fallback to the original next-to-search placement if the sidebar
-    // nav isn't found for any reason (e.g. a page without the standard layout)
-    let searchBox = document.querySelector(".search");
-    if (!searchBox) {
-      const searchInput = document.querySelector("input[type='search']");
-      if (searchInput) searchBox = searchInput.parentElement;
-    }
-    if (searchBox) {
-      wrapper.style.display = "inline-block";
-      searchBox.insertAdjacentElement("afterend", wrapper);
-    }
+  if (searchBox) {
+    wrapper.style.display = "inline-block";
+    searchBox.insertAdjacentElement("afterend", wrapper);
   }
 
   updateBasketCountUI();
@@ -109,10 +101,12 @@ document.addEventListener("DOMContentLoaded", () => {
   wrapper.addEventListener("mouseenter", () => {
     const items = loadBasket();
     const lastFive = items.slice(-5).reverse(); // last 5 added
+
     if (lastFive.length === 0) {
       dropdown.style.display = "none";
       return;
     }
+
     dropdown.innerHTML = `
       <div class="preview-header">Last 5 variables added were:</div>
       ${lastFive
@@ -130,6 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         View full basket →
       </div>
     `;
+
     dropdown.style.display = "block";
   });
 
