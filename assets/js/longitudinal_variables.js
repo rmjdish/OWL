@@ -278,8 +278,8 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td class="col-view">
           <button class="view-btn" data-fid="${f.fieldId}"
-                  style="font-size:11px;height:26px;padding:0 10px;
-                         display:inline-flex;align-items:center;gap:4px;">
+                  style="font-size:11px;height:26px;padding:0 10px;width:100%;
+                         display:flex;align-items:center;justify-content:center;gap:4px;">
             <i class="ti ti-chart-line" aria-hidden="true" style="font-size:11px;"></i> View
           </button>
         </td>`;
@@ -413,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const chartId = `chart-${fid}`;
 
       const tableRows = sweepData.map((s, i) => {
-        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:hsl(255 45% 96%);';
+        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:#EFEAFB;';
         const inBasket = s.varname && isInBasket(s.varname);
         const checkCell = `<td class="sweep-add-col">
           <input type="checkbox" class="sweep-check"
@@ -458,10 +458,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const theadCols = isContinuous
         ? `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
-           <th>Mean${units?' ('+units+')':''}</th><th>SD</th>
-           <th>Min</th><th>Max</th><th>n</th>`
+           <th>Mean${units?' ('+units+')':''}</th><th>Standard Deviation</th>
+           <th>Minimum</th><th>Maximum</th><th>N</th>`
         : `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
-           <th colspan="4"></th><th>n</th>`;
+           <th colspan="4"></th><th>N</th>`;
 
       const valLabelHtml = valLabels.length ? `
         <div style="margin-top:12px;">
@@ -519,7 +519,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Line = mean &middot; Shaded band = min–max (5th–95th percentile)
           </p>` : ''}
 
-        <div style="border:0.5px solid var(--border);border-radius:8px;overflow:hidden;">
+        <div>
           <table class="dtable">
             <thead><tr>${theadCols}</tr></thead>
             <tbody>${tableRows}</tbody>
