@@ -31,9 +31,10 @@
     "browse by category":           "ti-layout-grid",
     "view popular variables":       "ti-star",
 	"accessing nshd data":          "ti-database-share",
-	"metadata enhancement project":     "ti-sparkles",
-	"data coverage": "ti-chart-histogram",
+	"metadata enhancement project": "ti-sparkles",
+	"data coverage": 				"ti-chart-histogram",
 	"longitudinal variables":       "ti-repeat",
+	"longitudinal search":          "ti-repeat",
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
