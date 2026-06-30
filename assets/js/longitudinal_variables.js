@@ -498,15 +498,15 @@ document.addEventListener("DOMContentLoaded", () => {
       // types — Add/Year/Age/N are fixed narrow widths in both, only the
       // stat columns (continuous) vs Distribution column (categorical)
       // differ in count/width to fit their respective content.
-      const TABLE_WIDTH_CONTINUOUS  = 392; // 22+80+34+28+64+64+38+38+24
+      const TABLE_WIDTH_CONTINUOUS  = 352; // 22+80+34+28+64+64+38+38+24
       const TABLE_WIDTH_CATEGORICAL = 438; // 22+80+34+28+250+24
 
       const colgroup = isContinuous
         ? `<colgroup>
              <col style="width:22px;"><col style="width:80px;">
-             <col style="width:34px;"><col style="width:28px;">
-             <col style="width:64px;"><col style="width:64px;">
-             <col style="width:38px;"><col style="width:38px;">
+             <col style="width:32px;"><col style="width:26px;">
+             <col style="width:45px;"><col style="width:55px;">
+             <col style="width:34px;"><col style="width:34px;">
              <col style="width:24px;">
            </colgroup>`
         : `<colgroup>
