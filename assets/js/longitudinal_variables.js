@@ -422,11 +422,8 @@ document.addEventListener("DOMContentLoaded", () => {
                  data-fid="${fid}"
                  ${inBasket ? 'checked' : ''}>
         </td>`;
-        const B = 'border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;padding:7px 10px;';
+        const B = 'border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;padding:6px 12px;';
         if (isContinuous) {
-          const range  = (s.max !== null && s.min !== null) ? s.max - s.min : 1;
-          const barPct = (s.mean !== null && range > 0)
-            ? Math.min(100, Math.round(((s.mean - (s.min || 0)) / range) * 100)) : 0;
           return `<tr style="${bg}">
             ${checkCell}
             <td style="${B}color:#534AB7;font-weight:500;">
@@ -434,13 +431,11 @@ document.addEventListener("DOMContentLoaded", () => {
                  style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${s.varname}</a>
             </td>
             <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
-            <td style="${B}">${s.mean !== null
-              ? `${fmt(s.mean)}<div class="bar-wrap"><div class="bar-fill" style="width:${barPct}%"></div></div>`
-              : '—'}</td>
+            <td style="${B}">${fmt(s.mean)}</td>
             <td style="${B}">${fmt(s.sd)}</td>
             <td style="${B}">${fmt(s.min)}</td>
             <td style="${B}">${fmt(s.max)}</td>
-            <td style="border-bottom:1px solid #B9ACE8;padding:7px 10px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #B9ACE8;padding:6px 12px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         } else {
           return `<tr style="${bg}">
@@ -452,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
             <td colspan="4" style="${B}color:var(--text-muted);font-style:italic;font-size:11px;">
               Categorical — see value labels below</td>
-            <td style="border-bottom:1px solid #B9ACE8;padding:7px 10px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #B9ACE8;padding:6px 12px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         }
       }).join('');
@@ -520,7 +515,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Line = mean &middot; Shaded band = min–max (5th–95th percentile)
           </p>` : ''}
 
-        <div>
+        <div class="dtable-wrap">
           <table class="dtable">
             <thead><tr>${theadCols}</tr></thead>
             <tbody>${tableRows}</tbody>
