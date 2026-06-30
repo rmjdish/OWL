@@ -33,6 +33,7 @@
 	"accessing nshd data":          "ti-database-share",
 	"metadata enhancement project":     "ti-sparkles",
 	"data coverage": "ti-chart-histogram",
+	"longitudinal variables":       "ti-repeat",
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
