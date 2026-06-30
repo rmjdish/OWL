@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function cleanLabel(s) {
     return (s || '')
-      .replace(/\s*[-–]?\s*(?:at|by|aged?)\s+age\s+[\d–\-]+(?:\s*[-–]\s*\d+)?\s*(?:years?|yars?)?\s*(?:[-–]\s*(?:first|second|third)\s+measure)?\s*\.?\s*$/gi, '')
+      .replace(/\s*[-–]?\s*(?:at|by)\s+(?:age\s+)?[\d–\-]+(?:\s*[-–]\s*\d+)?\s*(?:years?|yars?)?\s*(?:[-–]\s*(?:first|second|third)\s+measure)?\s*\.?\s*$/gi, '')
       .trim();
   }
 
