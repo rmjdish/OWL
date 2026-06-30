@@ -213,13 +213,32 @@ document.addEventListener("DOMContentLoaded", () => {
       const allNames   = f.varnames.join(' · ');
       const panelId    = `panel-${f.fieldId}`;
 
+      // Determine basket state for this Field ID's variables
+      const inBasketCount = f.varnames.filter(n => n && isInBasket(n)).length;
+      const allInBasket   = inBasketCount > 0 && inBasketCount === f.varnames.length;
+      const someInBasket  = inBasketCount > 0 && inBasketCount < f.varnames.length;
+
+      let checkboxClass = '';
+      let checkboxChecked = '';
+      let checkboxTitle = '';
+      if (allInBasket) {
+        checkboxClass = 'check-full';
+        checkboxChecked = 'checked';
+        checkboxTitle = 'All sweeps already in basket';
+      } else if (someInBasket) {
+        checkboxClass = 'check-partial';
+        checkboxTitle = `${inBasketCount} of ${f.varnames.length} sweeps already in basket (added elsewhere)`;
+      }
+
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="col-check">
-          <input type="checkbox" class="row-check"
+          <input type="checkbox" class="row-check ${checkboxClass}"
                  data-varnames="${f.varnames.join(',')}"
                  data-label="${f.label.replace(/"/g, '&quot;')}"
-                 style="accent-color:#534AB7;width:14px;height:14px;">
+                 title="${checkboxTitle}"
+                 ${checkboxChecked}
+                 style="width:14px;height:14px;">
         </td>
         <td class="col-fid">${f.fieldId}</td>
         <td class="col-label">
@@ -273,8 +292,11 @@ document.addEventListener("DOMContentLoaded", () => {
       cb.onchange = () => {
         const names = cb.dataset.varnames.split(',').filter(Boolean);
         const label = cb.dataset.label;
+        // Always normalise to a clean "all in" or "all out" state on click,
+        // regardless of prior partial state
         if (cb.checked) names.forEach(n => addToBasket(n, label));
-        else            names.forEach(n => removeFromBasket(n));
+        else             names.forEach(n => removeFromBasket(n));
+        cb.classList.remove('check-partial', 'check-full');
         updateBasketCountUI();
       };
     });
@@ -508,6 +530,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!field) return;
     field.varnames.filter(Boolean).forEach(n => addToBasket(n, field.label));
     updateBasketCountUI();
+    // Refresh the row checkbox to reflect the new full-basket state
+    const rowCb = tbody.querySelector(`.row-check[data-varnames^="${field.varnames[0]}"], .row-check[data-varnames*=",${field.varnames[0]}"]`);
+    renderTable();
   };
 
   // ── Pagination ────────────────────────────────────────────────────────────
