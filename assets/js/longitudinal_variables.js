@@ -512,7 +512,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<colgroup>
              <col style="width:60px;"><col style="width:100px;">
              <col style="width:70px;"><col style="width:70px;">
-             <col style="width:150px;"><col style="width:24px;">
+             <col style="width:150px;"><col style="width:8px;">
            </colgroup>`;
 
       const tableWidthPx = isContinuous ? TABLE_WIDTH_CONTINUOUS : TABLE_WIDTH_CATEGORICAL;
