@@ -713,14 +713,14 @@ document.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   });
 
-  // ── Add selected ──────────────────────────────────────────────────────────
+  // ── Reset filters ────────────────────────────────────────────────────────
 
-  document.getElementById('addSelectedBtn').addEventListener('click', () => {
-    tbody.querySelectorAll('.row-check:checked').forEach(cb => {
-      const label = cb.dataset.label;
-      cb.dataset.varnames.split(',').filter(Boolean).forEach(n => addToBasket(n, label));
-    });
-    updateBasketCountUI();
+  document.getElementById('resetFiltersBtn').addEventListener('click', () => {
+    searchBox.value     = '';
+    sweepFilter.value   = '2';
+    topicFilter.value   = '';
+    sortState           = { col: 'fieldId', dir: 'asc' };
+    applyFilters();
   });
 
 });
