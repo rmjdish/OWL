@@ -422,7 +422,7 @@ document.addEventListener("DOMContentLoaded", () => {
                  data-fid="${fid}"
                  ${inBasket ? 'checked' : ''}>
         </td>`;
-        const B = 'border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;padding:6px 12px;';
+        const B = 'border-bottom:1px solid #B9ACE8;border-right:1px solid #B9ACE8;padding:6px 8px;';
         if (isContinuous) {
           return `<tr style="${bg}">
             ${checkCell}
@@ -435,7 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="${B}">${fmt(s.sd)}</td>
             <td style="${B}">${fmt(s.min)}</td>
             <td style="${B}">${fmt(s.max)}</td>
-            <td style="border-bottom:1px solid #B9ACE8;padding:6px 12px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #B9ACE8;padding:6px 8px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         } else {
           return `<tr style="${bg}">
@@ -447,10 +447,24 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
             <td colspan="4" style="${B}color:var(--text-muted);font-style:italic;font-size:11px;">
               Categorical — see value labels below</td>
-            <td style="border-bottom:1px solid #B9ACE8;padding:6px 12px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #B9ACE8;padding:6px 8px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         }
       }).join('');
+
+      const colgroup = isContinuous
+        ? `<colgroup>
+             <col style="width:34px;"><col style="width:84px;">
+             <col style="width:60px;"><col style="width:50px;">
+             <col style="width:78px;"><col style="width:80px;">
+             <col style="width:68px;"><col style="width:68px;">
+             <col style="width:50px;">
+           </colgroup>`
+        : `<colgroup>
+             <col style="width:34px;"><col style="width:84px;">
+             <col style="width:60px;"><col style="width:50px;">
+             <col style="width:312px;"><col style="width:50px;">
+           </colgroup>`;
 
       const theadCols = isContinuous
         ? `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
@@ -517,6 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <div class="dtable-wrap">
           <table class="dtable">
+            ${colgroup}
             <thead><tr>${theadCols}</tr></thead>
             <tbody>${tableRows}</tbody>
           </table>
