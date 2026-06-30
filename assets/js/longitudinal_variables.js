@@ -425,12 +425,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const units         = sharedUnits && sharedUnits !== 'Not applicable' ? sharedUnits : '';
 
       const metaItems = [
-        units         ? `<div><div class="sh-lbl">Units</div><div class="sh-val">${units}</div></div>` : '',
+        units         ? `<div><div class="sh-lbl">Units</div>
+          <div class="sh-val" style="color:#534AB7;">${units}</div></div>` : '',
         sharedDerived !== '' ? `<div><div class="sh-lbl">Derived</div>
           <div class="sh-val" style="color:${sharedDerived==='1'?'#854F0B':'#085041'}">
             ${sharedDerived==='1'?'Yes':'No'}</div></div>` : '',
         `<div><div class="sh-lbl">Type</div>
-          <div class="sh-val" style="color:${isContinuous?'#0F6E56':'#085041'}">
+          <div class="sh-val" style="color:#085041;">
             ${isContinuous?'Continuous':'Categorical'}</div></div>`
       ].filter(Boolean).join('');
 
