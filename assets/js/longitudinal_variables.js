@@ -213,24 +213,26 @@ document.addEventListener("DOMContentLoaded", () => {
       const allNames   = f.varnames.join(' · ');
       const panelId    = `panel-${f.fieldId}`;
 
-      // Determine basket state for this Field ID's variables
-      const inBasketCount = f.varnames.filter(n => n && isInBasket(n)).length;
-      const allInBasket   = inBasketCount > 0 && inBasketCount === f.varnames.length;
-      const someInBasket  = inBasketCount > 0 && inBasketCount < f.varnames.length;
+      // Determine basket state for this Field ID's variables — recomputed every render
+      const validNames    = f.varnames.filter(Boolean);
+      const inBasketCount = validNames.filter(n => isInBasket(n)).length;
+      const allInBasket    = validNames.length > 0 && inBasketCount === validNames.length;
+      const someInBasket  = inBasketCount > 0 && inBasketCount < validNames.length;
 
-      let checkboxClass = '';
+      let checkboxClass   = '';
       let checkboxChecked = '';
-      let checkboxTitle = '';
+      let checkboxTitle   = 'No sweeps in basket yet';
       if (allInBasket) {
-        checkboxClass = 'check-full';
+        checkboxClass   = 'check-full';
         checkboxChecked = 'checked';
-        checkboxTitle = 'All sweeps already in basket';
+        checkboxTitle   = 'All sweeps already in basket';
       } else if (someInBasket) {
-        checkboxClass = 'check-partial';
-        checkboxTitle = `${inBasketCount} of ${f.varnames.length} sweeps already in basket (added elsewhere)`;
+        checkboxClass   = 'check-partial';
+        checkboxTitle   = `${inBasketCount} of ${validNames.length} sweeps already in basket (added elsewhere)`;
       }
 
       const tr = document.createElement('tr');
+      tr.dataset.fieldId = f.fieldId;
       tr.innerHTML = `
         <td class="col-check">
           <input type="checkbox" class="row-check ${checkboxClass}"
@@ -292,12 +294,24 @@ document.addEventListener("DOMContentLoaded", () => {
       cb.onchange = () => {
         const names = cb.dataset.varnames.split(',').filter(Boolean);
         const label = cb.dataset.label;
-        // Always normalise to a clean "all in" or "all out" state on click,
-        // regardless of prior partial state
-        if (cb.checked) names.forEach(n => addToBasket(n, label));
-        else             names.forEach(n => removeFromBasket(n));
-        cb.classList.remove('check-partial', 'check-full');
+        const wasPartial = cb.classList.contains('check-partial');
+
+        // From a partial state, clicking always completes the set (adds remaining sweeps).
+        // From empty, clicking adds all. From full, unclicking removes all.
+        if (wasPartial || cb.checked) {
+          names.forEach(n => addToBasket(n, label));
+          cb.checked = true;
+        } else {
+          names.forEach(n => removeFromBasket(n));
+        }
+
+        cb.classList.remove('check-partial');
+        cb.classList.toggle('check-full', cb.checked);
         updateBasketCountUI();
+
+        // Refresh the expanded panel's sweep checkboxes if open
+        const fid = parseInt(cb.closest('tr').dataset.fieldId);
+        if (openPanels.has(fid)) refreshPanelCheckboxes(fid);
       };
     });
 
@@ -379,11 +393,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const tableRows = sweepData.map((s, i) => {
         const bg = i % 2 === 0 ? 'background:hsl(180 45% 97%);' : 'background:hsl(35 60% 97%);';
+        const inBasket = s.varname && isInBasket(s.varname);
+        const checkCell = `<td class="sweep-add-col">
+          <input type="checkbox" class="sweep-check"
+                 data-varname="${s.varname}"
+                 data-label="${field.label.replace(/"/g,'&quot;')}"
+                 data-fid="${fid}"
+                 ${inBasket ? 'checked' : ''}>
+        </td>`;
         if (isContinuous) {
           const range  = (s.max !== null && s.min !== null) ? s.max - s.min : 1;
           const barPct = (s.mean !== null && range > 0)
             ? Math.min(100, Math.round(((s.mean - (s.min || 0)) / range) * 100)) : 0;
           return `<tr style="${bg}">
+            ${checkCell}
             <td style="color:#534AB7;font-weight:500;">${s.varname}</td>
             <td>${s.year}</td><td>${s.age}</td>
             <td>${s.mean !== null
@@ -396,6 +419,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </tr>`;
         } else {
           return `<tr style="${bg}">
+            ${checkCell}
             <td style="color:#534AB7;font-weight:500;">${s.varname}</td>
             <td>${s.year}</td><td>${s.age}</td>
             <td colspan="4" style="color:var(--text-muted);font-style:italic;font-size:11px;">
@@ -406,10 +430,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }).join('');
 
       const theadCols = isContinuous
-        ? `<th>Variable</th><th>Year</th><th>Age</th>
+        ? `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
            <th>Mean${units?' ('+units+')':''}</th><th>SD</th>
            <th>Min</th><th>Max</th><th>n</th>`
-        : `<th>Variable</th><th>Year</th><th>Age</th>
+        : `<th>Add</th><th>Variable</th><th>Year</th><th>Age</th>
            <th colspan="4"></th><th>n</th>`;
 
       const valLabelHtml = valLabels.length ? `
@@ -440,9 +464,9 @@ document.addEventListener("DOMContentLoaded", () => {
               Field ID ${fid} &middot; ${field.sweeps.length} sweeps
             </span>
           </div>
-          <button onclick="addAllFromPanel(${fid})"
+          <button id="addAllBtn-${fid}" onclick="addAllFromPanel(${fid})"
                   style="font-size:11px;height:28px;padding:0 12px;">
-            Add all ${field.sweeps.length} variables to basket
+            Add all ${field.sweeps.length} sweeps to basket
           </button>
         </div>
 
@@ -473,6 +497,21 @@ document.addEventListener("DOMContentLoaded", () => {
           </table>
         </div>
         ${valLabelHtml}`;
+
+      // Wire per-sweep checkboxes
+      contentDiv.querySelectorAll('.sweep-check').forEach(cb => {
+        cb.onchange = () => {
+          const vn    = cb.dataset.varname;
+          const label = cb.dataset.label;
+          if (!vn) return;
+          if (cb.checked) addToBasket(vn, label);
+          else            removeFromBasket(vn);
+          updateBasketCountUI();
+          updateMainAddButton(fid);
+          syncRowCheckbox(fid);
+        };
+      });
+      updateMainAddButton(fid);
 
       if (isContinuous) {
         const valid = sweepData.filter(s => s.mean !== null);
@@ -528,12 +567,84 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addAllFromPanel = function(fid) {
     const field = allFields.find(f => f.fieldId === fid);
     if (!field) return;
+
+    // Add every sweep to the basket
     field.varnames.filter(Boolean).forEach(n => addToBasket(n, field.label));
     updateBasketCountUI();
-    // Refresh the row checkbox to reflect the new full-basket state
-    const rowCb = tbody.querySelector(`.row-check[data-varnames^="${field.varnames[0]}"], .row-check[data-varnames*=",${field.varnames[0]}"]`);
-    renderTable();
+
+    // Tick every sweep checkbox inside the open panel — panel stays open
+    document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
+      .forEach(cb => { cb.checked = true; });
+
+    // Turn the panel's "Add all" button purple/filled to show completion
+    updateMainAddButton(fid);
+
+    // Turn the main row checkbox purple (full) without collapsing the panel
+    syncRowCheckbox(fid);
   };
+
+  // ── Sync the main table row checkbox to reflect current basket state ──────
+  function syncRowCheckbox(fid) {
+    const field = allFields.find(f => f.fieldId === fid);
+    if (!field) return;
+    const row = tbody.querySelector(`tr[data-field-id="${fid}"]`);
+    if (!row) return;
+    const cb = row.querySelector('.row-check');
+    if (!cb) return;
+
+    const validNames    = field.varnames.filter(Boolean);
+    const inBasketCount = validNames.filter(n => isInBasket(n)).length;
+    const allIn          = validNames.length > 0 && inBasketCount === validNames.length;
+    const someIn         = inBasketCount > 0 && inBasketCount < validNames.length;
+
+    cb.classList.remove('check-full', 'check-partial');
+    cb.checked = false;
+    if (allIn) {
+      cb.classList.add('check-full');
+      cb.checked = true;
+      cb.title = 'All sweeps already in basket';
+    } else if (someIn) {
+      cb.classList.add('check-partial');
+      cb.title = `${inBasketCount} of ${validNames.length} sweeps already in basket (added elsewhere)`;
+    } else {
+      cb.title = 'No sweeps in basket yet';
+    }
+  }
+
+  // ── Update the "Add all" button inside an open panel to reflect state ─────
+  function updateMainAddButton(fid) {
+    const field = allFields.find(f => f.fieldId === fid);
+    if (!field) return;
+    const btn = document.getElementById(`addAllBtn-${fid}`);
+    if (!btn) return;
+
+    const validNames    = field.varnames.filter(Boolean);
+    const inBasketCount = validNames.filter(n => isInBasket(n)).length;
+    const allIn          = validNames.length > 0 && inBasketCount === validNames.length;
+
+    if (allIn) {
+      btn.innerHTML        = `<i class="ti ti-check" aria-hidden="true" style="font-size:11px;margin-right:3px;"></i> All ${validNames.length} sweeps in basket`;
+      btn.style.background = '#534AB7';
+      btn.style.color      = '#fff';
+      btn.style.borderColor = '#534AB7';
+    } else {
+      btn.innerHTML         = `Add all ${validNames.length} sweeps to basket`;
+      btn.style.background  = '';
+      btn.style.color       = '';
+      btn.style.borderColor = '';
+    }
+  }
+
+  // ── Refresh sweep checkboxes inside an already-open panel ─────────────────
+  function refreshPanelCheckboxes(fid) {
+    const field = allFields.find(f => f.fieldId === fid);
+    if (!field) return;
+    document.querySelectorAll(`#panel-content-${fid} .sweep-check`).forEach(cb => {
+      const vn = cb.dataset.varname;
+      cb.checked = vn ? isInBasket(vn) : false;
+    });
+    updateMainAddButton(fid);
+  }
 
   // ── Pagination ────────────────────────────────────────────────────────────
 
