@@ -430,7 +430,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="sh-val" style="color:${sharedDerived==='1'?'#854F0B':'#085041'}">
             ${sharedDerived==='1'?'Yes':'No'}</div></div>` : '',
         `<div><div class="sh-lbl">Type</div>
-          <div class="sh-val">${isContinuous?'Continuous':'Categorical'}</div></div>`
+          <div class="sh-val" style="color:${isContinuous?'#0F6E56':'#085041'}">
+            ${isContinuous?'Continuous':'Categorical'}</div></div>`
       ].filter(Boolean).join('');
 
       const chartId  = `chart-${fid}`;
