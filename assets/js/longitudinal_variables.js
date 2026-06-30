@@ -226,7 +226,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const firstYear  = f.sweeps[0]?.year || '';
       const lastYear   = f.sweeps[f.sweeps.length - 1]?.year || '';
       const yearRange  = firstYear === lastYear ? firstYear : `${firstYear} → ${lastYear}`;
-      const allNames   = f.varnames.join(' · ');
+      const allNames   = f.varnames.filter(Boolean).map(n =>
+        `<a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${n}" target="_blank" rel="noopener"
+            style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${n}</a>`
+      ).join(' &middot; ');
       const panelId    = `panel-${f.fieldId}`;
 
       // Determine basket state for this Field ID's variables — recomputed every render
@@ -258,7 +261,11 @@ document.addEventListener("DOMContentLoaded", () => {
                  ${checkboxChecked}
                  style="width:14px;height:14px;">
         </td>
-        <td class="col-fid">${f.fieldId}</td>
+        <td class="col-fid">
+          <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${f.fieldId}"
+             target="_blank" rel="noopener"
+             style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${f.fieldId}</a>
+        </td>
         <td class="col-label">
           <div class="label-text">${f.label}</div>
           <div style="font-size:10.5px;color:var(--text-secondary);margin-top:3px;line-height:1.6;">${allNames}</div>
@@ -389,14 +396,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }));
 
       const isContinuous  = sweepData.some(s => s.distType === 'continuous' && s.mean !== null);
-      const sharedForm    = sidecars.find(s => s?.form)?.form   || '';
       const sharedUnits   = sidecars.find(s => s?.units)?.units || '';
       const sharedDerived = sidecars.find(s => s?.derived != null)?.derived ?? '';
       const valLabels     = sweepData.find(s => s.valLabels?.length)?.valLabels || [];
       const units         = sharedUnits && sharedUnits !== 'Not applicable' ? sharedUnits : '';
 
       const metaItems = [
-        sharedForm    ? `<div><div class="sh-lbl">Form</div><div class="sh-val">${sharedForm}</div></div>` : '',
         units         ? `<div><div class="sh-lbl">Units</div><div class="sh-val">${units}</div></div>` : '',
         sharedDerived !== '' ? `<div><div class="sh-lbl">Derived</div>
           <div class="sh-val" style="color:${sharedDerived==='1'?'#854F0B':'#085041'}">
@@ -408,7 +413,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const chartId = `chart-${fid}`;
 
       const tableRows = sweepData.map((s, i) => {
-        const bg = i % 2 === 0 ? 'background:hsl(180 45% 97%);' : 'background:hsl(35 60% 97%);';
+        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:hsl(255 45% 96%);';
         const inBasket = s.varname && isInBasket(s.varname);
         const checkCell = `<td class="sweep-add-col">
           <input type="checkbox" class="sweep-check"
@@ -423,7 +428,10 @@ document.addEventListener("DOMContentLoaded", () => {
             ? Math.min(100, Math.round(((s.mean - (s.min || 0)) / range) * 100)) : 0;
           return `<tr style="${bg}">
             ${checkCell}
-            <td style="color:#534AB7;font-weight:500;">${s.varname}</td>
+            <td style="color:#534AB7;font-weight:500;">
+              <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${s.varname}" target="_blank" rel="noopener"
+                 style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${s.varname}</a>
+            </td>
             <td>${s.year}</td><td>${s.age}</td>
             <td>${s.mean !== null
               ? `${fmt(s.mean)}<div class="bar-wrap"><div class="bar-fill" style="width:${barPct}%"></div></div>`
@@ -436,7 +444,10 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           return `<tr style="${bg}">
             ${checkCell}
-            <td style="color:#534AB7;font-weight:500;">${s.varname}</td>
+            <td style="color:#534AB7;font-weight:500;">
+              <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${s.varname}" target="_blank" rel="noopener"
+                 style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${s.varname}</a>
+            </td>
             <td>${s.year}</td><td>${s.age}</td>
             <td colspan="4" style="color:var(--text-muted);font-style:italic;font-size:11px;">
               Categorical — see value labels below</td>
@@ -477,7 +488,9 @@ document.addEventListener("DOMContentLoaded", () => {
           <div>
             <span style="font-size:15px;font-weight:500;color:#085041;">${field.label}</span>
             <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">
-              Field ID ${fid} &middot; ${field.sweeps.length} sweeps
+              <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${fid}" target="_blank" rel="noopener"
+                 style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">Field ID ${fid}</a>
+              &middot; ${field.sweeps.length} sweeps
             </span>
           </div>
           <button id="addAllBtn-${fid}" onclick="addAllFromPanel(${fid})"
@@ -492,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
                       letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px;">
             Shared across all sweeps
           </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
             ${metaItems}
           </div>
         </div>
