@@ -24,6 +24,21 @@ const filterColumns = [
 
 let tableColumns = [];
 
+// ── Basket cache ────────────────────────────────────────────────────────────
+// Instead of calling isInBasket() (which re-reads localStorage) once per row
+// on every render, we load the basket ONCE into a Set at the start of each
+// renderTable() call. O(1) lookups, single localStorage read per render.
+// Updated by refreshBasketCache() after any add/remove action.
+let _basketCache = new Set();
+
+function refreshBasketCache() {
+  _basketCache = new Set(loadBasket().map(item => item.varName));
+}
+
+function inBasketFast(varName) {
+  return _basketCache.has(varName);
+}
+
 // ============================================================
 // Data load
 // ============================================================
@@ -169,13 +184,11 @@ function updateSortIcons() {
 document.getElementById("globalSearch").addEventListener("input", e => {
   currentSearch = e.target.value || "";
   applyFilters();      // 🔹 re-run filters + search together
-  // updateAllFilters();  // 🔹 keep dropdown options in sync with current subset
 
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
     updateAllFilters();   // ⭐ update filters AFTER user stops typing
   }, 300);
-
 });
 
 document.getElementById("pageSize").addEventListener("change", e => {
@@ -231,7 +244,7 @@ function buildTableHeader() {
       <span class="header-label">Add variable</span>
     </div>
   `;
-  headerRow.appendChild(thSelect); // ⭐ FIXED duplicate append
+  headerRow.appendChild(thSelect);
 
   // Sortable headers
   tableColumns.forEach(col => {
@@ -272,11 +285,12 @@ function allVisibleRowsSelected() {
   const end = start + pageSize;
   const visibleRows = filteredData.slice(start, end);
 
-  if (visibleRows.length === 0) return false; 
+  if (visibleRows.length === 0) return false;
 
+  // Uses the cache — no extra localStorage reads
   return visibleRows.every(row => {
     const varName = row["NSHD Variable Name"];
-    return varName && isInBasket(varName);
+    return varName && inBasketFast(varName);
   });
 }
 
@@ -289,23 +303,22 @@ function updateAddAllButtonLabel() {
   const visibleRows = filteredData.slice(start, end);
 
   if (visibleRows.length === 0) {
-	btn.textContent = "No visible variables to add";
-	btn.classList.remove("remove-mode");
-	btn.style.color = "";
-	btn.disabled = true;
+    btn.textContent = "No visible variables to add";
+    btn.classList.remove("remove-mode");
+    btn.style.color = "";
+    btn.disabled = true;
   } else if (allVisibleRowsSelected()) {
-	btn.textContent = "Remove all visible variables";
-	btn.classList.add("remove-mode");
-	btn.style.color = "";
-	btn.disabled = false;
+    btn.textContent = "Remove all visible variables";
+    btn.classList.add("remove-mode");
+    btn.style.color = "";
+    btn.disabled = false;
   } else {
-	btn.textContent = "Add all visible variables";
-	btn.classList.remove("remove-mode");
-	btn.style.color = "";
-	btn.disabled = false;
+    btn.textContent = "Add all visible variables";
+    btn.classList.remove("remove-mode");
+    btn.style.color = "";
+    btn.disabled = false;
   }
 }
-
 
 // ============================================================
 // Render table
@@ -313,6 +326,11 @@ function updateAddAllButtonLabel() {
 
 function renderTable() {
   sortData();
+
+  // ── Load basket ONCE per render ──────────────────────────────────────────
+  // Single localStorage read, O(1) lookups per row via the shared Set cache.
+  refreshBasketCache();
+
   const body = document.getElementById("table-body");
   body.innerHTML = "";
 
@@ -322,12 +340,12 @@ function renderTable() {
   filteredData.slice(start, end).forEach(row => {
     const tr = document.createElement("tr");
 
-    // Checkbox cell
+    // Checkbox cell — uses inBasketFast() instead of isInBasket()
     const tdSelect = document.createElement("td");
     tdSelect.classList.add("select-cell");
     const varName = row["NSHD Variable Name"];
     const label = (row["Variable Label"] || "").toString();
-    const checked = varName && isInBasket(varName);
+    const checked = varName && inBasketFast(varName);
 
     tdSelect.innerHTML = `
       <input type="checkbox" class="row-select"
@@ -368,7 +386,7 @@ function renderTable() {
     body.appendChild(tr);
   });
 
-  // ⭐ ensure glow updates after add/remove
+  // Checkbox change handlers
   document.querySelectorAll(".row-select").forEach(cb => {
     cb.addEventListener("change", e => {
       const varName = e.target.dataset.varName;
@@ -381,10 +399,14 @@ function renderTable() {
         removeFromBasket(varName);
       }
 
-      updateBasketCountUI(); // ⭐ global glow logic
-	  updateAddAllButtonLabel()
+      // Refresh cache after mutation, then update just the button label —
+      // no full re-render needed, which was the main source of slowdown
+      refreshBasketCache();
+      updateBasketCountUI();
+      updateAddAllButtonLabel();
     });
   });
+
   updateAddAllButtonLabel();
   document.getElementById("myTable").style.tableLayout = "fixed";
 }
@@ -462,7 +484,6 @@ function downloadFilteredCSV() {
 
 document.getElementById("downloadCsvBtn")
   .addEventListener("click", downloadFilteredCSV);
-  
 
 // ============================================================
 // Add/Remove All Visible Rows
@@ -474,13 +495,13 @@ document.getElementById("addAllBtn").addEventListener("click", () => {
   const visibleRows = filteredData.slice(start, end);
 
   if (allVisibleRowsSelected()) {
-    // ⭐ REMOVE ALL VISIBLE
+    // REMOVE ALL VISIBLE
     visibleRows.forEach(row => {
       const varName = row["NSHD Variable Name"];
       if (varName) removeFromBasket(varName);
     });
   } else {
-    // ⭐ ADD ALL VISIBLE
+    // ADD ALL VISIBLE
     visibleRows.forEach(row => {
       const varName = row["NSHD Variable Name"];
       const label = row["Variable Label"] || "";
@@ -488,13 +509,14 @@ document.getElementById("addAllBtn").addEventListener("click", () => {
     });
   }
 
+  // Refresh cache once after the batch operation, then re-render once
+  refreshBasketCache();
   updateBasketCountUI();
-  renderTable(); // refresh checkboxes + button label
+  renderTable();
 });
 
-
 // ============================================================
-// Make search methods label appear when the Data Dictionary page is active 
+// Make search methods label appear when Data Dictionary is active
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function () {
