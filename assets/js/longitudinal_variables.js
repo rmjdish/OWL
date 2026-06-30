@@ -486,7 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
                  style="color:#534AB7;text-decoration:underline;text-underline-offset:2px;">${s.varname}</a>
             </td>
             <td style="${B}">${s.year}</td><td style="${B}">${s.age}</td>
-            <td colspan="4" style="${B}">
+            <td style="${B}">
               ${distBar}${pctLabels}
             </td>
             <td style="border-bottom:1px solid #9AD4BE;padding:5px 6px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
@@ -497,9 +497,10 @@ document.addEventListener("DOMContentLoaded", () => {
       // ───────────────────────────────────────────────────────────────────
       // SINGLE SOURCE OF TRUTH for detail-table column widths.
       // Edit ONLY this block to resize any column — nothing else in the
-      // file or CSS needs to change. width = px, colspan only needed on
-      // the Distribution column (categorical), header text is what
-      // renders in the <th>.
+      // file or CSS needs to change. width = px, header text is what
+      // renders in the <th>. Every column here corresponds to exactly
+      // one <td> in the matching row template below — keep the count
+      // and order in sync if you ever add/remove a column.
       // ───────────────────────────────────────────────────────────────────
       const DTABLE_COLUMNS = {
         continuous: [
@@ -514,11 +515,11 @@ document.addEventListener("DOMContentLoaded", () => {
           { width: 24,  header: 'N' },
         ],
         categorical: [
-          { width: 60,  header: 'Add' },
+          { width: 22,  header: 'Add' },
           { width: 80,  header: 'Variable' },
           { width: 34,  header: 'Year' },
           { width: 28,  header: 'Age' },
-          { width: 150, header: 'Distribution', colspan: 4 },
+          { width: 250, header: 'Distribution' },
           { width: 24,  header: 'N' },
         ],
       };
