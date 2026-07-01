@@ -185,18 +185,29 @@ document.addEventListener("DOMContentLoaded", () => {
           </a>
         </div>
       `).join("")}
-      <div onclick="window.location='/OWL/docs/baskets/basket.html'"
-           style="background:#f3e8ff;padding:7px 12px;font-size:12px;font-weight:500;color:#4b067a;border-top:1px solid #e0d0f0;cursor:pointer;">
+      <a href="/OWL/docs/baskets/basket.html"
+         style="display:block;background:#f3e8ff;padding:7px 12px;font-size:12px;font-weight:500;color:#4b067a;border-top:1px solid #e0d0f0;text-decoration:none;">
         View full basket →
-      </div>
+      </a>
     `;
-    dropdown.style.cssText = "display:block; background:#ffffff; position:relative; z-index:100;";
+    // position:absolute takes dropdown out of flex flow so it doesn't
+    // push the OWL title or other header elements sideways
+    dropdown.style.display    = "block";
+    dropdown.style.background = "#ffffff";
+    dropdown.style.position   = "absolute";
+    dropdown.style.top        = "100%";
+    dropdown.style.left       = "0";
+    dropdown.style.zIndex     = "99999";
+    dropdown.style.minWidth   = "220px";
+    dropdown.style.border     = "1px solid #ddd";
+    dropdown.style.borderRadius = "6px";
+    dropdown.style.boxShadow  = "0 4px 12px rgba(0,0,0,0.15)";
   }
 
   function hideDropdown() {
     hideTimer = setTimeout(() => {
       dropdown.style.display = "none";
-    }, 200);
+    }, 500);
   }
 
   wrapper.addEventListener("mouseenter", showDropdown);
