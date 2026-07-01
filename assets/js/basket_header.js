@@ -137,22 +137,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const siteTitle  = document.querySelector(".site-title");
 
   if (siteHeader && siteTitle) {
-    // Move OWL title to the very start of the header (left edge)
-    siteTitle.style.marginLeft = "0";
-    siteTitle.style.paddingLeft = "0";
-    siteHeader.insertAdjacentElement("afterbegin", siteTitle);
-
-    // Place basket immediately after OWL title with a small gap
+    // Place basket immediately after OWL title
+    // marginRight gives the right-edge glow breathing room
     wrapper.style.display = "inline-flex";
-    wrapper.style.marginLeft = "8px";
-    wrapper.style.marginRight = "8px";  // gap on right so glow is visible
+    wrapper.style.marginRight = "8px";
     wrapper.classList.add("basket-sidebar-pinned");
     siteTitle.insertAdjacentElement("afterend", wrapper);
   } else if (siteHeader) {
     wrapper.style.display = "inline-flex";
     wrapper.style.marginRight = "8px";
     wrapper.classList.add("basket-sidebar-pinned");
-    siteHeader.insertAdjacentElement("afterbegin", wrapper);
+    siteHeader.insertAdjacentElement("beforeend", wrapper);
   } else {
     // Fallback: next to search bar
     let searchBox = document.querySelector(".search");
