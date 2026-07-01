@@ -137,13 +137,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const siteTitle  = document.querySelector(".site-title");
 
   if (siteHeader && siteTitle) {
+    // Move OWL title to the very start of the header (left edge)
+    siteTitle.style.marginLeft = "0";
+    siteTitle.style.paddingLeft = "0";
+    siteHeader.insertAdjacentElement("afterbegin", siteTitle);
+
+    // Place basket immediately after OWL title with a small gap
     wrapper.style.display = "inline-flex";
+    wrapper.style.marginLeft = "8px";
+    wrapper.style.marginRight = "8px";  // gap on right so glow is visible
     wrapper.classList.add("basket-sidebar-pinned");
     siteTitle.insertAdjacentElement("afterend", wrapper);
   } else if (siteHeader) {
     wrapper.style.display = "inline-flex";
+    wrapper.style.marginRight = "8px";
     wrapper.classList.add("basket-sidebar-pinned");
-    siteHeader.insertAdjacentElement("beforeend", wrapper);
+    siteHeader.insertAdjacentElement("afterbegin", wrapper);
   } else {
     // Fallback: next to search bar
     let searchBox = document.querySelector(".search");
