@@ -1,7 +1,6 @@
 // ============================================================
 // GLOBAL basket logic — loads on ALL pages
 // ============================================================
-
 const BASKET_KEY = "nshd_variable_basket";
 
 function loadBasket() {
@@ -20,7 +19,6 @@ function updateBasketCountUI() {
   const basket = loadBasket();
   const elMain = document.getElementById("basketCount");
   const basketTop = document.getElementById("basketTop");
-
   if (elMain) elMain.textContent = basket.length;
 
   // ⭐ Glow when basket is non-empty
@@ -43,7 +41,6 @@ function addToBasket(varName, label) {
     basket.push({ varName, label });
     saveBasket(basket);
   }
-
   updateBasketCountUI();
 
   // ⭐ Pulse animation on count
@@ -65,10 +62,59 @@ function removeFromBasket(varName) {
   let basket = loadBasket();
   basket = basket.filter(item => item.varName !== varName);
   saveBasket(basket);
-
   updateBasketCountUI();
 
   // ⭐ Shake animation on removal
+  const basketTop = document.getElementById("basketTop");
+  if (basketTop) {
+    basketTop.classList.add("shake");
+    setTimeout(() => basketTop.classList.remove("shake"), 400);
+  }
+}
+
+// ── Batch basket operations ─────────────────────────────────────────────────
+// For adding/removing many variables at once (e.g. "Add all visible").
+// Reads localStorage ONCE, modifies the full array in memory, writes ONCE,
+// then updates the UI once. Avoids N reads + N writes + N animations.
+// Use these in any "add all" / "remove all" handler instead of looping
+// addToBasket() / removeFromBasket().
+
+function batchAddToBasket(items) {
+  // items = [{ varName, label }, ...]
+  if (!items || items.length === 0) return;
+  const basket = loadBasket();
+  const existing = new Set(basket.map(i => i.varName));
+  items.forEach(({ varName, label }) => {
+    if (varName && !existing.has(varName)) {
+      basket.push({ varName, label });
+      existing.add(varName);
+    }
+  });
+  saveBasket(basket);
+  updateBasketCountUI();
+
+  // Single pulse after the whole batch
+  const badge = document.getElementById("basketCount");
+  if (badge) {
+    badge.classList.add("added");
+    setTimeout(() => badge.classList.remove("added"), 400);
+  }
+  const basketTop = document.getElementById("basketTop");
+  if (basketTop) {
+    basketTop.classList.add("basket-glow-pulse");
+    setTimeout(() => basketTop.classList.remove("basket-glow-pulse"), 600);
+  }
+}
+
+function batchRemoveFromBasket(varNames) {
+  // varNames = ["ht82", "wt82", ...]
+  if (!varNames || varNames.length === 0) return;
+  const removeSet = new Set(varNames);
+  let basket = loadBasket();
+  basket = basket.filter(item => !removeSet.has(item.varName));
+  saveBasket(basket);
+  updateBasketCountUI();
+
   const basketTop = document.getElementById("basketTop");
   if (basketTop) {
     basketTop.classList.add("shake");
@@ -80,19 +126,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("basketWrapper");
   const basket = document.getElementById("basketTop");
   const dropdown = document.getElementById("basketDropdown");
-
   if (!wrapper || !basket || !dropdown) return;
 
-  // Move basket icon next to search bar
-  let searchBox = document.querySelector(".search");
-  if (!searchBox) {
-    const searchInput = document.querySelector("input[type='search']");
-    if (searchInput) searchBox = searchInput.parentElement;
-  }
+  // ── Move basket icon into the site header, next to the OWL title ──────────
+  // Inserts into .site-header after .site-title so the basket sits at the
+  // same vertical level as the site logo/title and is always visible since
+  // the header is sticky/fixed in Just-the-Docs. The dropdown opens
+  // downward-right so it stays on screen.
+  const siteHeader = document.querySelector(".site-header");
+  const siteTitle  = document.querySelector(".site-title");
 
-  if (searchBox) {
-    wrapper.style.display = "inline-block";
-    searchBox.insertAdjacentElement("afterend", wrapper);
+  if (siteHeader && siteTitle) {
+    wrapper.style.display = "inline-flex";
+    wrapper.classList.add("basket-sidebar-pinned");
+    siteTitle.insertAdjacentElement("afterend", wrapper);
+  } else if (siteHeader) {
+    wrapper.style.display = "inline-flex";
+    wrapper.classList.add("basket-sidebar-pinned");
+    siteHeader.insertAdjacentElement("beforeend", wrapper);
+  } else {
+    // Fallback: next to search bar
+    let searchBox = document.querySelector(".search");
+    if (!searchBox) {
+      const searchInput = document.querySelector("input[type='search']");
+      if (searchInput) searchBox = searchInput.parentElement;
+    }
+    if (searchBox) {
+      wrapper.style.display = "inline-block";
+      searchBox.insertAdjacentElement("afterend", wrapper);
+    }
   }
 
   updateBasketCountUI();
@@ -101,12 +163,10 @@ document.addEventListener("DOMContentLoaded", () => {
   wrapper.addEventListener("mouseenter", () => {
     const items = loadBasket();
     const lastFive = items.slice(-5).reverse(); // last 5 added
-
     if (lastFive.length === 0) {
       dropdown.style.display = "none";
       return;
     }
-
     dropdown.innerHTML = `
       <div class="preview-header">Last 5 variables added were:</div>
       ${lastFive
@@ -124,7 +184,6 @@ document.addEventListener("DOMContentLoaded", () => {
         View full basket →
       </div>
     `;
-
     dropdown.style.display = "block";
   });
 

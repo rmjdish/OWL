@@ -495,23 +495,24 @@ document.getElementById("addAllBtn").addEventListener("click", () => {
   const visibleRows = filteredData.slice(start, end);
 
   if (allVisibleRowsSelected()) {
-    // REMOVE ALL VISIBLE
-    visibleRows.forEach(row => {
-      const varName = row["NSHD Variable Name"];
-      if (varName) removeFromBasket(varName);
-    });
+    // REMOVE ALL VISIBLE — single localStorage read+write via batch function
+    const varNames = visibleRows
+      .map(row => row["NSHD Variable Name"])
+      .filter(Boolean);
+    batchRemoveFromBasket(varNames);
   } else {
-    // ADD ALL VISIBLE
-    visibleRows.forEach(row => {
-      const varName = row["NSHD Variable Name"];
-      const label = row["Variable Label"] || "";
-      if (varName) addToBasket(varName, label);
-    });
+    // ADD ALL VISIBLE — single localStorage read+write via batch function
+    const items = visibleRows
+      .filter(row => row["NSHD Variable Name"])
+      .map(row => ({
+        varName: row["NSHD Variable Name"],
+        label:   row["Variable Label"] || ""
+      }));
+    batchAddToBasket(items);
   }
 
-  // Refresh cache once after the batch operation, then re-render once
+  // Refresh cache once, re-render once
   refreshBasketCache();
-  updateBasketCountUI();
   renderTable();
 });
 
