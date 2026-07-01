@@ -185,6 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
     dropdown.style.display = "block";
+    dropdown.style.backgroundColor = "#ffffff";
   });
 
   wrapper.addEventListener("mouseleave", () => {
