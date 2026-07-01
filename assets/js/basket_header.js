@@ -168,19 +168,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     dropdown.innerHTML = `
-      <div class="preview-header">Last 5 variables added were:</div>
+      <div class="preview-header" style="background:#ffffff;padding:6px 12px;font-size:12px;font-weight:600;color:#4b067a;border-bottom:1px solid #eee;">Last 5 variables added were:</div>
       ${lastFive
         .map(i => `
-          <div class="basket-preview-item">
+          <div class="basket-preview-item" style="background:#ffffff;padding:5px 12px;font-size:12px;">
             <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${i.varName}"
                target="_blank"
-               class="field-link">
+               class="field-link"
+               style="color:#4b067a;">
                ${i.varName}
             </a>
           </div>
         `)
         .join("")}
-      <div class="view-full" onclick="window.location='/OWL/docs/baskets/basket.html'">
+      <div class="view-full" onclick="window.location='/OWL/docs/baskets/basket.html'"
+           style="background:#f8f0ff;padding:6px 12px;font-size:12px;font-weight:500;color:#4b067a;border-top:1px solid #eee;cursor:pointer;">
         View full basket →
       </div>
     `;
