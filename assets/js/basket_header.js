@@ -166,6 +166,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // hides the dropdown before any click can register.
   let hideTimer = null;
 
+  // ── Move dropdown to <body> so it escapes the header's stacking context ──
+  // The sidebar header creates its own stacking context, so any child
+  // z-index is capped within it — the nav always wins. Moving the dropdown
+  // to document.body lets it sit above everything on the page.
+  document.body.appendChild(dropdown);
+
+  function positionDropdown() {
+    const rect = wrapper.getBoundingClientRect();
+    dropdown.style.position   = "fixed";
+    dropdown.style.top        = rect.bottom + "px";
+    dropdown.style.right      = (window.innerWidth - rect.right) + "px";
+    dropdown.style.left       = "auto";
+    dropdown.style.zIndex     = "999999";
+    dropdown.style.minWidth   = "240px";
+    dropdown.style.background = "#ffffff";
+    dropdown.style.border     = "1px solid #ddd";
+    dropdown.style.borderRadius = "6px";
+    dropdown.style.boxShadow  = "0 4px 12px rgba(0,0,0,0.18)";
+  }
+
   function showDropdown() {
     clearTimeout(hideTimer);
     const items = loadBasket();
@@ -190,18 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
         View full basket →
       </a>
     `;
-    // position:absolute takes dropdown out of flex flow so it doesn't
-    // push the OWL title or other header elements sideways
-    dropdown.style.display    = "block";
-    dropdown.style.background = "#ffffff";
-    dropdown.style.position   = "absolute";
-    dropdown.style.top        = "100%";
-    dropdown.style.left       = "0";
-    dropdown.style.zIndex     = "99999";
-    dropdown.style.minWidth   = "220px";
-    dropdown.style.border     = "1px solid #ddd";
-    dropdown.style.borderRadius = "6px";
-    dropdown.style.boxShadow  = "0 4px 12px rgba(0,0,0,0.15)";
+    positionDropdown();
+    dropdown.style.display = "block";
   }
 
   function hideDropdown() {
