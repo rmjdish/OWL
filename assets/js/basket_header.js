@@ -159,40 +159,52 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateBasketCountUI();
 
-  // ⭐ Dropdown preview on hover (wrapper, not icon)
-  wrapper.addEventListener("mouseenter", () => {
+  // ⭐ Dropdown preview on hover
+  // Uses a hide-delay so the dropdown stays open long enough for the
+  // user to move the cursor from the basket icon into the dropdown and
+  // click links — without a delay, mouseleave fires immediately and
+  // hides the dropdown before any click can register.
+  let hideTimer = null;
+
+  function showDropdown() {
+    clearTimeout(hideTimer);
     const items = loadBasket();
-    const lastFive = items.slice(-5).reverse(); // last 5 added
+    const lastFive = items.slice(-5).reverse();
     if (lastFive.length === 0) {
       dropdown.style.display = "none";
       return;
     }
     dropdown.innerHTML = `
-      <div class="preview-header" style="background:#ffffff;padding:6px 12px;font-size:12px;font-weight:600;color:#4b067a;border-bottom:1px solid #eee;">Last 5 variables added were:</div>
-      ${lastFive
-        .map(i => `
-          <div class="basket-preview-item" style="background:#ffffff;padding:5px 12px;font-size:12px;">
-            <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${i.varName}"
-               target="_blank"
-               class="field-link"
-               style="color:#4b067a;">
-               ${i.varName}
-            </a>
-          </div>
-        `)
-        .join("")}
-      <div class="view-full" onclick="window.location='/OWL/docs/baskets/basket.html'"
-           style="background:#f8f0ff;padding:6px 12px;font-size:12px;font-weight:500;color:#4b067a;border-top:1px solid #eee;cursor:pointer;">
+      <div style="background:#ffffff;padding:6px 12px;font-size:12px;font-weight:600;color:#4b067a;border-bottom:1px solid #e0d0f0;">Last 5 variables added:</div>
+      ${lastFive.map(i => `
+        <div style="background:#ffffff;padding:5px 12px;font-size:12px;">
+          <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${i.varName}"
+             target="_blank"
+             style="color:#4b067a;text-decoration:underline;">
+            ${i.varName}
+          </a>
+        </div>
+      `).join("")}
+      <div onclick="window.location='/OWL/docs/baskets/basket.html'"
+           style="background:#f3e8ff;padding:7px 12px;font-size:12px;font-weight:500;color:#4b067a;border-top:1px solid #e0d0f0;cursor:pointer;">
         View full basket →
       </div>
     `;
-    dropdown.style.display = "block";
-    dropdown.style.backgroundColor = "#ffffff";
-  });
+    dropdown.style.cssText = "display:block; background:#ffffff; position:relative; z-index:100;";
+  }
 
-  wrapper.addEventListener("mouseleave", () => {
-    dropdown.style.display = "none";
-  });
+  function hideDropdown() {
+    hideTimer = setTimeout(() => {
+      dropdown.style.display = "none";
+    }, 200);
+  }
+
+  wrapper.addEventListener("mouseenter", showDropdown);
+  wrapper.addEventListener("mouseleave", hideDropdown);
+
+  // Keep dropdown open when cursor moves into it
+  dropdown.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+  dropdown.addEventListener("mouseleave", hideDropdown);
 
   basket.addEventListener("click", () => {
     window.location = "/OWL/docs/baskets/basket.html";
