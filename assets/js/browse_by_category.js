@@ -339,17 +339,21 @@ document.addEventListener("DOMContentLoaded", () => {
       filteredData = data;
       sortDirty    = true;
 
-      // Build label dropdown
+      // Build label dropdown using a DocumentFragment — single DOM insertion
+      // instead of 1,200 individual appendChild() calls which each trigger
+      // a browser reflow. This is the main cause of the slow spinner.
       const labels = [...new Set(data.map(r => r["Variable Label"] || ""))]
         .filter(x => x.trim() !== "")
         .sort();
 
+      const fragment = document.createDocumentFragment();
       labels.forEach(l => {
         const opt       = document.createElement("option");
         opt.value       = l;
         opt.textContent = l;
-        labelFilter.appendChild(opt);
+        fragment.appendChild(opt);
       });
+      labelFilter.appendChild(fragment);   // single DOM operation
 
       // Reposition select if it would overflow right edge
       const rect = labelFilter.getBoundingClientRect();
