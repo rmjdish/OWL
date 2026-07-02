@@ -153,6 +153,36 @@ document.addEventListener("DOMContentLoaded", () => {
       loadingScreen.style.display = 'none';
       mainUI.style.display        = 'block';
       applyFilters();
+
+      // ── Deep-link from variable metadata page ─────────────────────────────
+      // URL pattern: ?fid=1042&open=true
+      // Sent by "View ▶" and "View all in Longitudinal Search" buttons on
+      // each variable's Linked & Longitudinal tab. Scrolls to the matching
+      // Field ID row and opens its detail panel automatically.
+      const params = new URLSearchParams(window.location.search);
+      const fidParam  = params.get('fid');
+      const openParam = params.get('open');
+      if (fidParam && openParam === 'true') {
+        const target = allFields.find(f => String(f.fieldId) === String(fidParam));
+        if (target) {
+          // Paginate to the page containing this Field ID
+          const idx = filteredFields.indexOf(target);
+          if (idx >= 0) {
+            currentPage = Math.floor(idx / PAGE_SIZE) + 1;
+            renderTable();
+          }
+          // Wait one tick for the DOM to render, then open the panel
+          setTimeout(() => {
+            const btn = tbody.querySelector(`.view-btn[data-fid="${target.fieldId}"]`);
+            if (btn) {
+              togglePanel(target.fieldId, target, btn);
+              // Scroll the row into view
+              const row = btn.closest('tr');
+              if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 100);
+        }
+      }
     })
     .catch(err => {
       loadingScreen.innerHTML =
@@ -241,6 +271,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const start      = (currentPage - 1) * PAGE_SIZE;
     const pageRows   = filteredFields.slice(start, start + PAGE_SIZE);
 
+    // ── Load basket ONCE per render into a Set (O(1) lookups) ─────────────
+    // Avoids calling isInBasket() (which re-reads localStorage) for every
+    // variable on every row — key fix for pagination performance with large
+    // baskets (100+ items).
+    const basketSet = new Set(loadBasket().map(item => item.varName));
+    const inBasketFast = varName => basketSet.has(varName);
+
     resultsCount.textContent = `${total.toLocaleString()} longitudinal fields`;
     tbody.innerHTML = '';
 
@@ -256,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Determine basket state for this Field ID's variables — recomputed every render
       const validNames    = f.varnames.filter(Boolean);
-      const inBasketCount = validNames.filter(n => isInBasket(n)).length;
+      const inBasketCount = validNames.filter(n => inBasketFast(n)).length;
       const allInBasket    = validNames.length > 0 && inBasketCount === validNames.length;
       const someInBasket  = inBasketCount > 0 && inBasketCount < validNames.length;
 
@@ -439,16 +476,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const catColorMap = isContinuous ? {} : buildCategoryColorMap(sweepData);
 
       const tableRows = sweepData.map((s, i) => {
-        const bg = i % 2 === 0 ? 'background:#ffffff;' : 'background:#D7F0E8;';
+        const bg = i % 2 === 0 ? 'background:#F0EBF8;' : 'background:#E0D4F0;';
         const inBasket = s.varname && isInBasket(s.varname);
-        const checkCell = `<td class="sweep-add-col" style="border-bottom:1px solid #9AD4BE;border-right:1px solid #9AD4BE;">
+        const checkCell = `<td class="sweep-add-col" style="border-bottom:1px solid #C4ADE8;border-right:1px solid #C4ADE8;">
           <input type="checkbox" class="sweep-check"
                  data-varname="${s.varname}"
                  data-label="${field.label.replace(/"/g,'&quot;')}"
                  data-fid="${fid}"
                  ${inBasket ? 'checked' : ''}>
         </td>`;
-        const B = 'border-bottom:1px solid #9AD4BE;border-right:1px solid #9AD4BE;padding:5px 6px;';
+        const B = 'border-bottom:1px solid #C4ADE8;border-right:1px solid #C4ADE8;padding:5px 6px;';
         if (isContinuous) {
           return `<tr style="${bg}">
             ${checkCell}
@@ -461,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="${B}">${fmt(s.sd)}</td>
             <td style="${B}">${fmt(s.min)}</td>
             <td style="${B}">${fmt(s.max)}</td>
-            <td style="border-bottom:1px solid #9AD4BE;padding:5px 6px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #C4ADE8;padding:5px 6px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         } else {
           const counts = s.catCounts || [];
@@ -489,7 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="${B}">
               ${distBar}${pctLabels}
             </td>
-            <td style="border-bottom:1px solid #9AD4BE;padding:5px 6px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
+            <td style="border-bottom:1px solid #C4ADE8;padding:5px 6px;">${s.n !== null ? Math.round(s.n).toLocaleString() : '—'}</td>
           </tr>`;
         }
       }).join('');
@@ -508,10 +545,10 @@ document.addEventListener("DOMContentLoaded", () => {
           { width: 80,  header: 'Variable' },
           { width: 34,  header: 'Year' },
           { width: 28,  header: 'Age' },
-          { width: 45,  header: `Mean${units ? ' (' + units + ')' : ''}` },
-          { width: 55,  header: 'Standard Deviation' },
-          { width: 34,  header: 'Minimum' },
-          { width: 34,  header: 'Maximum' },
+          { width: 64,  header: `Mean${units ? ' (' + units + ')' : ''}` },
+          { width: 64,  header: 'Standard Deviation' },
+          { width: 38,  header: 'Minimum' },
+          { width: 38,  header: 'Maximum' },
           { width: 24,  header: 'N' },
         ],
         categorical: [
@@ -519,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
           { width: 80,  header: 'Variable' },
           { width: 34,  header: 'Year' },
           { width: 28,  header: 'Age' },
-          { width: 175, header: 'Distribution' },
+          { width: 250, header: 'Distribution' },
           { width: 24,  header: 'N' },
         ],
       };
@@ -752,7 +789,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!cb) return;
 
     const validNames    = field.varnames.filter(Boolean);
-    const inBasketCount = validNames.filter(n => isInBasket(n)).length;
+    const _bs           = new Set(loadBasket().map(i => i.varName));
+    const inBasketCount = validNames.filter(n => _bs.has(n)).length;
     const allIn          = validNames.length > 0 && inBasketCount === validNames.length;
     const someIn         = inBasketCount > 0 && inBasketCount < validNames.length;
 
@@ -778,7 +816,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!btn) return;
 
     const validNames    = field.varnames.filter(Boolean);
-    const inBasketCount = validNames.filter(n => isInBasket(n)).length;
+    const _bs2          = new Set(loadBasket().map(i => i.varName));
+    const inBasketCount = validNames.filter(n => _bs2.has(n)).length;
     const allIn          = validNames.length > 0 && inBasketCount === validNames.length;
 
     if (allIn) {
