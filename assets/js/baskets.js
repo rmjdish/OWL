@@ -6,7 +6,7 @@ window.addEventListener("load", function () {
   let basketSortColumn = null;
   let basketSortDirection = "asc";
 
-  // Path to the full OWL data dictionary, published as a static JSON asset.
+  // Path to the full OWL data dictionary, published as a static JSON asset .
   // Update this if the file is hosted somewhere else on the site.
   const DATA_DICTIONARY_URL = "/OWL/docs/data_dictionary/NSHD_Data_Dictionary_Public.json";
 
