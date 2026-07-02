@@ -6,12 +6,67 @@ window.addEventListener("load", function () {
   let basketSortColumn = null;
   let basketSortDirection = "asc";
 
-  // Path to the full OWL data dictionary, published as a static JSON asset .
+  // Path to the full OWL data dictionary, published as a static JSON asset.
   // Update this if the file is hosted somewhere else on the site.
-  const DATA_DICTIONARY_URL = "/OWL/docs/data_dictionary/NSHD_Data_Dictionary_Public.json";
+  const DATA_DICTIONARY_URL = "/OWL/assets/data/data_dictionary.json";
 
-  // Cached in memory after first fetch so repeat downloads don't re-fetch.
+  // CDN build of ExcelJS, used to produce a real, styled .xlsx client-side.
+  const EXCELJS_CDN_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
+
+  // Cached in memory after first fetch/load so repeat downloads are instant.
   let dictionaryCache = null;
+  let exceljsLoadPromise = null;
+
+  // Column widths taken from the original Data Dictionary workbook
+  // (character-width units, same scale openpyxl/Excel use).
+  const COLUMN_WIDTHS = {
+    "NSHD Library File": 15,
+    "Topic": 19.5,
+    "Subtopic 1": 19.5,
+    "Subtopic 2": 19.5,
+    "Subtopic 3": 19.5,
+    "Subtopic 4": 19.5,
+    "NSHD Variable Name": 15.43,
+    "Showcase Field ID": 15.43,
+    "UKLLC Dataset Name(s)": 18.14,
+    "Variable Label": 55,
+    "Value labels": 34,
+    "Units": 13.57,
+    "Form": 20,
+    "Question Number": 13.57,
+    "Year of collection": 12.57,
+    "Is variable derived?": 12.57,
+    "Is variable sensitive?": 12.57,
+    "Reason variable is sensitive": 15.14,
+    "Notes": 34.7,
+    "Request variable": 16
+  };
+
+  // Header fill colours taken from the original workbook, grouped by
+  // column meaning. New "Request variable" column gets its own colour
+  // so it stands out as the added field.
+  const HEADER_FILLS = {
+    "NSHD Library File": "FFF7C6D0",
+    "Topic": "FFC0C0C0",
+    "Subtopic 1": "FFC0C0C0",
+    "Subtopic 2": "FFC0C0C0",
+    "Subtopic 3": "FFC0C0C0",
+    "Subtopic 4": "FFC0C0C0",
+    "NSHD Variable Name": "FFC1E1C1",
+    "Showcase Field ID": "FFC1E1C1",
+    "UKLLC Dataset Name(s)": "FFC1E1C1",
+    "Variable Label": "FFADD8E6",
+    "Value labels": "FFADD8E6",
+    "Units": "FFADD8E6",
+    "Form": "FFADD8E6",
+    "Question Number": "FFADD8E6",
+    "Year of collection": "FFADD8E6",
+    "Is variable derived?": "FFADD8E6",
+    "Is variable sensitive?": "FFADD8E6",
+    "Reason variable is sensitive": "FFADD8E6",
+    "Notes": "FFADD8E6",
+    "Request variable": "FFFFD966"
+  };
 
   function sortBasketData(data) {
     if (!basketSortColumn) return data;
@@ -153,20 +208,25 @@ window.addEventListener("load", function () {
     updateBasketCountUI();
   }
 
-  // ── CSV field escaping ──────────────────────────────────────────────
-  function csvEscape(value) {
-    const str = value === null || value === undefined ? "" : String(value);
-    return `"${str.replace(/"/g, '""')}"`;
-  }
+  // ── Lazy-load ExcelJS from CDN, only when a download is requested ──
+  function loadExcelJS() {
+    if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
+    if (exceljsLoadPromise) return exceljsLoadPromise;
 
-  function triggerCsvDownload(csvContent, filename) {
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
+    exceljsLoadPromise = new Promise(function (resolve, reject) {
+      const script = document.createElement("script");
+      script.src = EXCELJS_CDN_URL;
+      script.onload = function () {
+        if (window.ExcelJS) resolve(window.ExcelJS);
+        else reject(new Error("ExcelJS failed to initialise after loading."));
+      };
+      script.onerror = function () {
+        reject(new Error("Failed to load ExcelJS from CDN."));
+      };
+      document.head.appendChild(script);
+    });
+
+    return exceljsLoadPromise;
   }
 
   // ── Load the full data dictionary (cached after first fetch) ───────
@@ -180,8 +240,53 @@ window.addEventListener("load", function () {
     return dictionaryCache;
   }
 
-  // ── Download basket as CSV, using full dictionary rows plus a ──────
-  // ── "Request variable" = Y column appended at the end ──────────────
+  function triggerBlobDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Save a blob to disk, letting the user choose the location/name ─
+  // ── where the browser supports it (File System Access API — ──────
+  // ── Chrome/Edge). Falls back to a normal browser download,     ─────
+  // ── which still honours "Ask where to save each file" if the   ─────
+  // ── user has that browser setting turned on.                    ─────
+  async function saveBlobToFile(blob, suggestedName) {
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: suggestedName,
+          types: [
+            {
+              description: "Excel Workbook",
+              accept: {
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"]
+              }
+            }
+          ]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") {
+          // User closed/cancelled the save dialog — respect that, no fallback download.
+          throw err;
+        }
+        console.warn("showSaveFilePicker failed, falling back to standard download:", err);
+        // fall through to the standard download below
+      }
+    }
+    triggerBlobDownload(blob, suggestedName);
+  }
+
+  // ── Build and download the full Data Dictionary as .xlsx, with a ──
+  // ── "Request variable" column: Y for basket variables, blank for ──
+  // ── every other row. Formatting mirrors the original workbook.   ──
   async function downloadBasketCSV() {
     const basket = loadBasket();
     if (!basket.length) {
@@ -197,53 +302,78 @@ window.addEventListener("load", function () {
     }
 
     try {
-      const dictionary = await loadDataDictionary();
+      const [ExcelJS, dictionary] = await Promise.all([
+        loadExcelJS(),
+        loadDataDictionary()
+      ]);
 
-      // Build a lookup keyed by NSHD Variable Name for fast matching.
-      const dictByName = {};
-      dictionary.forEach(function (row) {
-        dictByName[row["NSHD Variable Name"]] = row;
-      });
+      const requestedNames = new Set(basket.map(item => item.varName));
 
-      // Base columns come from the dictionary itself, so the export
-      // always matches the current Data Dictionary structure.
       const baseColumns = dictionary.length
         ? Object.keys(dictionary[0])
         : ["NSHD Variable Name", "Variable Label"];
-
       const columns = baseColumns.concat(["Request variable"]);
 
-      let csvContent = columns.map(csvEscape).join(",") + "\n";
-      const missing = [];
-
-      basket.forEach(function (item) {
-        const dictRow = dictByName[item.varName];
-        if (!dictRow) missing.push(item.varName);
-
-        const rowValues = columns.map(function (col) {
-          if (col === "Request variable") return "Y";
-          if (dictRow && Object.prototype.hasOwnProperty.call(dictRow, col)) {
-            return dictRow[col];
-          }
-          // Fallback if a basket variable isn't found in the dictionary
-          if (col === "NSHD Variable Name") return item.varName;
-          if (col === "Variable Label") return item.label || "";
-          return "";
-        });
-
-        csvContent += rowValues.map(csvEscape).join(",") + "\n";
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet("Data_dictionary", {
+        views: [{ state: "frozen", ySplit: 1 }]
       });
 
-      if (missing.length) {
-        console.warn(
-          `${missing.length} basket variable(s) were not found in the data dictionary and were exported with limited detail:`,
-          missing
-        );
-      }
+      sheet.columns = columns.map(function (colName) {
+        return { header: colName, key: colName, width: COLUMN_WIDTHS[colName] || 18 };
+      });
 
-      triggerCsvDownload(csvContent, "NSHD_Variable_Basket.csv");
+      // ── Header row styling, matching the original workbook ──────────
+      const headerRow = sheet.getRow(1);
+      headerRow.height = 42;
+      columns.forEach(function (colName, idx) {
+        const cell = headerRow.getCell(idx + 1);
+        cell.font = { bold: true };
+        cell.alignment = { horizontal: "center", vertical: "bottom", wrapText: true };
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: HEADER_FILLS[colName] || "FFD9D9D9" }
+        };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" }
+        };
+      });
+
+      // ── Data rows: every dictionary row, Request variable = Y only ──
+      // ── for basket matches, blank for everything else.             ──
+      dictionary.forEach(function (dictRow) {
+        const rowValues = {};
+        baseColumns.forEach(function (col) {
+          rowValues[col] = dictRow[col];
+        });
+        rowValues["Request variable"] = requestedNames.has(dictRow["NSHD Variable Name"]) ? "Y" : "";
+        sheet.addRow(rowValues);
+      });
+
+      sheet.autoFilter = {
+        from: { row: 1, column: 1 },
+        to: { row: dictionary.length + 1, column: columns.length }
+      };
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      });
+
+      try {
+        await saveBlobToFile(blob, "NSHD_Data_Dictionary_Saved.xlsx");
+      } catch (saveErr) {
+        if (!(saveErr && saveErr.name === "AbortError")) {
+          throw saveErr;
+        }
+        // User cancelled the save dialog — nothing more to do.
+      }
     } catch (err) {
-      console.error("Could not build the full basket export:", err);
+      console.error("Could not build the full data dictionary export:", err);
       alert("Something went wrong preparing your download. Please try again.");
     } finally {
       if (downloadBtn) {
