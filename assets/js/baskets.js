@@ -39,7 +39,9 @@ window.addEventListener("load", function () {
     "Is variable sensitive?": 12.57,
     "Reason variable is sensitive": 15.14,
     "Notes": 34.7,
-    "Request variable": 16
+    "Request variable": 16,
+    "Role": 14,
+    "Note": 30
   };
 
   // Header fill colours taken from the original workbook, grouped by
@@ -65,7 +67,9 @@ window.addEventListener("load", function () {
     "Is variable sensitive?": "FFADD8E6",
     "Reason variable is sensitive": "FFADD8E6",
     "Notes": "FFADD8E6",
-    "Request variable": "FFFFD966"
+    "Request variable": "FFFFD966",
+    "Role": "FFD9CEF5",
+    "Note": "FFD9CEF5"
   };
 
   function sortBasketData(data) {
@@ -307,12 +311,12 @@ window.addEventListener("load", function () {
         loadDataDictionary()
       ]);
 
-      const requestedNames = new Set(basket.map(item => item.varName));
+      const requestedByName = new Map(basket.map(item => [item.varName, item]));
 
       const baseColumns = dictionary.length
         ? Object.keys(dictionary[0])
         : ["NSHD Variable Name", "Variable Label"];
-      const columns = baseColumns.concat(["Request variable"]);
+      const columns = baseColumns.concat(["Request variable", "Role", "Note"]);
 
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet("Data_dictionary", {
@@ -322,6 +326,19 @@ window.addEventListener("load", function () {
       sheet.columns = columns.map(function (colName) {
         return { header: colName, key: colName, width: COLUMN_WIDTHS[colName] || 18 };
       });
+
+      // ── Column-level highlight for the Request variable column: ────
+      // ── bold, centered, filled for every row (header keeps its own ─
+      // ── distinct colour below, since cell-level style wins there). ─
+      const reqColIndex = columns.indexOf("Request variable") + 1;
+      const reqColumn = sheet.getColumn(reqColIndex);
+      reqColumn.font = { bold: true };
+      reqColumn.alignment = { horizontal: "center", vertical: "middle" };
+      reqColumn.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFF2CC" }
+      };
 
       // ── Header row styling, matching the original workbook ──────────
       const headerRow = sheet.getRow(1);
@@ -350,7 +367,10 @@ window.addEventListener("load", function () {
         baseColumns.forEach(function (col) {
           rowValues[col] = dictRow[col];
         });
-        rowValues["Request variable"] = requestedNames.has(dictRow["NSHD Variable Name"]) ? "Y" : "";
+        const matchedItem = requestedByName.get(dictRow["NSHD Variable Name"]);
+        rowValues["Request variable"] = matchedItem ? "Y" : "";
+        rowValues["Role"] = matchedItem ? (matchedItem.role || "") : "";
+        rowValues["Note"] = matchedItem ? (matchedItem.note || "") : "";
         sheet.addRow(rowValues);
       });
 
