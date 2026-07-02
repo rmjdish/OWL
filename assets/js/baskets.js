@@ -6,6 +6,13 @@ window.addEventListener("load", function () {
   let basketSortColumn = null;
   let basketSortDirection = "asc";
 
+  // Path to the full OWL data dictionary, published as a static JSON asset.
+  // Update this if the file is hosted somewhere else on the site.
+  const DATA_DICTIONARY_URL = "/OWL/docs/data_dictionary/NSHD_Data_Dictionary_Public.json";
+
+  // Cached in memory after first fetch so repeat downloads don't re-fetch.
+  let dictionaryCache = null;
+
   function sortBasketData(data) {
     if (!basketSortColumn) return data;
 
@@ -146,31 +153,104 @@ window.addEventListener("load", function () {
     updateBasketCountUI();
   }
 
-  function downloadBasketCSV() {
+  // ── CSV field escaping ──────────────────────────────────────────────
+  function csvEscape(value) {
+    const str = value === null || value === undefined ? "" : String(value);
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+
+  function triggerCsvDownload(csvContent, filename) {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── Load the full data dictionary (cached after first fetch) ───────
+  async function loadDataDictionary() {
+    if (dictionaryCache) return dictionaryCache;
+    const resp = await fetch(DATA_DICTIONARY_URL);
+    if (!resp.ok) {
+      throw new Error(`Failed to fetch data dictionary: ${resp.status}`);
+    }
+    dictionaryCache = await resp.json();
+    return dictionaryCache;
+  }
+
+  // ── Download basket as CSV, using full dictionary rows plus a ──────
+  // ── "Request variable" = Y column appended at the end ──────────────
+  async function downloadBasketCSV() {
     const basket = loadBasket();
     if (!basket.length) {
       alert("Basket is empty");
       return;
     }
 
-    const headers = ["NSHD Variable Name", "Variable label"];
-    let csvContent = headers.join(",") + "\n";
+    const downloadBtn = document.getElementById("downloadBasketCsvBtn");
+    const originalBtnText = downloadBtn ? downloadBtn.textContent : null;
+    if (downloadBtn) {
+      downloadBtn.disabled = true;
+      downloadBtn.textContent = "Preparing download…";
+    }
 
-    basket.forEach(function (item) {
-      const row = [
-        `"${String(item.varName).replace(/"/g, '""')}"`,
-        `"${String(item.label || "").replace(/"/g, '""')}"`
-      ].join(",");
-      csvContent += row + "\n";
-    });
+    try {
+      const dictionary = await loadDataDictionary();
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "NSHD_Variable_Basket.csv";
-    link.click();
-    URL.revokeObjectURL(url);
+      // Build a lookup keyed by NSHD Variable Name for fast matching.
+      const dictByName = {};
+      dictionary.forEach(function (row) {
+        dictByName[row["NSHD Variable Name"]] = row;
+      });
+
+      // Base columns come from the dictionary itself, so the export
+      // always matches the current Data Dictionary structure.
+      const baseColumns = dictionary.length
+        ? Object.keys(dictionary[0])
+        : ["NSHD Variable Name", "Variable Label"];
+
+      const columns = baseColumns.concat(["Request variable"]);
+
+      let csvContent = columns.map(csvEscape).join(",") + "\n";
+      const missing = [];
+
+      basket.forEach(function (item) {
+        const dictRow = dictByName[item.varName];
+        if (!dictRow) missing.push(item.varName);
+
+        const rowValues = columns.map(function (col) {
+          if (col === "Request variable") return "Y";
+          if (dictRow && Object.prototype.hasOwnProperty.call(dictRow, col)) {
+            return dictRow[col];
+          }
+          // Fallback if a basket variable isn't found in the dictionary
+          if (col === "NSHD Variable Name") return item.varName;
+          if (col === "Variable Label") return item.label || "";
+          return "";
+        });
+
+        csvContent += rowValues.map(csvEscape).join(",") + "\n";
+      });
+
+      if (missing.length) {
+        console.warn(
+          `${missing.length} basket variable(s) were not found in the data dictionary and were exported with limited detail:`,
+          missing
+        );
+      }
+
+      triggerCsvDownload(csvContent, "NSHD_Variable_Basket.csv");
+    } catch (err) {
+      console.error("Could not build the full basket export:", err);
+      alert("Something went wrong preparing your download. Please try again.");
+    } finally {
+      if (downloadBtn) {
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = originalBtnText;
+      }
+    }
   }
 
   document.getElementById("clearBasketBtn").addEventListener("click", clearBasket);
