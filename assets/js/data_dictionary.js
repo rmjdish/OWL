@@ -338,6 +338,15 @@ function updateAddAllButtonLabel() {
 // Render table
 // ============================================================
 
+// Escape values that get interpolated as HTML text content (not attributes).
+// Attributes already go through the existing quote-escaping below.
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function renderTable() {
   sortData(); // 🔹 no-op unless sortDirty is true
 
@@ -346,61 +355,60 @@ function renderTable() {
   refreshBasketCache();
 
   const body = document.getElementById("table-body");
-  body.innerHTML = "";
 
   const start = (currentPage - 1) * pageSize;
   const end = start + pageSize;
 
-  filteredData.slice(start, end).forEach(row => {
-    const tr = document.createElement("tr");
-
-    // Checkbox cell — uses inBasketFast() instead of isInBasket()
-    const tdSelect = document.createElement("td");
-    tdSelect.classList.add("select-cell");
+  // 🔹 Build the whole page as one HTML string and assign innerHTML ONCE,
+  // instead of createElement/appendChild per cell (which was ~8 DOM ops ×
+  // pageSize, each risking a layout/reflow). This is what browse.js already
+  // does and is the main reason it stayed fast at pageSize 100.
+  const rowsHtml = filteredData.slice(start, end).map(row => {
     const varName = row["NSHD Variable Name"];
     const label = (row["Variable Label"] || "").toString();
     const checked = varName && inBasketFast(varName);
 
-    tdSelect.innerHTML = `
-      <input type="checkbox" class="row-select"
-             data-var-name="${varName || ""}"
-             data-label="${label.replace(/"/g, "&quot;")}"
-             ${checked ? "checked" : ""}>
+    const selectCell = `
+      <td class="select-cell">
+        <input type="checkbox" class="row-select"
+               data-var-name="${varName || ""}"
+               data-label="${label.replace(/"/g, "&quot;")}"
+               ${checked ? "checked" : ""}>
+      </td>
     `;
-    tr.appendChild(tdSelect);
 
-    // Data cells
-    tableColumns.forEach(col => {
-      const td = document.createElement("td");
+    const dataCells = tableColumns.map(col => {
       const value = row[col] ?? "";
 
       if (col === "Showcase Field ID" && value !== "") {
-        td.innerHTML = `
+        return `<td>
           <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}"
              target="_blank"
              class="field-link">
              ${value}
           </a>
-        `;
-      } else if (col === "NSHD Variable Name" && value !== "") {
-        td.innerHTML = `
+        </td>`;
+      }
+
+      if (col === "NSHD Variable Name" && value !== "") {
+        return `<td>
           <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${value}"
              target="_blank"
              class="field-link">
              ${value}
           </a>
-        `;
-      } else {
-        td.textContent = value;
+        </td>`;
       }
 
-      tr.appendChild(td);
-    });
+      return `<td>${escapeHtml(value)}</td>`;
+    }).join("");
 
-    body.appendChild(tr);
-  });
+    return `<tr>${selectCell}${dataCells}</tr>`;
+  }).join("");
 
-  // Checkbox change handlers
+  body.innerHTML = rowsHtml;
+
+  // Checkbox change handlers — attached once after the single innerHTML write
   document.querySelectorAll(".row-select").forEach(cb => {
     cb.addEventListener("change", e => {
       const varName = e.target.dataset.varName;
