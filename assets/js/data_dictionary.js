@@ -43,7 +43,7 @@ function inBasketFast(varName) {
 // Data load
 // ============================================================
 
-fetch("/OWL/assets/data/NSHD_Data_Dictionary_Public.json")
+fetch("NSHD_Data_Dictionary_Public.json")
   .then(r => r.json())
   .then(data => {
     rawData = data;
