@@ -148,6 +148,8 @@
         const a = document.createElement("a");
         a.className = "jargon-term";
         a.href = `${GLOSSARY_PATH}#jargon-${termData.slug}`;
+        a.target = "_blank";
+        a.rel = "noopener";
         a.textContent = matchedText;
         a.setAttribute("aria-describedby", "jargon-tooltip-live");
 
