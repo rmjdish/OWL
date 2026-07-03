@@ -3,18 +3,19 @@
  * ================
  * Sitewide auto-linker for cohort study jargon.
  *
- * Scans the rendered page text for every term defined in
- * window.NSHD_JARGON_TERMS (see jargon-terms.js, which must load first)
- * and wraps EVERY occurrence in a styled link that:
+ * Scans the rendered page text for every term loaded via
+ * window.NSHD_JARGON_READY (see jargon-loader.js, which must load
+ * first and fetches /assets/data/jargon-terms.json) and wraps EVERY
+ * occurrence in a styled link that:
  *   - shows a hover/focus tooltip with the definition, and
  *   - navigates to that term's anchor on the Cohort Study Jargon page
  *     on click.
  *
- * Include this on every page via the shared footer, AFTER jargon-terms.js
- * and AFTER basket_header.js (order relative to basket scripts doesn't
- * matter, just needs jargon-terms.js first):
+ * Include this on every page via the shared footer, AFTER
+ * jargon-loader.js and AFTER basket_header.js (order relative to
+ * basket scripts doesn't matter, just needs jargon-loader.js first):
  *
- *   <script src="{{ site.baseurl }}/assets/js/jargon-terms.js"></script>
+ *   <script src="{{ site.baseurl }}/assets/js/jargon-loader.js"></script>
  *   <script src="{{ site.baseurl }}/assets/js/jargon-linker.js"></script>
  *
  * The glossary page itself (Cohort Study Jargon) is intentionally
@@ -38,11 +39,9 @@
     ".jargon-term", ".jargon-tooltip"
   ].join(",");
 
-  function init() {
+  function init(terms) {
     if (window.location.pathname.includes(SKIP_PATH_MATCH)) return;
-    if (!window.NSHD_JARGON_TERMS || !window.NSHD_JARGON_TERMS.length) return;
-
-    const terms = window.NSHD_JARGON_TERMS;
+    if (!terms || !terms.length) return;
 
     // Longest term first, so "Birth cohort study" matches before the
     // shorter "Cohort" contained inside it at the same text position.
@@ -173,10 +172,20 @@
     setTimeout(run, 300);
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
+  function start() {
+    if (!window.NSHD_JARGON_READY) {
+      console.error("jargon-linker.js: NSHD_JARGON_READY is missing — make sure jargon-loader.js is loaded first.");
+      return;
+    }
+    window.NSHD_JARGON_READY.then(terms => {
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", () => init(terms));
+      } else {
+        init(terms);
+      }
+    });
   }
+
+  start();
 
 })();
