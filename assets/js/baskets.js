@@ -256,37 +256,48 @@ window.addEventListener("load", function () {
     URL.revokeObjectURL(url);
   }
 
-  // ── Save a blob to disk, letting the user choose the location/name ─
-  // ── where the browser supports it (File System Access API — ──────
-  // ── Chrome/Edge). Falls back to a normal browser download,     ─────
-  // ── which still honours "Ask where to save each file" if the   ─────
-  // ── user has that browser setting turned on.                    ─────
-  async function saveBlobToFile(blob, suggestedName) {
-    if (window.showSaveFilePicker) {
-      try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: suggestedName,
-          types: [
-            {
-              description: "Excel Workbook",
-              accept: {
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"]
-              }
+  // ── Ask the user where to save, up front, before any slow work ────
+  // ── (fetching the dictionary, building the workbook). Browsers    ─
+  // ── only allow showSaveFilePicker within a few seconds of the     ─
+  // ── actual click — asking for it after several seconds of async   ─
+  // ── work causes it to silently fail and fall back to a plain      ─
+  // ── download, which is why the picker seemed to "disappear".      ─
+  // ── Returns { handle } on success, { cancelled: true } if the     ─
+  // ── user closed the dialog, or { handle: null } if unsupported.   ─
+  async function requestSaveHandle(suggestedName) {
+    if (!window.showSaveFilePicker) {
+      return { handle: null };
+    }
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: suggestedName,
+        types: [
+          {
+            description: "Excel Workbook",
+            accept: {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"]
             }
-          ]
-        });
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        return;
-      } catch (err) {
-        if (err && err.name === "AbortError") {
-          // User closed/cancelled the save dialog — respect that, no fallback download.
-          throw err;
-        }
-        console.warn("showSaveFilePicker failed, falling back to standard download:", err);
-        // fall through to the standard download below
+          }
+        ]
+      });
+      return { handle };
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        return { cancelled: true };
       }
+      console.warn("showSaveFilePicker unavailable, will fall back to a standard download:", err);
+      return { handle: null };
+    }
+  }
+
+  // ── Write the finished blob to an already-obtained file handle,  ──
+  // ── or fall back to a normal browser download if none was given. ──
+  async function writeBlobToHandle(blob, handle, suggestedName) {
+    if (handle) {
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
     }
     triggerBlobDownload(blob, suggestedName);
   }
@@ -298,6 +309,16 @@ window.addEventListener("load", function () {
     const basket = loadBasket();
     if (!basket.length) {
       alert("Basket is empty");
+      return;
+    }
+
+    const suggestedName = "NSHD_Data_Dictionary_Saved.xlsx";
+
+    // Ask where to save FIRST, while the click's user activation is
+    // still fresh — before any fetching or workbook building begins.
+    const saveTarget = await requestSaveHandle(suggestedName);
+    if (saveTarget.cancelled) {
+      // User closed the save dialog — nothing more to do.
       return;
     }
 
@@ -326,8 +347,16 @@ window.addEventListener("load", function () {
         views: [{ state: "frozen", ySplit: 1 }]
       });
 
+      // Dropdown columns get a small ▼ appended to their header text
+      // so the dropdown is visible before the cell is even clicked —
+      // Excel only shows the arrow control itself on focus, but this
+      // makes it obvious at a glance which column has one.
+      const DROPDOWN_HEADER_SUFFIX = " \u25BE";
       sheet.columns = columns.map(function (colName) {
-        return { header: colName, key: colName, width: COLUMN_WIDTHS[colName] || 18 };
+        const displayHeader = colName === "Variable Role"
+          ? colName + DROPDOWN_HEADER_SUFFIX
+          : colName;
+        return { header: displayHeader, key: colName, width: COLUMN_WIDTHS[colName] || 18 };
       });
 
       // ── Column-level highlight for the Request variable column: ────
@@ -418,14 +447,7 @@ window.addEventListener("load", function () {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       });
 
-      try {
-        await saveBlobToFile(blob, "NSHD_Data_Dictionary_Saved.xlsx");
-      } catch (saveErr) {
-        if (!(saveErr && saveErr.name === "AbortError")) {
-          throw saveErr;
-        }
-        // User cancelled the save dialog — nothing more to do.
-      }
+      await writeBlobToHandle(blob, saveTarget.handle, suggestedName);
     } catch (err) {
       console.error("Could not build the full data dictionary export:", err);
       alert("Something went wrong preparing your download. Please try again.");
