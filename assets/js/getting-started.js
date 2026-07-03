@@ -3,6 +3,17 @@ document.addEventListener('DOMContentLoaded', function () {
   if (!jargonList) return;
   var terms = [];
   var filtered = [];
+
+  // Matches the slug logic in jargon-loader.js, so a term links to the
+  // same #jargon-<slug> anchor whether the link was generated here or
+  // by the sitewide jargon-linker.js on another page.
+  function slugify(str) {
+    return str
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
   function lettersAvailable() {
     var set = {};
     terms.forEach(function (t) { set[t.term[0].toUpperCase()] = true; });
@@ -48,7 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
           '<p class="gs-jargon-cat-label">' + cat + '</p>' +
           items.map(function (t) {
             return (
-              '<div class="gs-jargon-entry" data-term-letter="' + t.term[0].toUpperCase() + '">' +
+              '<div class="gs-jargon-entry" id="jargon-' + slugify(t.term) + '" data-term-letter="' + t.term[0].toUpperCase() + '">' +
                 '<div class="gs-jargon-icon"><i class="ti ' + t.icon + '" aria-hidden="true"></i></div>' +
                 '<div>' +
                   '<p class="gs-jargon-term">' + t.term + '</p>' +
@@ -66,6 +77,22 @@ document.addEventListener('DOMContentLoaded', function () {
       return a.term.localeCompare(b.term);
     });
   }
+
+  // Deep-link handling: someone arriving from another page via
+  // #jargon-<slug> hits this page before the fetch below resolves, so
+  // the browser's native hash-scroll fires too early and finds nothing.
+  // Run this manually once the glossary has actually been rendered.
+  function scrollToHash() {
+    if (!window.location.hash) return;
+    var target = document.querySelector(window.location.hash);
+    if (!target) return;
+    requestAnimationFrame(function () {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      target.classList.add('jargon-flash');
+      setTimeout(function () { target.classList.remove('jargon-flash'); }, 1800);
+    });
+  }
+
   var search = document.getElementById('gs-jargon-search');
   if (search) {
     search.addEventListener('input', function (e) {
@@ -83,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
       filtered = terms;
       renderAZ();
       render();
+      scrollToHash();
     })
     .catch(function () {
       jargonList.innerHTML = '<p class="gs-jargon-empty">Couldn\'t load the glossary right now.</p>';
