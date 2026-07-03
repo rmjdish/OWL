@@ -40,8 +40,8 @@ window.addEventListener("load", function () {
     "Reason variable is sensitive": 15.14,
     "Notes": 34.7,
     "Request variable": 16,
-    "Role": 14,
-    "Note": 30
+    "Variable Role": 16,
+    "Researcher's Notes": 34
   };
 
   // Header fill colours taken from the original workbook, grouped by
@@ -68,9 +68,12 @@ window.addEventListener("load", function () {
     "Reason variable is sensitive": "FFADD8E6",
     "Notes": "FFADD8E6",
     "Request variable": "FFFFD966",
-    "Role": "FFD9CEF5",
-    "Note": "FFD9CEF5"
+    "Variable Role": "FFD9CEF5",
+    "Researcher's Notes": "FFD9CEF5"
   };
+
+  // Fixed set of options offered in the Role dropdown on export.
+  const ROLE_OPTIONS = ["Exposure", "Outcome", "Covariate", "Other"];
 
   function sortBasketData(data) {
     if (!basketSortColumn) return data;
@@ -316,7 +319,7 @@ window.addEventListener("load", function () {
       const baseColumns = dictionary.length
         ? Object.keys(dictionary[0])
         : ["NSHD Variable Name", "Variable Label"];
-      const columns = baseColumns.concat(["Request variable", "Role", "Note"]);
+      const columns = baseColumns.concat(["Request variable", "Variable Role", "Researcher's Notes"]);
 
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet("Data_dictionary", {
@@ -340,6 +343,23 @@ window.addEventListener("load", function () {
         fgColor: { argb: "FFFFF2CC" }
       };
 
+      // ── Role column: dropdown list, applied to the whole data range ─
+      // ── in one call rather than per-cell (fast even at 28k+ rows). ──
+      const roleColIndex = columns.indexOf("Variable Role") + 1;
+      const roleColLetter = sheet.getColumn(roleColIndex).letter;
+      sheet.dataValidations.add(
+        `${roleColLetter}2:${roleColLetter}${dictionary.length + 1}`,
+        {
+          type: "list",
+          allowBlank: true,
+          formulae: [`"${ROLE_OPTIONS.join(",")}"`],
+          showErrorMessage: true,
+          errorStyle: "stop",
+          errorTitle: "Invalid role",
+          error: `Please choose a value from the list: ${ROLE_OPTIONS.join(", ")}.`
+        }
+      );
+
       // ── Header row styling, matching the original workbook ──────────
       const headerRow = sheet.getRow(1);
       headerRow.height = 42;
@@ -358,6 +378,20 @@ window.addEventListener("load", function () {
           bottom: { style: "thin" },
           right: { style: "thin" }
         };
+
+        if (colName === "Variable Role") {
+          cell.note = {
+            texts: [{
+              text: `Optional — fill in yourself. Choose how this variable is used in your analysis: ${ROLE_OPTIONS.join(", ")}.`
+            }]
+          };
+        } else if (colName === "Researcher's Notes") {
+          cell.note = {
+            texts: [{
+              text: "Optional — fill in yourself. Add any free-text notes about how you plan to use this variable."
+            }]
+          };
+        }
       });
 
       // ── Data rows: every dictionary row, Request variable = Y only ──
@@ -369,8 +403,8 @@ window.addEventListener("load", function () {
         });
         const matchedItem = requestedByName.get(dictRow["NSHD Variable Name"]);
         rowValues["Request variable"] = matchedItem ? "Y" : "";
-        rowValues["Role"] = matchedItem ? (matchedItem.role || "") : "";
-        rowValues["Note"] = matchedItem ? (matchedItem.note || "") : "";
+        rowValues["Variable Role"] = matchedItem ? (matchedItem.role || "") : "";
+        rowValues["Researcher's Notes"] = matchedItem ? (matchedItem.note || "") : "";
         sheet.addRow(rowValues);
       });
 
