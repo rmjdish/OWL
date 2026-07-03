@@ -59,6 +59,12 @@
 
     const termLookup = new Map(terms.map(t => [t.term.toLowerCase(), t]));
 
+    // Slugs already linked on this page load. Persists across multiple
+    // run() calls (e.g. if a late-rendering page calls
+    // window.runJargonLinker() again), so a term is only ever highlighted
+    // once per page, not once per run.
+    const linkedTerms = new Set();
+
     // ── Tooltip (single shared element, reused for every hover) ─────────
     const tooltip = document.createElement("div");
     tooltip.className = "jargon-tooltip";
@@ -123,15 +129,22 @@
       let matchedAny = false;
 
       while ((match = termRegex.exec(text)) !== null) {
-        matchedAny = true;
         const matchedText = match[0];
         const start = match.index;
+        const termData = termLookup.get(matchedText.toLowerCase());
+
+        // Already linked once elsewhere on this page — leave this
+        // occurrence as plain text instead of linking it again.
+        if (linkedTerms.has(termData.slug)) continue;
+
+        matchedAny = true;
 
         if (start > lastIndex) {
           frag.appendChild(document.createTextNode(text.slice(lastIndex, start)));
         }
 
-        const termData = termLookup.get(matchedText.toLowerCase());
+        linkedTerms.add(termData.slug);
+
         const a = document.createElement("a");
         a.className = "jargon-term";
         a.href = `${GLOSSARY_PATH}#jargon-${termData.slug}`;
