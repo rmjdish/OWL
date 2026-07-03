@@ -14,6 +14,13 @@ let sortDirection = 1; // 1 = asc, -1 = desc
 let currentSearch = ""; // 🔹 track current text search
 let searchDebounce;
 
+// ── Sort cache ──────────────────────────────────────────────────────────────
+// sortData() is expensive on large datasets. Only re-sort when the sort
+// state actually changed (column/direction clicked) or filteredData was
+// rebuilt (applyFilters/resetAllFilters). Pagination, checkbox toggles, and
+// "add/remove all visible" just re-render off the already-sorted array.
+let sortDirty = true;
+
 const filterColumns = [
   "Topic",
   "Subtopic 1",
@@ -48,6 +55,7 @@ fetch("NSHD_Data_Dictionary_Public.json")
   .then(data => {
     rawData = data;
     filteredData = [...rawData];
+    sortDirty = true;
 
     // Drop first 5 metadata fields, then remove Order
     tableColumns = Object.keys(rawData[0]).slice(5).filter(col => col !== "Order");
@@ -110,6 +118,7 @@ function applyFilters() {
   }
 
   filteredData = base;
+  sortDirty = true; // 🔹 filteredData rebuilt — sort cache is stale
 
   currentPage = 1;
   renderTable();
@@ -146,6 +155,7 @@ function updateAllFilters() {
 
 function sortData() {
   if (!sortColumn) return;
+  if (!sortDirty) return; // 🔹 already sorted for current column/direction/dataset
 
   filteredData.sort((a, b) => {
     const valA = a[sortColumn] ?? "";
@@ -157,6 +167,8 @@ function sortData() {
 
     return String(valA).localeCompare(String(valB)) * sortDirection;
   });
+
+  sortDirty = false;
 }
 
 function updateSortIcons() {
@@ -210,6 +222,7 @@ function resetAllFilters() {
   currentSearch = ""; // 🔹 clear search state
 
   filteredData = [...rawData];
+  sortDirty = true; // 🔹 filteredData rebuilt — sort cache is stale
   currentPage = 1;
 
   updateAllFilters();
@@ -266,6 +279,7 @@ function buildTableHeader() {
         sortDirection = 1;
       }
 
+      sortDirty = true; // 🔹 sort state changed — recompute on next render
       updateSortIcons();
       currentPage = 1;
       renderTable();
@@ -325,7 +339,7 @@ function updateAddAllButtonLabel() {
 // ============================================================
 
 function renderTable() {
-  sortData();
+  sortData(); // 🔹 no-op unless sortDirty is true
 
   // ── Load basket ONCE per render ──────────────────────────────────────────
   // Single localStorage read, O(1) lookups per row via the shared Set cache.
@@ -512,6 +526,9 @@ document.getElementById("addAllBtn").addEventListener("click", () => {
   }
 
   // Refresh cache once, re-render once
+  // Note: sortDirty is untouched here — filteredData's row order/contents
+  // haven't changed (basket membership isn't a sort key), so renderTable()
+  // will skip sortData() entirely, same as before the click.
   refreshBasketCache();
   renderTable();
 });
