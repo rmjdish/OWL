@@ -8,7 +8,7 @@ window.addEventListener("load", function () {
 
   // Path to the full OWL data dictionary, published as a static JSON asset.
   // Update this if the file is hosted somewhere else on the site.
-  const DATA_DICTIONARY_URL = "/OWL/assets/data/_dictionary/NSHD_Data_Dictionary_Public.json";
+  const DATA_DICTIONARY_URL = "/OWL/assets/data/NSHD_Data_Dictionary_Public.json";
 
   // CDN build of ExcelJS, used to produce a real, styled .xlsx client-side.
   const EXCELJS_CDN_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
