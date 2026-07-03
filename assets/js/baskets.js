@@ -8,7 +8,7 @@ window.addEventListener("load", function () {
 
   // Path to the full OWL data dictionary, published as a static JSON asset.
   // Update this if the file is hosted somewhere else on the site.
-  const DATA_DICTIONARY_URL = "/OWL/docs/data_dictionary/data_dictionary.json";
+  const DATA_DICTIONARY_URL = "/OWL/docs/data_dictionary/NSHD_Data_Dictionary_Public.json";
 
   // CDN build of ExcelJS, used to produce a real, styled .xlsx client-side.
   const EXCELJS_CDN_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
@@ -40,7 +40,7 @@ window.addEventListener("load", function () {
     "Reason variable is sensitive": 15.14,
     "Notes": 34.7,
     "Request variable": 16,
-    "Variable Role": 16,
+    "Variable Role": 26,
     "Researcher's Notes": 34
   };
 
@@ -347,15 +347,12 @@ window.addEventListener("load", function () {
         views: [{ state: "frozen", ySplit: 1 }]
       });
 
-      // Dropdown columns get a small ▼ appended to their header text
-      // so the dropdown is visible before the cell is even clicked —
-      // Excel only shows the arrow control itself on focus, but this
-      // makes it obvious at a glance which column has one.
-      const DROPDOWN_HEADER_SUFFIX = " \u25BE";
+      // Dropdown column shows its actual options directly in the header
+      // text (on a second line) so they're visible at a glance, without
+      // needing to click into a cell or hover a comment to find them.
+      const ROLE_HEADER_TEXT = "Variable Role \u25BE\n(" + ROLE_OPTIONS.join(" / ") + ")";
       sheet.columns = columns.map(function (colName) {
-        const displayHeader = colName === "Variable Role"
-          ? colName + DROPDOWN_HEADER_SUFFIX
-          : colName;
+        const displayHeader = colName === "Variable Role" ? ROLE_HEADER_TEXT : colName;
         return { header: displayHeader, key: colName, width: COLUMN_WIDTHS[colName] || 18 };
       });
 
@@ -391,7 +388,7 @@ window.addEventListener("load", function () {
 
       // ── Header row styling, matching the original workbook ──────────
       const headerRow = sheet.getRow(1);
-      headerRow.height = 42;
+      headerRow.height = 56;
       columns.forEach(function (colName, idx) {
         const cell = headerRow.getCell(idx + 1);
         cell.font = { bold: true };
@@ -448,6 +445,13 @@ window.addEventListener("load", function () {
       });
 
       await writeBlobToHandle(blob, saveTarget.handle, suggestedName);
+
+      const savedName = (saveTarget.handle && saveTarget.handle.name) || suggestedName;
+      if (saveTarget.handle) {
+        alert(`Done! "${savedName}" has been saved to the location you chose.`);
+      } else {
+        alert(`Done! "${savedName}" has been downloaded — check your browser's downloads bar or your default Downloads folder.`);
+      }
     } catch (err) {
       console.error("Could not build the full data dictionary export:", err);
       alert("Something went wrong preparing your download. Please try again.");
