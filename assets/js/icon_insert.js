@@ -36,7 +36,7 @@
 	"longitudinal variables":       "ti-repeat",
 	"longitudinal search":          "ti-repeat",
 	"the data dictionary":			"ti-book-2",
-	"study timeline":				"ti-clock-history",
+	"study timeline":				"ti-hourglass",
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
