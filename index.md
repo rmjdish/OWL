@@ -27,8 +27,8 @@ classes: home-page
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item">
-      <div class="stat-number">36</div>
-      <div class="stat-label">Survey waves</div>
+      <div class="stat-number">40</div>
+      <div class="stat-label">Survey sweeps</div>
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item">
@@ -86,7 +86,7 @@ classes: home-page
       </button>
       <div class="sec-body">
         <p>The <strong>NSHD OWL</strong> — Online Wellbeing and Lifecourse Resource — is the central reference for the National Survey of Health and Development,
-		Britain's longest-running birth cohort study. The study has followed over 5,000 individuals born in a single week of March 1946, now into
+		Britain's longest-running birth cohort study. The study has followed 5,362 individuals born in a single week of March 1946, now into
 		their eighties, generating one of the richest longitudinal datasets in the world.</p>
         <p>Spanning physical health, cognitive development, mental wellbeing, lifestyle, and socioeconomic circumstance from birth through to older age,
 		the NSHD offers unparalleled insight into how lives unfold across time. This resource gives researchers structured access to metadata — search
@@ -113,7 +113,7 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>This page sets out two broad ways of using the OWL — searching, for when you already have something concrete to look for, and exploring documentation, for when you're browsing without a fixed target. It walks through five tools in turn: Search Data Dictionary and Browse by Category for targeted lookups, Popular Variables as a sanity check against common research practice, and NSHD Questionnaires and Topics for understanding context before diving into individual variables. Each tool is explained with a short description of who it suits and when to reach for it, so if you're not sure which part of the site fits your question, this is the page that points you to the right starting tool rather than leaving you to guess.</p>
+              <p>This page sets out two broad ways of using the OWL — searching, for when you already have something concrete to look for, and exploring documentation, for when you're browsing without a fixed target. It walks through six tools in turn: Search Data Dictionary and Browse by Category for targeted lookups, Popular Variables as a sanity check against common research practice, Longitudinal search to see how the trajectory of the variable changes over time and NSHD Questionnaires and Topics for understanding context before diving into individual variables. Each tool is explained with a short description of who it suits and when to reach for it, so if you're not sure which part of the site fits your question, this is the page that points you to the right starting tool rather than leaving you to guess.</p>
               <a class="inner-link" href="/OWL/docs/getting-started/where-to-start/">Go to Where should I start? →</a>
             </div>
           </div>
@@ -137,7 +137,7 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>The data dictionary is the spreadsheet NSHD uses to process a formal data request — completing it, by marking which variables you want, is a required step before submitting an application. Build a basket on OWL and download it to have most of the dictionary filled in automatically, including any Role or Researcher's Notes you've added, or download a blank copy and work through it entirely offline — the two approaches can be mixed freely. This page also explains every column in the file, including the three extra ones OWL adds on top of the original: Request variable, Variable Role, and Researcher's Notes.</p>
+              <p>The data dictionary is the spreadsheet NSHD uses to process a formal data request — completing it, by marking which variables you want, is a required step before submitting an application. Build a basket on OWL and download it to have the dictionary filled in automatically, or download a blank copy and work through it entirely offline — the two approaches can be mixed freely. This page also explains every column in the file, including the three extra ones OWL adds on top of the original: Request variable, Variable Role, and Researcher's Notes.</p>
               <a class="inner-link" href="/OWL/docs/getting-started/data-dictionary/">Go to The Data Dictionary →</a>
             </div>
           </div>
@@ -149,7 +149,7 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>The basket is where you collect variables as you find them, regardless of which tool you used to locate them — keyword search, category browsing, or popular variables. Each variable metadata page includes an add-to-basket control, and a running total is always visible from the basket icon in the site header, along with a quick preview of the most recently added items. From the basket page itself you can review your full selection, remove anything you no longer need, check labels and sweep coverage at a glance, and export the complete list as a CSV — ready to use in a project proposal, a data access request, or as a working variable list for analysis. The basket persists as you move between pages, so there's no need to finish a search in one sitting before moving on to browse or look something else up.</p>
+              <p>The basket is where you collect variables as you find them, regardless of which tool you used to locate them — keyword search, category browsing, popular variables or longitudinal search. Each variable metadata page includes an add-to-basket control, and a running total is always visible from the basket icon in the site header, along with a quick preview of the most recently added items. From the basket page itself you can review your full selection, remove anything you no longer need, check labels and sweep coverage at a glance, and export the complete data dictionary as an Excel file — ready to use in a project proposal, a data access request, or as a working variable list for analysis. The basket persists as you move between pages, so there's no need to finish a search in one sitting before moving on to browse or look something else up.</p>
               <a class="inner-link" href="/OWL/docs/getting-started/basket-management/">Go to Basket Management →</a>
             </div>
           </div>
