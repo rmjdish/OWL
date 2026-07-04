@@ -46,6 +46,7 @@ classes: home-page
       <li class="sb-parent"><a href="#sec-getting-started" data-sec="sec-getting-started">🧭 Getting Started</a></li>
       <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where">Where should I start?</a></li>
       <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
+      <li class="sb-sub"><a href="#gs-data-dictionary" data-sec="sec-getting-started" data-inner="gs-data-dictionary">The Data Dictionary</a></li>
       <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
       <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata">Variable Metadata</a></li>
       <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
@@ -126,6 +127,18 @@ classes: home-page
             <div class="inner-body">
               <p>This page explains the structural logic behind the OWL rather than walking through individual tools one by one. It groups everything into three mechanisms: search-first tools that work by keyword and return tables of variables, documentation pages that explain a subject or sweep before pointing you toward the data itself, and the basket, which sits underneath both and lets you collect variables regardless of which route you took to find them. It also covers the sidebar summary component that appears on most documentation pages, showing how it tracks your position and lets you jump between sections. Read this if you want the bigger picture of how the site fits together, rather than instructions for any single page.</p>
               <a class="inner-link" href="/OWL/docs/getting-started/how-the-site-is-organised/">Go to How the site is organised →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="gs-data-dictionary">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-book-2" aria-hidden="true"></i></span>
+              <span class="inner-title">The Data Dictionary</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The data dictionary is the spreadsheet NSHD uses to process a formal data request — completing it, by marking which variables you want, is a required step before submitting an application. Build a basket on OWL and download it to have most of the dictionary filled in automatically, including any Role or Researcher's Notes you've added, or download a blank copy and work through it entirely offline — the two approaches can be mixed freely. This page also explains every column in the file, including the three extra ones OWL adds on top of the original: Request variable, Variable Role, and Researcher's Notes.</p>
+              <a class="inner-link" href="/OWL/docs/getting-started/data-dictionary/">Go to The Data Dictionary →</a>
             </div>
           </div>
 
