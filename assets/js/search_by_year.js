@@ -16,9 +16,19 @@ const FORM_FIELD = "Form";
 
 // Rows are identified as Women's health by their Form value, not by
 // year alone — the study spans 1993-2005 and its 1999 rows would
-// otherwise look identical to the general 1999 sweep. Confirm this
-// matches your actual Form text (case-insensitive substring match).
-const WOMENS_HEALTH_FORM_KEYWORDS = ["women's health", "womens health"];
+// otherwise look identical to the general 1999 sweep. Matching strips
+// apostrophes first, so it doesn't matter whether your data uses a
+// straight quote (') or a curly one (’).
+const WOMENS_HEALTH_FORM_KEYWORDS = ["womens health"];
+
+function normalizeForMatch(str) {
+  return String(str || "").toLowerCase().replace(/['’‘‛]/g, "");
+}
+
+function isWomensHealthRow(row) {
+  const formVal = normalizeForMatch(row[FORM_FIELD]);
+  return WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(normalizeForMatch(k)));
+}
 
 // Columns shown in the table, in this exact order.
 // type: "varlink" | "fieldlink" | "text" | "yearbadge"
@@ -153,9 +163,7 @@ function waveMatchesRow(wave, row) {
   // Auto-generated year waves carry an isWH flag when the same year has
   // both general and Women's health rows, splitting them into two pills.
   if (typeof wave.isWH === "boolean") {
-    const formVal = String(row[FORM_FIELD] || "").toLowerCase();
-    const rowIsWH = WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(k.toLowerCase()));
-    if (rowIsWH !== wave.isWH) return false;
+    if (isWomensHealthRow(row) !== wave.isWH) return false;
   }
   return true;
 }
@@ -177,8 +185,7 @@ function buildAllWaves() {
     const parsed = parseYearField(row[YEAR_FIELD]);
     if (!parsed) return;
 
-    const formVal = String(row[FORM_FIELD] || "").toLowerCase();
-    const isWH = WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(k.toLowerCase()));
+    const isWH = isWomensHealthRow(row);
 
     const rangeKey = `${parsed.start}-${parsed.end}`;
     const groupKey = isWH ? `${rangeKey}|wh` : `${rangeKey}|gen`;
@@ -213,6 +220,16 @@ function logUniqueYears() {
   console.log("Unique raw year values:", vals);
 }
 window.logUniqueYears = logUniqueYears;
+
+// Debug helper — run logFormValues() in the console to see every
+// distinct Form value in your data, so you can confirm
+// WOMENS_HEALTH_FORM_KEYWORDS actually matches the real text.
+function logFormValues() {
+  const vals = [...new Set(rawData.map(r => r[FORM_FIELD]).filter(Boolean))].sort();
+  console.log("Unique Form values:", vals);
+  console.log("Matched as Women's health:", vals.filter(v => isWomensHealthRow({ [FORM_FIELD]: v })));
+}
+window.logFormValues = logFormValues;
 
 // ============================================================
 // Data load
