@@ -59,7 +59,6 @@ function ageLabelForRange(start, end) {
 // among the auto-generated year pills below. `ageRange` drives the
 // automatic age subtitle.
 const SUBSTUDY_DEFINITIONS = [
-  { id: "whs",       label1: "1993–2005", ageRange: { start: 1993, end: 2005 }, formIncludes: WOMENS_HEALTH_FORM_KEYWORDS, color: "wave-womens", sortStart: 1993 },
   { id: "insight46", label1: "2015–21",   ageRange: { start: 2015, end: 2021 }, ranges: [{ start: 2015, end: 2018 }, { start: 2018, end: 2021 }], color: "wave-insight", sortStart: 2015 },
   { id: "covid",     label1: "2020–21",   ageRange: { start: 2020, end: 2021 }, ranges: [{ start: 2020, end: 2021 }], color: "wave-covid", sortStart: 2020 },
   { id: "myofit",    label1: "2020–25",   ageRange: { start: 2020, end: 2025 }, ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit", sortStart: 2020 }
@@ -71,13 +70,12 @@ SUBSTUDY_DEFINITIONS.forEach(w => {
 // Legend text + dot colour for each sub-study, shown below the pill bar
 // since pills themselves now show age rather than the study name.
 const LEGEND_DOT_COLORS = {
-  "wave-womens": "#B0292C",
+  "wave-womens": "#D4537E",
   "wave-insight": "#7F77DD",
   "wave-myofit": "#1D9E75",
   "wave-covid": "#BA7517"
 };
 const LEGEND_NAMES = {
-  whs: "Women's health, 1993–2005",
   insight46: "Insight46",
   myofit: "MyoFit",
   covid: "Covid"
@@ -256,6 +254,14 @@ function buildWaveLegend() {
   const legend = document.getElementById("wave-legend");
   if (!legend) return;
   legend.innerHTML = "";
+
+  // Women's health has no pill of its own (it spans many actual years),
+  // but rows are still flagged pink in the table's Year column — so it
+  // still needs a legend entry even though it's not in SUBSTUDY_DEFINITIONS.
+  const whsItem = document.createElement("span");
+  whsItem.className = "legend-item";
+  whsItem.innerHTML = `<span class="legend-dot" style="background:${LEGEND_DOT_COLORS["wave-womens"]}"></span>Women's health (shown pink in Year column)`;
+  legend.appendChild(whsItem);
 
   SUBSTUDY_DEFINITIONS.forEach(wave => {
     const item = document.createElement("span");
@@ -571,8 +577,18 @@ function escapeHtml(value) {
 
 function renderYearBadge(row) {
   const rawVal = row[YEAR_FIELD] ?? "";
-  const wave = getWaveForRow(row);
-  const cls = wave && wave.color ? wave.color : "wave-general";
+
+  const formVal = String(row[FORM_FIELD] || "").toLowerCase();
+  const isWomensHealth = WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(k.toLowerCase()));
+
+  let cls = "wave-general";
+  if (isWomensHealth) {
+    cls = "wave-womens";
+  } else {
+    const wave = getWaveForRow(row);
+    if (wave && wave.color) cls = wave.color;
+  }
+
   return `<span class="year-badge ${cls}">${escapeHtml(rawVal)}</span>`;
 }
 
