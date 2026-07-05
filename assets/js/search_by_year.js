@@ -41,29 +41,46 @@ const filterColumns = [
   "Subtopic 4"
 ];
 
+// The cohort was born in 1946 — used to compute "Age X" or "Age X–Y"
+// automatically for every pill, including sub-studies and any future
+// year added to the data. No per-year lookup table needed.
+const BIRTH_YEAR = 1946;
+
+function ageLabelForRange(start, end) {
+  if (start === BIRTH_YEAR && end === BIRTH_YEAR) return "Birth";
+  const ageStart = start - BIRTH_YEAR;
+  const ageEnd = end - BIRTH_YEAR;
+  return ageStart === ageEnd ? `Age ${ageStart}` : `Age ${ageStart}–${ageEnd}`;
+}
+
 // Sub-studies are pills that don't correspond to one simple year — either
 // identified by Form text (Women's health) or spanning specific known
 // ranges (Insight46, MyoFit, Covid). `sortStart` controls where they land
-// among the auto-generated year pills below.
+// among the auto-generated year pills below. `ageRange` drives the
+// automatic age subtitle.
 const SUBSTUDY_DEFINITIONS = [
-  { id: "whs",       label1: "1993–2005", label2: "Women's health", formIncludes: WOMENS_HEALTH_FORM_KEYWORDS, color: "wave-womens", sortStart: 1993 },
-  { id: "insight46", label1: "2015–21",   label2: "Insight46",      ranges: [{ start: 2015, end: 2018 }, { start: 2018, end: 2021 }], color: "wave-insight", sortStart: 2015 },
-  { id: "covid",     label1: "2020–21",   label2: "Covid",          ranges: [{ start: 2020, end: 2021 }], color: "wave-covid", sortStart: 2020 },
-  { id: "myofit",    label1: "2020–25",   label2: "MyoFit",         ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit", sortStart: 2020 }
+  { id: "whs",       label1: "1993–2005", ageRange: { start: 1993, end: 2005 }, formIncludes: WOMENS_HEALTH_FORM_KEYWORDS, color: "wave-womens", sortStart: 1993 },
+  { id: "insight46", label1: "2015–21",   ageRange: { start: 2015, end: 2021 }, ranges: [{ start: 2015, end: 2018 }, { start: 2018, end: 2021 }], color: "wave-insight", sortStart: 2015 },
+  { id: "covid",     label1: "2020–21",   ageRange: { start: 2020, end: 2021 }, ranges: [{ start: 2020, end: 2021 }], color: "wave-covid", sortStart: 2020 },
+  { id: "myofit",    label1: "2020–25",   ageRange: { start: 2020, end: 2025 }, ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit", sortStart: 2020 }
 ];
+SUBSTUDY_DEFINITIONS.forEach(w => {
+  w.label2 = ageLabelForRange(w.ageRange.start, w.ageRange.end);
+});
 
-// Optional friendly subtitle for auto-generated year pills, keyed by
-// "start-end". Any year found in the data that ISN'T listed here still
-// gets a pill — just without a subtitle — so new sweeps are never dropped.
-const AGE_LABELS = {
-  "1946-1946": "Birth",
-  "1950-1950": "Age 4",
-  "1957-1957": "Age 11",
-  "1972-1972": "Age 26",
-  "1989-1989": "Age 43",
-  "1999-1999": "Age 53",
-  "2006-2010": "Age 60–64",
-  "2025-2025": "Age 79"
+// Legend text + dot colour for each sub-study, shown below the pill bar
+// since pills themselves now show age rather than the study name.
+const LEGEND_DOT_COLORS = {
+  "wave-womens": "#B0292C",
+  "wave-insight": "#7F77DD",
+  "wave-myofit": "#1D9E75",
+  "wave-covid": "#BA7517"
+};
+const LEGEND_NAMES = {
+  whs: "Women's health, 1993–2005",
+  insight46: "Insight46",
+  myofit: "MyoFit",
+  covid: "Covid"
 };
 
 // Built once the data loads — see buildAllWaves() below.
@@ -159,7 +176,7 @@ function buildAllWaves() {
   const autoYearWaves = [...rangesMap.entries()].map(([key, r]) => ({
     id: "yr-" + key,
     label1: r.start === r.end ? String(r.start) : `${r.start}–${String(r.end).slice(-2)}`,
-    label2: AGE_LABELS[key] || "",
+    label2: ageLabelForRange(r.start, r.end),
     ranges: [r],
     sortStart: r.start
   }));
@@ -230,6 +247,23 @@ function buildWaveBar() {
     `;
     pill.addEventListener("click", () => toggleWave(wave.id));
     bar.appendChild(pill);
+  });
+
+  buildWaveLegend();
+}
+
+function buildWaveLegend() {
+  const legend = document.getElementById("wave-legend");
+  if (!legend) return;
+  legend.innerHTML = "";
+
+  SUBSTUDY_DEFINITIONS.forEach(wave => {
+    const item = document.createElement("span");
+    item.className = "legend-item";
+    const dotColor = LEGEND_DOT_COLORS[wave.color] || "#999";
+    const name = LEGEND_NAMES[wave.id] || wave.id;
+    item.innerHTML = `<span class="legend-dot" style="background:${dotColor}"></span>${name}`;
+    legend.appendChild(item);
   });
 }
 
