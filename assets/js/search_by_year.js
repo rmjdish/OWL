@@ -41,28 +41,33 @@ const filterColumns = [
   "Subtopic 4"
 ];
 
-// Every pill on the year bar. Women's health is identified by Form
-// text (it spans many actual collection years, 1993-2005), so it's
-// checked first — any row matching it is claimed before the general
-// age-based waves below get a chance to match on year alone.
-const WAVE_DEFINITIONS = [
-  { id: "whs", label1: "1993–2005", label2: "Women's health", formIncludes: WOMENS_HEALTH_FORM_KEYWORDS, color: "wave-womens" },
-  { id: "1946",      label1: "1946",     label2: "Birth",     ranges: [{ start: 1946, end: 1946 }] },
-  { id: "1950",      label1: "1950",     label2: "Age 4",     ranges: [{ start: 1950, end: 1950 }] },
-  { id: "1957",      label1: "1957",     label2: "Age 11",    ranges: [{ start: 1957, end: 1957 }] },
-  { id: "1972",      label1: "1972",     label2: "Age 26",    ranges: [{ start: 1972, end: 1972 }] },
-  { id: "1989",      label1: "1989",     label2: "Age 43",    ranges: [{ start: 1989, end: 1989 }] },
-  {
-    id: "1999", label1: "1999", label2: "General survey",
-    ranges: [{ start: 1999, end: 1999 }],
-    formExcludes: WOMENS_HEALTH_FORM_KEYWORDS
-  },
-  { id: "2006-10",   label1: "2006–10",  label2: "Age 60–64", ranges: [{ start: 2006, end: 2010 }] },
-  { id: "insight46", label1: "2015–21",  label2: "Insight46", ranges: [{ start: 2015, end: 2018 }, { start: 2018, end: 2021 }], color: "wave-insight" },
-  { id: "myofit",    label1: "2020–25",  label2: "MyoFit",    ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit" },
-  { id: "covid",     label1: "2020–21",  label2: "Covid",     ranges: [{ start: 2020, end: 2021 }], color: "wave-covid" },
-  { id: "2025",      label1: "2025",     label2: "Age 79",    ranges: [{ start: 2025, end: 2025 }] }
+// Sub-studies are pills that don't correspond to one simple year — either
+// identified by Form text (Women's health) or spanning specific known
+// ranges (Insight46, MyoFit, Covid). `sortStart` controls where they land
+// among the auto-generated year pills below.
+const SUBSTUDY_DEFINITIONS = [
+  { id: "whs",       label1: "1993–2005", label2: "Women's health", formIncludes: WOMENS_HEALTH_FORM_KEYWORDS, color: "wave-womens", sortStart: 1993 },
+  { id: "insight46", label1: "2015–21",   label2: "Insight46",      ranges: [{ start: 2015, end: 2018 }, { start: 2018, end: 2021 }], color: "wave-insight", sortStart: 2015 },
+  { id: "covid",     label1: "2020–21",   label2: "Covid",          ranges: [{ start: 2020, end: 2021 }], color: "wave-covid", sortStart: 2020 },
+  { id: "myofit",    label1: "2020–25",   label2: "MyoFit",         ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit", sortStart: 2020 }
 ];
+
+// Optional friendly subtitle for auto-generated year pills, keyed by
+// "start-end". Any year found in the data that ISN'T listed here still
+// gets a pill — just without a subtitle — so new sweeps are never dropped.
+const AGE_LABELS = {
+  "1946-1946": "Birth",
+  "1950-1950": "Age 4",
+  "1957-1957": "Age 11",
+  "1972-1972": "Age 26",
+  "1989-1989": "Age 43",
+  "1999-1999": "Age 53",
+  "2006-2010": "Age 60–64",
+  "2025-2025": "Age 79"
+};
+
+// Built once the data loads — see buildAllWaves() below.
+let ALL_WAVES = [];
 
 // ============================================================
 // State
@@ -77,7 +82,7 @@ let sortDirection = 1;
 let currentSearch = "";
 let searchDebounce;
 let sortDirty = true;
-let activeWaveId = "all";
+let activeWaveIds = new Set(); // empty = "All" (no year filter)
 
 let _basketCache = new Set();
 function refreshBasketCache() {
@@ -125,29 +130,50 @@ function waveMatchesRow(wave, row) {
     return wave.formIncludes.some(k => formVal.includes(k.toLowerCase()));
   }
 
-  // Year-range-based wave — matched on the parsed year, with an
-  // optional formExcludes safety net (e.g. keeping Women's health
-  // rows out of the general 1999 pill even if checked out of order).
+  // Year-range-based wave — matched on the parsed year.
   const parsed = parseYearField(row[YEAR_FIELD]);
   if (!parsed) return false;
+  return wave.ranges.some(r => r.start === parsed.start && r.end === parsed.end);
+}
 
-  const rangeMatch = wave.ranges.some(r => r.start === parsed.start && r.end === parsed.end);
-  if (!rangeMatch) return false;
+function isClaimedBySubstudy(row) {
+  return SUBSTUDY_DEFINITIONS.some(w => waveMatchesRow(w, row));
+}
 
-  if (wave.formExcludes) {
-    const formVal = String(row[FORM_FIELD] || "").toLowerCase();
-    if (wave.formExcludes.some(k => formVal.includes(k.toLowerCase()))) return false;
-  }
-  return true;
+// Scans the full dataset once at load time and builds one pill per
+// distinct year/range found — excluding rows already claimed by a
+// sub-study (so, e.g., Women's health rows collected "in" 1999 don't
+// also generate/inflate a generic 1999 pill). Any year present in the
+// data automatically gets a pill here, with no code changes needed.
+function buildAllWaves() {
+  const rangesMap = new Map();
+
+  rawData.forEach(row => {
+    if (isClaimedBySubstudy(row)) return;
+    const parsed = parseYearField(row[YEAR_FIELD]);
+    if (!parsed) return;
+    const key = `${parsed.start}-${parsed.end}`;
+    if (!rangesMap.has(key)) rangesMap.set(key, parsed);
+  });
+
+  const autoYearWaves = [...rangesMap.entries()].map(([key, r]) => ({
+    id: "yr-" + key,
+    label1: r.start === r.end ? String(r.start) : `${r.start}–${String(r.end).slice(-2)}`,
+    label2: AGE_LABELS[key] || "",
+    ranges: [r],
+    sortStart: r.start
+  }));
+
+  ALL_WAVES = [...autoYearWaves, ...SUBSTUDY_DEFINITIONS]
+    .sort((a, b) => a.sortStart - b.sortStart);
 }
 
 function getWaveForRow(row) {
-  return WAVE_DEFINITIONS.find(w => waveMatchesRow(w, row)) || null;
+  return ALL_WAVES.find(w => waveMatchesRow(w, row)) || null;
 }
 
 // Debug helper — run logUniqueYears() in the browser console to see
-// every raw value in YEAR_FIELD, so you can confirm WAVE_DEFINITIONS
-// covers everything correctly.
+// every raw value in YEAR_FIELD.
 function logUniqueYears() {
   const vals = [...new Set(rawData.map(r => r[YEAR_FIELD]).filter(Boolean))].sort();
   console.log("Unique raw year values:", vals);
@@ -165,6 +191,7 @@ fetch("/OWL/assets/data/NSHD_Data_Dictionary_Public.json")
     filteredData = [...rawData];
     sortDirty = true;
 
+    buildAllWaves();
     buildWaveBar();
     buildTopicFilters();
     buildTableHeader();
@@ -189,30 +216,48 @@ function buildWaveBar() {
   allPill.className = "year-pill year-pill-all active";
   allPill.dataset.waveId = "all";
   allPill.innerHTML = `<span class="pill-line1">All</span>`;
-  allPill.addEventListener("click", () => selectWave("all"));
+  allPill.addEventListener("click", () => clearWaveSelection());
   bar.appendChild(allPill);
 
-  WAVE_DEFINITIONS.forEach(wave => {
+  ALL_WAVES.forEach(wave => {
     const pill = document.createElement("button");
     pill.type = "button";
     pill.className = "year-pill" + (wave.color ? " " + wave.color : "");
     pill.dataset.waveId = wave.id;
     pill.innerHTML = `
       <span class="pill-line1">${wave.label1}</span>
-      <span class="pill-line2">${wave.label2}</span>
+      ${wave.label2 ? `<span class="pill-line2">${wave.label2}</span>` : ""}
     `;
-    pill.addEventListener("click", () => selectWave(wave.id));
+    pill.addEventListener("click", () => toggleWave(wave.id));
     bar.appendChild(pill);
   });
 }
 
-function selectWave(waveId) {
-  activeWaveId = waveId;
-
+function refreshPillActiveStates() {
   document.querySelectorAll(".year-pill").forEach(p => {
-    p.classList.toggle("active", p.dataset.waveId === waveId);
+    const id = p.dataset.waveId;
+    if (id === "all") {
+      p.classList.toggle("active", activeWaveIds.size === 0);
+    } else {
+      p.classList.toggle("active", activeWaveIds.has(id));
+    }
   });
+}
 
+function toggleWave(waveId) {
+  if (activeWaveIds.has(waveId)) {
+    activeWaveIds.delete(waveId);
+  } else {
+    activeWaveIds.add(waveId);
+  }
+  refreshPillActiveStates();
+  applyFilters();
+  updateAllFilters();
+}
+
+function clearWaveSelection() {
+  activeWaveIds.clear();
+  refreshPillActiveStates();
   applyFilters();
   updateAllFilters();
 }
@@ -250,11 +295,12 @@ function applyFilters() {
     if (sel.value !== "") activeTopicFilters[sel.dataset.column] = sel.value;
   });
 
-  // 1) Filter by selected wave/year
+  // 1) Filter by selected wave(s)/year(s) — a row matches if it fits
+  //    ANY currently-selected pill. Empty selection means no year filter.
   let base = rawData;
-  if (activeWaveId !== "all") {
-    const wave = WAVE_DEFINITIONS.find(w => w.id === activeWaveId);
-    if (wave) base = base.filter(row => waveMatchesRow(wave, row));
+  if (activeWaveIds.size > 0) {
+    const selectedWaves = ALL_WAVES.filter(w => activeWaveIds.has(w.id));
+    base = base.filter(row => selectedWaves.some(w => waveMatchesRow(w, row)));
   }
 
   // 2) Filter by topic levels
@@ -373,10 +419,8 @@ function resetAllFilters() {
   document.getElementById("globalSearch").value = "";
   currentSearch = "";
 
-  activeWaveId = "all";
-  document.querySelectorAll(".year-pill").forEach(p => {
-    p.classList.toggle("active", p.dataset.waveId === "all");
-  });
+  activeWaveIds.clear();
+  refreshPillActiveStates();
 
   filteredData = [...rawData];
   sortDirty = true;
