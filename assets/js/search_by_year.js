@@ -138,17 +138,26 @@ function parseYearField(raw) {
 }
 
 function waveMatchesRow(wave, row) {
-  // Form-based wave (e.g. Women's health) — matched purely on Form
-  // text, regardless of which specific year that row was collected in.
-  if (wave.formIncludes) {
+  // Pure form-based wave with no year constraint at all.
+  if (wave.formIncludes && !wave.ranges) {
     const formVal = String(row[FORM_FIELD] || "").toLowerCase();
     return wave.formIncludes.some(k => formVal.includes(k.toLowerCase()));
   }
 
-  // Year-range-based wave — matched on the parsed year.
   const parsed = parseYearField(row[YEAR_FIELD]);
   if (!parsed) return false;
-  return wave.ranges.some(r => r.start === parsed.start && r.end === parsed.end);
+
+  const rangeMatch = wave.ranges.some(r => r.start === parsed.start && r.end === parsed.end);
+  if (!rangeMatch) return false;
+
+  // Auto-generated year waves carry an isWH flag when the same year has
+  // both general and Women's health rows, splitting them into two pills.
+  if (typeof wave.isWH === "boolean") {
+    const formVal = String(row[FORM_FIELD] || "").toLowerCase();
+    const rowIsWH = WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(k.toLowerCase()));
+    if (rowIsWH !== wave.isWH) return false;
+  }
+  return true;
 }
 
 function isClaimedBySubstudy(row) {
@@ -167,15 +176,25 @@ function buildAllWaves() {
     if (isClaimedBySubstudy(row)) return;
     const parsed = parseYearField(row[YEAR_FIELD]);
     if (!parsed) return;
-    const key = `${parsed.start}-${parsed.end}`;
-    if (!rangesMap.has(key)) rangesMap.set(key, parsed);
+
+    const formVal = String(row[FORM_FIELD] || "").toLowerCase();
+    const isWH = WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(k.toLowerCase()));
+
+    const rangeKey = `${parsed.start}-${parsed.end}`;
+    const groupKey = isWH ? `${rangeKey}|wh` : `${rangeKey}|gen`;
+
+    if (!rangesMap.has(groupKey)) {
+      rangesMap.set(groupKey, { start: parsed.start, end: parsed.end, isWH, groupKey });
+    }
   });
 
-  const autoYearWaves = [...rangesMap.entries()].map(([key, r]) => ({
-    id: "yr-" + key,
+  const autoYearWaves = [...rangesMap.values()].map(r => ({
+    id: "yr-" + r.groupKey,
     label1: r.start === r.end ? String(r.start) : `${r.start}–${String(r.end).slice(-2)}`,
-    label2: ageLabelForRange(r.start, r.end),
-    ranges: [r],
+    label2: r.isWH ? "Women's health" : ageLabelForRange(r.start, r.end),
+    ranges: [{ start: r.start, end: r.end }],
+    isWH: r.isWH,
+    color: r.isWH ? "wave-womens" : undefined,
     sortStart: r.start
   }));
 
@@ -255,12 +274,17 @@ function buildWaveLegend() {
   if (!legend) return;
   legend.innerHTML = "";
 
-  // Women's health has no pill of its own (it spans many actual years),
-  // but rows are still flagged pink in the table's Year column — so it
-  // still needs a legend entry even though it's not in SUBSTUDY_DEFINITIONS.
+  const generalItem = document.createElement("span");
+  generalItem.className = "legend-item";
+  generalItem.innerHTML = `<span class="legend-dot legend-dot-general"></span>General survey years`;
+  legend.appendChild(generalItem);
+
+  // Women's health doesn't have one fixed pill — it splits out of
+  // whichever year(s) it was collected alongside general survey rows,
+  // and gets its own pink pill wherever that split happens.
   const whsItem = document.createElement("span");
   whsItem.className = "legend-item";
-  whsItem.innerHTML = `<span class="legend-dot" style="background:${LEGEND_DOT_COLORS["wave-womens"]}"></span>Women's health (shown pink in Year column)`;
+  whsItem.innerHTML = `<span class="legend-dot" style="background:${LEGEND_DOT_COLORS["wave-womens"]}"></span>Women's health`;
   legend.appendChild(whsItem);
 
   SUBSTUDY_DEFINITIONS.forEach(wave => {
@@ -335,25 +359,24 @@ function applyFilters() {
     if (sel.value !== "") activeTopicFilters[sel.dataset.column] = sel.value;
   });
 
-  // 1) Filter by selected wave(s)/year(s) — a row matches if it fits
-  //    ANY currently-selected pill. Empty selection means no year filter.
-  let base = rawData;
-  if (activeWaveIds.size > 0) {
-    const selectedWaves = ALL_WAVES.filter(w => activeWaveIds.has(w.id));
-    base = base.filter(row => selectedWaves.some(w => waveMatchesRow(w, row)));
-  }
-
-  // 2) Filter by topic levels
-  base = base.filter(row =>
+  // Topic + search filtering, independent of which year pill(s) are
+  // selected — this subset is what drives which pills get highlighted.
+  let topicSearchFiltered = rawData.filter(row =>
     Object.entries(activeTopicFilters).every(([col, val]) => row[col] === val)
   );
 
-  // 3) Filter by search text
   const q = currentSearch.toLowerCase().trim();
   if (q !== "") {
-    base = base.filter(row =>
+    topicSearchFiltered = topicSearchFiltered.filter(row =>
       Object.values(row).some(v => String(v).toLowerCase().includes(q))
     );
+  }
+
+  // Then narrow further by any selected year pill(s) for the actual table.
+  let base = topicSearchFiltered;
+  if (activeWaveIds.size > 0) {
+    const selectedWaves = ALL_WAVES.filter(w => activeWaveIds.has(w.id));
+    base = base.filter(row => selectedWaves.some(w => waveMatchesRow(w, row)));
   }
 
   filteredData = base;
@@ -363,6 +386,19 @@ function applyFilters() {
   renderTable();
   renderPagination();
   updateResultsCount();
+  updatePillHighlights(topicSearchFiltered);
+}
+
+// Dims out any year pill with zero matches in the current topic/search
+// subset, so as soon as a topic or keyword is chosen, the pills for
+// years that actually contain that data visually stand out.
+function updatePillHighlights(topicSearchFiltered) {
+  document.querySelectorAll(".year-pill:not(.year-pill-all)").forEach(pillEl => {
+    const wave = ALL_WAVES.find(w => w.id === pillEl.dataset.waveId);
+    if (!wave) return;
+    const hasMatch = topicSearchFiltered.some(row => waveMatchesRow(wave, row));
+    pillEl.classList.toggle("pill-no-match", !hasMatch);
+  });
 }
 
 // Recompute each topic dropdown's options from the currently
@@ -461,6 +497,7 @@ function resetAllFilters() {
 
   activeWaveIds.clear();
   refreshPillActiveStates();
+  document.querySelectorAll(".year-pill").forEach(p => p.classList.remove("pill-no-match"));
 
   filteredData = [...rawData];
   sortDirty = true;
@@ -577,18 +614,8 @@ function escapeHtml(value) {
 
 function renderYearBadge(row) {
   const rawVal = row[YEAR_FIELD] ?? "";
-
-  const formVal = String(row[FORM_FIELD] || "").toLowerCase();
-  const isWomensHealth = WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(k.toLowerCase()));
-
-  let cls = "wave-general";
-  if (isWomensHealth) {
-    cls = "wave-womens";
-  } else {
-    const wave = getWaveForRow(row);
-    if (wave && wave.color) cls = wave.color;
-  }
-
+  const wave = getWaveForRow(row);
+  const cls = wave && wave.color ? wave.color : "wave-general";
   return `<span class="year-badge ${cls}">${escapeHtml(rawVal)}</span>`;
 }
 
