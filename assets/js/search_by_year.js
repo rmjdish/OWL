@@ -40,7 +40,7 @@ function categorizeRow(row) {
 const COLUMNS_CONFIG = [
   { key: "NSHD Variable Name", label: "Variable name",   type: "varlink" },
   { key: "Showcase Field ID",  label: "Field ID",        type: "fieldlink" },
-  { key: "Variable Label",     label: "Label",           type: "text" },
+  { key: "Variable Label",     label: "Variable Label",  type: "text" },
   { key: "Units",              label: "Units",           type: "text" },
   { key: "Form",               label: "Form",            type: "text" },
   { key: "Question Number",    label: "Question number", type: "text" },
