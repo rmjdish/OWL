@@ -38,6 +38,7 @@
 	"the data dictionary":			"ti-book-2",
 	"study timeline":				"ti-hourglass",
 	"search by year":				"ti-calendar",
+	"search overview":				"ti-search", 
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
