@@ -101,6 +101,7 @@ const LEGEND_NAMES = {
 
 // Built once the data loads — see buildAllWaves() below.
 let ALL_WAVES = [];
+let WAVE_BY_ID = new Map(); // id -> wave, for O(1) lookups instead of scanning ALL_WAVES
 
 // ============================================================
 // State
@@ -155,51 +156,46 @@ function parseYearField(raw) {
   return { start: startY, end: endY };
 }
 
-function waveMatchesRow(wave, row) {
-  // Pure form-based wave with no year constraint at all.
-  if (wave.formIncludes && !wave.ranges) {
-    const formVal = String(row[FORM_FIELD] || "").toLowerCase();
-    return wave.formIncludes.some(k => formVal.includes(k.toLowerCase()));
-  }
+// Runs ONCE when data loads. Caches each row's parsed year, category,
+// and matched wave id directly on the row object, so every later click
+// is a cheap property/Set lookup instead of re-parsing and re-matching
+// the whole dataset against every pill.
+function precomputeRowMetadata() {
+  rawData.forEach(row => {
+    const parsed = parseYearField(row[YEAR_FIELD]);
+    row.__parsedYear = parsed;
+    row.__category = categorizeRow(row);
 
-  const parsed = parseYearField(row[YEAR_FIELD]);
-  if (!parsed) return false;
+    if (!parsed) {
+      row.__waveId = null;
+      return;
+    }
 
-  const rangeMatch = wave.ranges.some(r => r.start === parsed.start && r.end === parsed.end);
-  if (!rangeMatch) return false;
+    const substudy = SUBSTUDY_DEFINITIONS.find(w =>
+      w.ranges.some(r => r.start === parsed.start && r.end === parsed.end)
+    );
 
-  // Auto-generated year waves carry a category ("gen", "wh", or "covid")
-  // when the same year has rows of more than one kind, splitting them
-  // into separate pills.
-  if (wave.category) {
-    if (categorizeRow(row) !== wave.category) return false;
-  }
-  return true;
+    row.__waveId = substudy ? substudy.id : `yr-${parsed.start}-${parsed.end}|${row.__category}`;
+  });
 }
 
-function isClaimedBySubstudy(row) {
-  return SUBSTUDY_DEFINITIONS.some(w => waveMatchesRow(w, row));
-}
-
-// Scans the full dataset once at load time and builds one pill per
-// distinct year/range found — excluding rows already claimed by a
-// sub-study (so, e.g., Women's health rows collected "in" 1999 don't
-// also generate/inflate a generic 1999 pill). Any year present in the
-// data automatically gets a pill here, with no code changes needed.
+// Scans the cached per-row wave ids (computed once in
+// precomputeRowMetadata) and builds one pill per distinct year/range —
+// any year present in the data automatically gets a pill, no code
+// changes needed for new sweeps.
 function buildAllWaves() {
   const rangesMap = new Map();
 
   rawData.forEach(row => {
-    if (isClaimedBySubstudy(row)) return;
-    const parsed = parseYearField(row[YEAR_FIELD]);
-    if (!parsed) return;
-
-    const category = categorizeRow(row);
-    const rangeKey = `${parsed.start}-${parsed.end}`;
-    const groupKey = `${rangeKey}|${category}`;
-
-    if (!rangesMap.has(groupKey)) {
-      rangesMap.set(groupKey, { start: parsed.start, end: parsed.end, category, groupKey });
+    const id = row.__waveId;
+    if (!id || !id.startsWith("yr-")) return; // substudy-claimed or unparsed
+    if (!rangesMap.has(id)) {
+      rangesMap.set(id, {
+        id,
+        start: row.__parsedYear.start,
+        end: row.__parsedYear.end,
+        category: row.__category
+      });
     }
   });
 
@@ -207,7 +203,7 @@ function buildAllWaves() {
   const CATEGORY_LABEL = { wh: "Women's health", covid: "Covid" };
 
   const autoYearWaves = [...rangesMap.values()].map(r => ({
-    id: "yr-" + r.groupKey,
+    id: r.id,
     label1: r.start === r.end ? String(r.start) : `${r.start}–${String(r.end).slice(-2)}`,
     label2: CATEGORY_LABEL[r.category] || ageLabelForRange(r.start, r.end),
     ranges: [{ start: r.start, end: r.end }],
@@ -218,10 +214,12 @@ function buildAllWaves() {
 
   ALL_WAVES = [...autoYearWaves, ...SUBSTUDY_DEFINITIONS]
     .sort((a, b) => a.sortStart - b.sortStart);
+
+  WAVE_BY_ID = new Map(ALL_WAVES.map(w => [w.id, w]));
 }
 
 function getWaveForRow(row) {
-  return ALL_WAVES.find(w => waveMatchesRow(w, row)) || null;
+  return WAVE_BY_ID.get(row.__waveId) || null;
 }
 
 // Debug helper — run logUniqueYears() in the browser console to see
@@ -254,6 +252,7 @@ fetch("/OWL/assets/data/NSHD_Data_Dictionary_Public.json")
     filteredData = [...rawData];
     sortDirty = true;
 
+    precomputeRowMetadata();
     buildAllWaves();
     buildWaveBar();
     buildTopicFilters();
@@ -408,10 +407,10 @@ function applyFilters() {
   }
 
   // Then narrow further by any selected year pill(s) for the actual table.
+  // Uses the __waveId cached once at load — O(1) Set lookup per row.
   let base = topicSearchFiltered;
   if (activeWaveIds.size > 0) {
-    const selectedWaves = ALL_WAVES.filter(w => activeWaveIds.has(w.id));
-    base = base.filter(row => selectedWaves.some(w => waveMatchesRow(w, row)));
+    base = base.filter(row => activeWaveIds.has(row.__waveId));
   }
 
   filteredData = base;
@@ -425,13 +424,18 @@ function applyFilters() {
 }
 
 // Dims out any year pill with zero matches in the current topic/search
-// subset, so as soon as a topic or keyword is chosen, the pills for
-// years that actually contain that data visually stand out.
+// subset. Builds one Set of present wave ids in a single pass over the
+// subset (O(rows)), then does a cheap Set lookup per pill (O(pills)) —
+// instead of the old approach of re-matching every row against every
+// pill from scratch (O(rows * pills)), which is what made this slow.
 function updatePillHighlights(topicSearchFiltered) {
+  const matchedIds = new Set();
+  topicSearchFiltered.forEach(row => {
+    if (row.__waveId) matchedIds.add(row.__waveId);
+  });
+
   document.querySelectorAll(".year-pill:not(.year-pill-all)").forEach(pillEl => {
-    const wave = ALL_WAVES.find(w => w.id === pillEl.dataset.waveId);
-    if (!wave) return;
-    const hasMatch = topicSearchFiltered.some(row => waveMatchesRow(wave, row));
+    const hasMatch = matchedIds.has(pillEl.dataset.waveId);
     pillEl.classList.toggle("pill-no-match", !hasMatch);
   });
 }
@@ -505,12 +509,12 @@ function updateSortIcons() {
 
 document.getElementById("globalSearch").addEventListener("input", e => {
   currentSearch = e.target.value || "";
-  applyFilters();
 
   clearTimeout(searchDebounce);
   searchDebounce = setTimeout(() => {
+    applyFilters();
     updateAllFilters();
-  }, 300);
+  }, 250);
 });
 
 document.getElementById("pageSize").addEventListener("change", e => {
