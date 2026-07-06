@@ -2,7 +2,7 @@
 layout: default
 title: Search Data Dictionary
 parent: Search Overview
-nav_order: 9
+nav_order: 1
 classes: page-search-data-dictionary
 ---
 
