@@ -14,20 +14,25 @@
 const YEAR_FIELD = "Year of collection";      // raw year/range field, e.g. "2006-10"
 const FORM_FIELD = "Form";
 
-// Rows are identified as Women's health by their Form value, not by
-// year alone — the study spans 1993-2005 and its 1999 rows would
-// otherwise look identical to the general 1999 sweep. Matching strips
-// apostrophes first, so it doesn't matter whether your data uses a
-// straight quote (') or a curly one (’).
-const WOMENS_HEALTH_FORM_KEYWORDS = ["womens health"];
+// Subtopic 1 is the reliable field for identifying these sub-studies —
+// Form is NOT reliable (e.g. a Covid row's Form can be "Blood assays").
+// Matching strips apostrophes so straight/curly quotes don't matter,
+// though neither of these particular keywords currently needs one.
+const IDENTIFY_FIELD = "Subtopic 1";
+const WOMENS_HEALTH_KEYWORDS = ["womens health"];   // matches "Womens health questionnaire [700]"
+const COVID_KEYWORDS = ["covid"];                    // matches "Covid questionnaires [602]"
 
 function normalizeForMatch(str) {
   return String(str || "").toLowerCase().replace(/['’‘‛]/g, "");
 }
 
-function isWomensHealthRow(row) {
-  const formVal = normalizeForMatch(row[FORM_FIELD]);
-  return WOMENS_HEALTH_FORM_KEYWORDS.some(k => formVal.includes(normalizeForMatch(k)));
+// Returns "wh", "covid", or "gen" for a row — drives both which pill
+// it falls into and what colour that pill gets.
+function categorizeRow(row) {
+  const val = normalizeForMatch(row[IDENTIFY_FIELD]);
+  if (WOMENS_HEALTH_KEYWORDS.some(k => val.includes(normalizeForMatch(k)))) return "wh";
+  if (COVID_KEYWORDS.some(k => val.includes(normalizeForMatch(k)))) return "covid";
+  return "gen";
 }
 
 // Columns shown in the table, in this exact order.
@@ -68,9 +73,12 @@ function ageLabelForRange(start, end) {
 // ranges (Insight46, MyoFit, Covid). `sortStart` controls where they land
 // among the auto-generated year pills below. `ageRange` drives the
 // automatic age subtitle.
+// Insight46 and MyoFit are still matched on fixed known ranges — if
+// these turn out to need Subtopic 1 matching too (like Women's health
+// and Covid did), tell me their Subtopic 1 text and I'll switch them
+// over the same way.
 const SUBSTUDY_DEFINITIONS = [
   { id: "insight46", label1: "2015–21",   ageRange: { start: 2015, end: 2021 }, ranges: [{ start: 2015, end: 2018 }, { start: 2018, end: 2021 }], color: "wave-insight", sortStart: 2015 },
-  { id: "covid",     label1: "2020–21",   ageRange: { start: 2020, end: 2021 }, ranges: [{ start: 2020, end: 2021 }], color: "wave-covid", sortStart: 2020 },
   { id: "myofit",    label1: "2020–25",   ageRange: { start: 2020, end: 2025 }, ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit", sortStart: 2020 }
 ];
 SUBSTUDY_DEFINITIONS.forEach(w => {
@@ -160,10 +168,11 @@ function waveMatchesRow(wave, row) {
   const rangeMatch = wave.ranges.some(r => r.start === parsed.start && r.end === parsed.end);
   if (!rangeMatch) return false;
 
-  // Auto-generated year waves carry an isWH flag when the same year has
-  // both general and Women's health rows, splitting them into two pills.
-  if (typeof wave.isWH === "boolean") {
-    if (isWomensHealthRow(row) !== wave.isWH) return false;
+  // Auto-generated year waves carry a category ("gen", "wh", or "covid")
+  // when the same year has rows of more than one kind, splitting them
+  // into separate pills.
+  if (wave.category) {
+    if (categorizeRow(row) !== wave.category) return false;
   }
   return true;
 }
@@ -185,23 +194,25 @@ function buildAllWaves() {
     const parsed = parseYearField(row[YEAR_FIELD]);
     if (!parsed) return;
 
-    const isWH = isWomensHealthRow(row);
-
+    const category = categorizeRow(row);
     const rangeKey = `${parsed.start}-${parsed.end}`;
-    const groupKey = isWH ? `${rangeKey}|wh` : `${rangeKey}|gen`;
+    const groupKey = `${rangeKey}|${category}`;
 
     if (!rangesMap.has(groupKey)) {
-      rangesMap.set(groupKey, { start: parsed.start, end: parsed.end, isWH, groupKey });
+      rangesMap.set(groupKey, { start: parsed.start, end: parsed.end, category, groupKey });
     }
   });
+
+  const CATEGORY_COLOR = { wh: "wave-womens", covid: "wave-covid" };
+  const CATEGORY_LABEL = { wh: "Women's health", covid: "Covid" };
 
   const autoYearWaves = [...rangesMap.values()].map(r => ({
     id: "yr-" + r.groupKey,
     label1: r.start === r.end ? String(r.start) : `${r.start}–${String(r.end).slice(-2)}`,
-    label2: r.isWH ? "Women's health" : ageLabelForRange(r.start, r.end),
+    label2: CATEGORY_LABEL[r.category] || ageLabelForRange(r.start, r.end),
     ranges: [{ start: r.start, end: r.end }],
-    isWH: r.isWH,
-    color: r.isWH ? "wave-womens" : undefined,
+    category: r.category,
+    color: CATEGORY_COLOR[r.category],
     sortStart: r.start
   }));
 
@@ -221,15 +232,16 @@ function logUniqueYears() {
 }
 window.logUniqueYears = logUniqueYears;
 
-// Debug helper — run logFormValues() in the console to see every
-// distinct Form value in your data, so you can confirm
-// WOMENS_HEALTH_FORM_KEYWORDS actually matches the real text.
-function logFormValues() {
-  const vals = [...new Set(rawData.map(r => r[FORM_FIELD]).filter(Boolean))].sort();
-  console.log("Unique Form values:", vals);
-  console.log("Matched as Women's health:", vals.filter(v => isWomensHealthRow({ [FORM_FIELD]: v })));
+// Debug helper — run logSubtopicValues() in the console to see every
+// distinct Subtopic 1 value in your data, and which ones get
+// categorized as Women's health / Covid / general.
+function logSubtopicValues() {
+  const vals = [...new Set(rawData.map(r => r[IDENTIFY_FIELD]).filter(Boolean))].sort();
+  console.log("Unique Subtopic 1 values:", vals);
+  console.log("Matched as Women's health:", vals.filter(v => categorizeRow({ [IDENTIFY_FIELD]: v }) === "wh"));
+  console.log("Matched as Covid:", vals.filter(v => categorizeRow({ [IDENTIFY_FIELD]: v }) === "covid"));
 }
-window.logFormValues = logFormValues;
+window.logSubtopicValues = logSubtopicValues;
 
 // ============================================================
 // Data load
@@ -296,13 +308,19 @@ function buildWaveLegend() {
   generalItem.innerHTML = `<span class="legend-dot legend-dot-general"></span>General survey years`;
   legend.appendChild(generalItem);
 
-  // Women's health doesn't have one fixed pill — it splits out of
-  // whichever year(s) it was collected alongside general survey rows,
-  // and gets its own pink pill wherever that split happens.
+  // Women's health and Covid don't have one fixed pill each — they
+  // split out of whichever year(s) they were actually collected in
+  // alongside general survey rows, so they need manual legend entries
+  // even though they're not in SUBSTUDY_DEFINITIONS.
   const whsItem = document.createElement("span");
   whsItem.className = "legend-item";
   whsItem.innerHTML = `<span class="legend-dot" style="background:${LEGEND_DOT_COLORS["wave-womens"]}"></span>Women's health`;
   legend.appendChild(whsItem);
+
+  const covidItem = document.createElement("span");
+  covidItem.className = "legend-item";
+  covidItem.innerHTML = `<span class="legend-dot" style="background:${LEGEND_DOT_COLORS["wave-covid"]}"></span>Covid`;
+  legend.appendChild(covidItem);
 
   SUBSTUDY_DEFINITIONS.forEach(wave => {
     const item = document.createElement("span");
