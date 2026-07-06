@@ -693,7 +693,7 @@ function renderTable() {
         return `<td><a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}" target="_blank" class="field-link">${value}</a></td>`;
       }
       if (cfg.type === "varlink" && value !== "") {
-        return `<td><a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${value}" target="_blank" class="field-link">${value}</a></td>`;
+        return `<td><a href="/OWL/docs/variable_metadata/variable_metadata?var=${encodeURIComponent(value)}" target="_blank" class="field-link">${value}</a></td>`;
       }
       if (cfg.type === "yearbadge") {
         return `<td>${renderYearBadge(row)}</td>`;
