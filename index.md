@@ -53,6 +53,8 @@ classes: home-page
 
       <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
 
+      <li><a href="#sec-timeline" data-sec="sec-timeline">🕰️ Study Timeline</a></li>
+
       <li class="sb-parent"><a href="#sec-data-access" data-sec="sec-data-access">🗄️ Accessing NSHD Data</a></li>
       <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview">Overview</a></li>
       <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms">OWL, Showcase &amp; Condor</a></li>
@@ -64,6 +66,7 @@ classes: home-page
       <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat">Browse by Category</a></li>
       <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
       <li class="sb-sub"><a href="#search-long" data-sec="sec-search" data-inner="search-long">Longitudinal Search</a></li>
+      <li class="sb-sub"><a href="#search-year" data-sec="sec-search" data-inner="search-year">Search by Year</a></li>
       <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
 
       <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore">🧭 Explore Documentation</a></li>
@@ -195,6 +198,19 @@ classes: home-page
       </div>
     </div>
 
+    <!-- STUDY TIMELINE -->
+    <div class="sec-row" id="sec-timeline" style="border-left:4px solid hsl(190,45%,45%);border-radius:0 6px 6px 0;">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon">🕰️</span>
+        <span class="sec-title" style="color:hsl(190,45%,18%);">Study Timeline</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>Follow the NSHD study members' lives sweep by sweep, from birth in March 1946 through to the present day — the timeline lays out each collection point in order, the age of study members at the time, and which named sub-studies (Insight46, MyoFit, Covid, Women's Health) ran alongside the main survey at each stage, giving a quick sense of how densely the study was sampled at different life stages before you go looking for variables from a specific sweep.</p>
+        <a class="inner-link" href="/OWL/docs/study-timeline/">View the full Study Timeline →</a>
+      </div>
+    </div>
+
     <!-- ACCESSING NSHD DATA -->
     <div class="sec-row" id="sec-data-access" style="border-left:4px solid hsl(210,45%,45%);border-radius:0 6px 6px 0;">
       <button class="sec-trigger" aria-expanded="false">
@@ -277,7 +293,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Data Dictionary search operates directly on the structured dataset, examining variable names, labels, descriptions, categories, and all metadata fields. It is the most powerful method for detailed variable-level exploration and works in combination with the filter panel for layered, precise narrowing of results.</p>
               <p>The search updates instantly as you type, making it especially valuable when working with large variable collections where manual browsing would be time-consuming.</p>
-              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/data_dictionary/NSHD_Data_Dictionary.html">Go to Data Dictionary Search →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/search_data_dictionary/">Go to Data Dictionary Search →</a>
             </div>
           </div>
 
@@ -290,7 +306,7 @@ classes: home-page
             <div class="inner-body">
               <p>Variables are grouped into meaningful themes such as demographics, lifestyle, clinical measures, and biological markers. This method is ideal for users who prefer to navigate conceptually, or for new users learning how the dataset is organised.</p>
               <p>Category browsing supports exploratory research — it lets you scan available options and discover variables you might not have known to search for directly.</p>
-              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/browse_by_category/Browse_by_Category.html">Go to Category Browsing →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/browse_by_category/">Go to Category Browsing →</a>
             </div>
           </div>
 
@@ -303,7 +319,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Popular Variables tool highlights variables added to baskets most often across recent projects, offering insight into which measures are widely used or considered essential within the research community.</p>
               <p>The table includes counts, labels, and direct links to metadata pages, and can be sorted and filtered to focus on specific areas of interest.</p>
-              <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/popular_vars/popular-variables.html">Go to Popular Variables →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/popular_variables/">Go to Popular Variables →</a>
             </div>
           </div>
 
@@ -316,14 +332,27 @@ classes: home-page
             <div class="inner-body">
               <p>Longitudinal Search finds only variables collected with <strong>identical question text and coding</strong> across two or more sweeps — grouped by Showcase Field ID, the same strict linkage standard used by the NSHD Showcase. This is a narrower, stricter set than OWL's general Linked &amp; Longitudinal feature, which connects variables for any reason even where coding changed between sweeps.</p>
               <p>Each result expands into a sweep-by-sweep view: a trajectory chart — a line with a min–max band for continuous variables, or a stacked bar showing the full response distribution for categorical variables — plus a detail table with year, age, and summary statistics for every sweep. Variables can be added to the basket individually per sweep or all at once.</p>
-              <a class="inner-link" href="/OWL/docs/longitudinal_variables/longitudinal_search_guide/">Go to Longitudinal Search →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/longitudinal_search_guide/">Go to Longitudinal Search →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="search-year">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-calendar-time" aria-hidden="true"></i></span>
+              <span class="inner-title">5. Search by Year</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Search by Year starts from a point in time rather than a variable or topic. A row of year pills across the top of the page represents every NSHD sweep — clicking one or more filters results to variables collected in those years, with single-sweep collections and rolling collection windows clearly distinguished, and named sub-studies (Insight46, MyoFit, Covid, Women's Health) highlighted in colour alongside a legend.</p>
+              <p>Topic filters covering five levels of the category hierarchy sit alongside the year pills and interact live — pills with no matching results for the current topic or search term dim automatically, so it's clear at a glance which years actually have relevant data before you click.</p>
+              <a class="inner-link" href="/OWL/docs/search_methods/search_by_year/">Go to Search by Year →</a>
             </div>
           </div>
 
           <div class="inner-item" id="search-global">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🌐</span>
-              <span class="inner-title">5. Global Site Search</span>
+              <span class="inner-title">6. Global Site Search</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
