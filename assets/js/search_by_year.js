@@ -78,8 +78,9 @@ function ageLabelForRange(start, end) {
 // and Covid did), tell me their Subtopic 1 text and I'll switch them
 // over the same way.
 const SUBSTUDY_DEFINITIONS = [
-  { id: "insight46", label1: "2015–21",   ageRange: { start: 2015, end: 2021 }, ranges: [{ start: 2015, end: 2018 }, { start: 2018, end: 2021 }], color: "wave-insight", sortStart: 2015 },
-  { id: "myofit",    label1: "2020–25",   ageRange: { start: 2020, end: 2025 }, ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit", sortStart: 2020 }
+  { id: "insight46-1", label1: "2015–18",   ageRange: { start: 2015, end: 2018 }, ranges: [{ start: 2015, end: 2018 }], color: "wave-insight", sortStart: 2015 },
+  { id: "insight46-2", label1: "2018–21",   ageRange: { start: 2018, end: 2021 }, ranges: [{ start: 2018, end: 2021 }], color: "wave-insight", sortStart: 2018 },
+  { id: "myofit",      label1: "2020–25",   ageRange: { start: 2020, end: 2025 }, ranges: [{ start: 2020, end: 2025 }], color: "wave-myofit", sortStart: 2020 }
 ];
 SUBSTUDY_DEFINITIONS.forEach(w => {
   w.label2 = ageLabelForRange(w.ageRange.start, w.ageRange.end);
@@ -94,7 +95,8 @@ const LEGEND_DOT_COLORS = {
   "wave-covid": "#BA7517"
 };
 const LEGEND_NAMES = {
-  insight46: "Insight46",
+  "insight46-1": "Insight46",
+  "insight46-2": "Insight46",
   myofit: "MyoFit",
   covid: "Covid"
 };
@@ -321,11 +323,15 @@ function buildWaveLegend() {
   covidItem.innerHTML = `<span class="legend-dot" style="background:${LEGEND_DOT_COLORS["wave-covid"]}"></span>Covid`;
   legend.appendChild(covidItem);
 
+  const seenNames = new Set();
   SUBSTUDY_DEFINITIONS.forEach(wave => {
-    const item = document.createElement("span");
-    item.className = "legend-item";
     const dotColor = LEGEND_DOT_COLORS[wave.color] || "#999";
     const name = LEGEND_NAMES[wave.id] || wave.id;
+    if (seenNames.has(name)) return; // e.g. insight46-1 / insight46-2 share one entry
+    seenNames.add(name);
+
+    const item = document.createElement("span");
+    item.className = "legend-item";
     item.innerHTML = `<span class="legend-dot" style="background:${dotColor}"></span>${name}`;
     legend.appendChild(item);
   });
