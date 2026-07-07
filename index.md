@@ -293,7 +293,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Data Dictionary search operates directly on the structured dataset, examining variable names, labels, descriptions, categories, and all metadata fields. It is the most powerful method for detailed variable-level exploration and works in combination with the filter panel for layered, precise narrowing of results.</p>
               <p>The search updates instantly as you type, making it especially valuable when working with large variable collections where manual browsing would be time-consuming.</p>
-              <a class="inner-link" href="/OWL/docs/search_methods/search_data_dictionary/">Go to Data Dictionary Search →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/data_dictionary/">Go to Data Dictionary Search →</a>
             </div>
           </div>
 
