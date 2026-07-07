@@ -22,7 +22,7 @@ classes: home-page
     </div>
     <div class="stat-divider"></div>
     <div class="stat-item">
-      <div class="stat-number">80 years</div>
+      <div class="stat-number">80+ years</div>
       <div class="stat-label">Data span</div>
     </div>
     <div class="stat-divider"></div>
