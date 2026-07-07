@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
   const SITE_BASEURL = "/OWL";
-  const DICT_URL     = `${SITE_BASEURL}/docs/data_dictionary/NSHD_Data_Dictionary_Public.json`;
+  const DICT_URL     = `${SITE_BASEURL}/docs/search_methods/data_dictionary/NSHD_Data_Dictionary_Public.json`;
   const SIDECAR_BASE = `${SITE_BASEURL}/assets/variable_metadata/`;
   const PAGE_SIZE    = 20;
 
