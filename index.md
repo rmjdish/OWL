@@ -281,7 +281,7 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>OWL gives you five different ways to find NSHD variables, each suited to a different kind of question — see the <a href="/OWL/docs/search_methods/search_overview.html">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
+        <p>OWL gives you five different ways to find NSHD variables, each suited to a different kind of question — see the <a href="/OWL/docs/search_methods/search_overview/">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
         <div class="inner-accordion">
 
           <div class="inner-item" id="search-dd">
