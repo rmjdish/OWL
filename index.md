@@ -332,7 +332,7 @@ classes: home-page
             <div class="inner-body">
               <p>Longitudinal Search finds only variables collected with <strong>identical question text and coding</strong> across two or more sweeps — grouped by Showcase Field ID, the same strict linkage standard used by the NSHD Showcase. This is a narrower, stricter set than OWL's general Linked &amp; Longitudinal feature, which connects variables for any reason even where coding changed between sweeps.</p>
               <p>Each result expands into a sweep-by-sweep view: a trajectory chart — a line with a min–max band for continuous variables, or a stacked bar showing the full response distribution for categorical variables — plus a detail table with year, age, and summary statistics for every sweep. Variables can be added to the basket individually per sweep or all at once.</p>
-              <a class="inner-link" href="/OWL/docs/search_methods/longitudinal_variables/about_longitudinal_search.html">Go to Longitudinal Search →</a>
+              <a class="inner-link" href="/OWL//docs/search_methods/longitudinal_variables/longitudinal_search_guide/">Go to Longitudinal Search →</a>
             </div>
           </div>
 
