@@ -319,7 +319,7 @@ classes: home-page
             <div class="inner-body">
               <p>The Popular Variables tool highlights variables added to baskets most often across recent projects, offering insight into which measures are widely used or considered essential within the research community.</p>
               <p>The table includes counts, labels, and direct links to metadata pages, and can be sorted and filtered to focus on specific areas of interest.</p>
-              <a class="inner-link" href="/OWL/docs/search_methods/popular_vars/popular_variables/popular-variables.html">Go to Popular Variables →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/popular_vars/popular-variables.html">Go to Popular Variables →</a>
             </div>
           </div>
 
