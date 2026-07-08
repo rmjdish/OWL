@@ -32,6 +32,13 @@ function categorizeRow(row) {
   const val = normalizeForMatch(row[IDENTIFY_FIELD]);
   if (WOMENS_HEALTH_KEYWORDS.some(k => val.includes(normalizeForMatch(k)))) return "wh";
   if (COVID_KEYWORDS.some(k => val.includes(normalizeForMatch(k)))) return "covid";
+
+  // Some Covid variables sit outside the "Specialist questionnaire" subtopic
+  // and so don't match on Subtopic 1 — but they do carry "Covid" in Form,
+  // so check that too before falling back to general.
+  const formVal = normalizeForMatch(row[FORM_FIELD]);
+  if (COVID_KEYWORDS.some(k => formVal.includes(normalizeForMatch(k)))) return "covid";
+
   return "gen";
 }
 
