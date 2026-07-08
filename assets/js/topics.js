@@ -150,23 +150,23 @@ document.addEventListener('DOMContentLoaded', function () {
      genuine variable-code cells are always plain text with no
      existing <a> tag.
      ============================================================ */
-  (function linkVariableCodes() {
-    const baseUrl = 'https://rmjdish.github.io/OWL/assets/variable_metadata/';
-    const cells = document.querySelectorAll('.topic-table tbody td');
-
-    cells.forEach(function (cell) {
-      if (cell.querySelector('a')) return;
-
-      const text = cell.textContent.trim();
-      if (/^[a-zA-Z0-9]+$/.test(text)) {
-        const link = document.createElement('a');
-        link.href = baseUrl + text.toLowerCase();
-        link.textContent = text;
-        cell.innerHTML = '';
-        cell.appendChild(link);
-      }
-    });
-  })();
+(function linkVariableCodes() {
+  const baseUrl = 'https://rmjdish.github.io/OWL/assets/variable_metadata/';
+  const cells = document.querySelectorAll('.topic-table tbody td');
+  cells.forEach(function (cell) {
+    if (cell.querySelector('a')) return;
+    const text = cell.textContent.trim();
+    if (/^[a-zA-Z0-9]+$/.test(text)) {
+      const link = document.createElement('a');
+      link.href = baseUrl + text.toLowerCase();
+      link.textContent = text;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      cell.innerHTML = '';
+      cell.appendChild(link);
+    }
+  });
+})();
 
   /* ============================================================
      Description column alignment
