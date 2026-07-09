@@ -228,7 +228,7 @@ window.addEventListener("load", function () {
     updateBasketLimitWarning();
   }
 
-  // ── Lazy-load ExcelJS from CDN, only when a download is requested ──
+  // ── Lazy-load ExcelJS from CDN, only when a download or upload is requested ──
   function loadExcelJS() {
     if (window.ExcelJS) return Promise.resolve(window.ExcelJS);
     if (exceljsLoadPromise) return exceljsLoadPromise;
@@ -488,6 +488,357 @@ window.addEventListener("load", function () {
         downloadBtn.textContent = originalBtnText;
       }
     }
+  }
+
+  // ================================================================
+  // ── UPLOAD BASKET ────────────────────────────────────────────────
+  // Restore a previous basket from either:
+  //  (a) a basket file downloaded earlier from OWL (the full Data
+  //      Dictionary .xlsx, with "Request variable" = Y for saved items), or
+  //  (b) a plain CSV with NSHD Variable Name (+ optional label) columns.
+  // Auto-detected by file extension and by whether a "Request variable"
+  // column is present. Nothing is written to the basket until the user
+  // reviews the preview list and clicks "Confirm & Add to Basket".
+  // OWL itself has no hard basket-size limit — unlike downloadBasketCSV(),
+  // this only *warns* if the resulting basket would exceed Condor's
+  // 500-variable upload limit; it never blocks adding here.
+  // ================================================================
+
+  const CONDOR_BASKET_LIMIT = 500;
+  const NAME_COL = "nshd variable name";
+  const REQUEST_COL = "request variable";
+  const LABEL_COL_CANDIDATES = ["variable label", "variable_label", "label"];
+
+  let uploadParsedItems = []; // { name, label, isNew }
+
+  function normCell(v) {
+    return (v === null || v === undefined) ? "" : String(v).trim();
+  }
+
+  function findColIndex(headerRow, targetLower) {
+    for (let i = 0; i < headerRow.length; i++) {
+      if (normCell(headerRow[i]).toLowerCase() === targetLower) return i;
+    }
+    return -1;
+  }
+
+  function findFirstColIndex(headerRow, candidatesLower) {
+    for (const c of candidatesLower) {
+      const idx = findColIndex(headerRow, c);
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  }
+
+  function showUploadProgress(pct, label, indeterminate) {
+    const container = document.getElementById("uploadProgressContainer");
+    const fill = document.getElementById("uploadProgressFill");
+    const labelEl = document.getElementById("uploadProgressLabel");
+    container.style.display = "block";
+    labelEl.style.display = "block";
+    labelEl.textContent = label;
+    if (indeterminate) {
+      fill.classList.add("indeterminate");
+      fill.textContent = "";
+    } else {
+      fill.classList.remove("indeterminate");
+      fill.style.width = pct + "%";
+      fill.textContent = pct + "%";
+    }
+  }
+
+  function hideUploadProgress() {
+    document.getElementById("uploadProgressContainer").style.display = "none";
+    document.getElementById("uploadProgressLabel").style.display = "none";
+    const fill = document.getElementById("uploadProgressFill");
+    fill.classList.remove("indeterminate");
+    fill.style.width = "0%";
+    fill.textContent = "0%";
+  }
+
+  function resetUploadPanel() {
+    document.getElementById("uploadStatus").textContent = "";
+    document.getElementById("uploadMissingNameBox").style.display = "none";
+    document.getElementById("uploadInvalidValueBox").style.display = "none";
+    document.getElementById("uploadDuplicateBox").style.display = "none";
+    document.getElementById("uploadLimitWarningBox").style.display = "none";
+    document.getElementById("uploadPreview").style.display = "none";
+    document.getElementById("uploadDone").innerHTML = "";
+  }
+
+  function closeUploadPanel() {
+    document.getElementById("uploadBasketPanel").style.display = "none";
+    const fileInput = document.getElementById("uploadBasketFile");
+    if (fileInput) fileInput.value = "";
+    uploadParsedItems = [];
+    resetUploadPanel();
+    hideUploadProgress();
+  }
+
+  function handleUploadFile(file, uploadBtn) {
+    resetUploadPanel();
+    document.getElementById("uploadBasketPanel").style.display = "block";
+    uploadBtn.disabled = true;
+    showUploadProgress(0, "Reading file... 0%", false);
+
+    const isCsv = /\.csv$/i.test(file.name);
+    const reader = new FileReader();
+
+    reader.onprogress = function (e) {
+      if (e.lengthComputable) {
+        const pct = Math.round((e.loaded / e.total) * 100);
+        showUploadProgress(pct, "Reading file... " + pct + "%", false);
+      }
+    };
+
+    reader.onerror = function () {
+      hideUploadProgress();
+      document.getElementById("uploadStatus").textContent = "Could not read the file.";
+      uploadBtn.disabled = false;
+    };
+
+    reader.onload = function (e) {
+      showUploadProgress(100, "Parsing file, please wait...", true);
+      setTimeout(function () {
+        if (isCsv) {
+          parseUploadCsv(e.target.result, uploadBtn);
+        } else {
+          parseUploadXlsx(e.target.result, uploadBtn);
+        }
+      }, 30);
+    };
+
+    if (isCsv) {
+      reader.readAsText(file);
+    } else {
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  function parseUploadCsv(text, uploadBtn) {
+    const rows = text.split(/\r?\n/)
+      .filter(l => l.trim() !== "")
+      .map(l => l.split(",").map(c => c.replace(/^"|"$/g, "").trim()));
+    processUploadRows(rows, uploadBtn);
+  }
+
+  async function parseUploadXlsx(arrayBuffer, uploadBtn) {
+    function fail(msg) {
+      hideUploadProgress();
+      document.getElementById("uploadStatus").textContent = msg;
+      uploadBtn.disabled = false;
+    }
+
+    let ExcelJS;
+    try {
+      ExcelJS = await loadExcelJS();
+    } catch (err) {
+      fail("Could not load the spreadsheet reader. Check your connection and try again.");
+      return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    try {
+      await workbook.xlsx.load(arrayBuffer);
+    } catch (err) {
+      fail("Could not parse this file as a spreadsheet.");
+      return;
+    }
+
+    const sheet = workbook.getWorksheet("Data_dictionary") || workbook.worksheets[0];
+    if (!sheet) {
+      fail("No sheet found in this spreadsheet.");
+      return;
+    }
+
+    const rows = [];
+    sheet.eachRow({ includeEmpty: false }, function (row) {
+      const values = row.values.slice(1); // ExcelJS rows are 1-indexed; drop the leading undefined
+      rows.push(values.map(function (v) {
+        if (v === null || v === undefined) return "";
+        if (typeof v === "object" && v.text !== undefined) return v.text; // rich text cells
+        return v;
+      }));
+    });
+
+    if (rows.length < 2) {
+      fail("No data rows found in the spreadsheet.");
+      return;
+    }
+
+    processUploadRows(rows, uploadBtn);
+  }
+
+  function processUploadRows(rows, uploadBtn) {
+    function fail(msg) {
+      hideUploadProgress();
+      document.getElementById("uploadStatus").textContent = msg;
+      uploadBtn.disabled = false;
+    }
+
+    const headerRow = rows[0];
+    const nameIdx = findColIndex(headerRow, NAME_COL);
+    const labelIdx = findFirstColIndex(headerRow, LABEL_COL_CANDIDATES);
+    const reqIdx = findColIndex(headerRow, REQUEST_COL);
+
+    if (nameIdx === -1) {
+      fail('Could not find a "NSHD Variable Name" column. Check the column headers in the file.');
+      return;
+    }
+
+    const requireY = reqIdx !== -1;
+    const existingBasket = loadBasket();
+    const existingSet = new Set(existingBasket.map(item => item.varName));
+
+    uploadParsedItems = [];
+    let previewRows = "";
+    const invalidRequestValues = [];
+    const missingNameRows = [];
+    const duplicateNames = [];
+    const seen = new Set();
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i] || [];
+      const name = normCell(row[nameIdx]);
+      const reqVal = requireY ? normCell(row[reqIdx]) : "";
+
+      if (requireY) {
+        if (reqVal === "") continue; // not requested, skip silently
+        if (reqVal !== "Y") {
+          invalidRequestValues.push({ row: i + 1, name: name, value: reqVal });
+          continue;
+        }
+        if (name === "") {
+          missingNameRows.push(i + 1);
+          continue;
+        }
+      } else {
+        if (name === "") continue; // blank row in a plain basket file, skip silently
+      }
+
+      if (seen.has(name)) {
+        duplicateNames.push(name);
+        continue;
+      }
+      seen.add(name);
+
+      const label = labelIdx !== -1 ? normCell(row[labelIdx]) : "";
+      const isNew = !existingSet.has(name);
+      uploadParsedItems.push({ name: name, label: label, isNew: isNew });
+
+      previewRows += "<tr><td>" + uploadParsedItems.length + "</td><td>" + name + "</td><td>" + label + "</td>" +
+        '<td class="' + (isNew ? 'status-new">New' : 'status-existing">Already in basket') + "</td></tr>";
+    }
+
+    if (missingNameRows.length > 0) {
+      document.getElementById("uploadMissingNameSummary").textContent =
+        missingNameRows.length + " row(s) marked Y have no NSHD Variable Name (skipped):";
+      document.getElementById("uploadMissingNameDetail").textContent =
+        "Rows: " + missingNameRows.slice(0, 50).join(", ") +
+        (missingNameRows.length > 50 ? ", ...and " + (missingNameRows.length - 50) + " more" : "");
+      document.getElementById("uploadMissingNameBox").style.display = "block";
+    }
+
+    if (invalidRequestValues.length > 0) {
+      document.getElementById("uploadInvalidValueSummary").textContent =
+        invalidRequestValues.length + ' variable(s) have something other than Y in "Request variable" (skipped):';
+      const list = invalidRequestValues.slice(0, 50).map(function (r) {
+        return (r.name !== "" ? r.name : "row " + r.row + " (no name)") + " \u2192 \"" + r.value + "\"";
+      });
+      document.getElementById("uploadInvalidValueDetail").textContent =
+        list.join(", ") + (invalidRequestValues.length > 50 ? ", ...and " + (invalidRequestValues.length - 50) + " more" : "");
+      document.getElementById("uploadInvalidValueBox").style.display = "block";
+    }
+
+    if (duplicateNames.length > 0) {
+      document.getElementById("uploadDuplicateSummary").textContent =
+        duplicateNames.length + " duplicate variable name(s) in the file were skipped after the first occurrence:";
+      document.getElementById("uploadDuplicateDetail").textContent =
+        duplicateNames.slice(0, 50).join(", ") +
+        (duplicateNames.length > 50 ? ", ...and " + (duplicateNames.length - 50) + " more" : "");
+      document.getElementById("uploadDuplicateBox").style.display = "block";
+    }
+
+    hideUploadProgress();
+    uploadBtn.disabled = false;
+
+    if (uploadParsedItems.length === 0) {
+      document.getElementById("uploadStatus").textContent = requireY
+        ? 'No valid rows marked "Y" with a variable name were found.'
+        : "No variable names were found in this file.";
+      return;
+    }
+
+    const newCount = uploadParsedItems.filter(v => v.isNew).length;
+    const projectedTotal = existingBasket.length + newCount;
+
+    // Non-blocking: OWL itself has no hard basket-size limit. This is
+    // purely a heads-up that Condor will reject anything over 500 when
+    // this basket is eventually uploaded there.
+    if (projectedTotal > CONDOR_BASKET_LIMIT) {
+      document.getElementById("uploadLimitSummary").textContent =
+        "Heads up: adding these would bring your basket to " + projectedTotal + " variables.";
+      document.getElementById("uploadLimitDetail").textContent =
+        "That's fine here on OWL, but Condor only accepts baskets of " + CONDOR_BASKET_LIMIT +
+        " variables or fewer per upload. You can still add these now, and split the basket into batches of " +
+        CONDOR_BASKET_LIMIT + " when you come to upload it to Condor.";
+      document.getElementById("uploadLimitWarningBox").style.display = "block";
+    }
+
+    document.getElementById("uploadVarCount").textContent = uploadParsedItems.length;
+    document.getElementById("uploadNewCount").textContent = newCount;
+    document.getElementById("uploadAlreadyCount").textContent = uploadParsedItems.length - newCount;
+    document.getElementById("uploadCurrentCount").textContent = existingBasket.length;
+    document.getElementById("uploadPreviewBody").innerHTML = previewRows;
+    document.getElementById("uploadPreview").style.display = "block";
+  }
+
+  const uploadBtn = document.getElementById("uploadBasketBtn");
+  const uploadFileInput = document.getElementById("uploadBasketFile");
+
+  if (uploadBtn && uploadFileInput) {
+    uploadBtn.addEventListener("click", function () {
+      document.getElementById("uploadBasketPanel").style.display = "block";
+      resetUploadPanel();
+      uploadFileInput.click();
+    });
+
+    uploadFileInput.addEventListener("change", function () {
+      if (uploadFileInput.files[0]) {
+        handleUploadFile(uploadFileInput.files[0], uploadBtn);
+      }
+    });
+  }
+
+  const confirmUploadBtn = document.getElementById("confirmUploadBtn");
+  if (confirmUploadBtn) {
+    confirmUploadBtn.addEventListener("click", function () {
+      if (uploadParsedItems.length === 0) return;
+
+      const items = uploadParsedItems.map(v => ({ varName: v.name, label: v.label }));
+      batchAddToBasket(items); // single localStorage read+write, defined in basket_header.js
+
+      const newCount = uploadParsedItems.filter(v => v.isNew).length;
+      document.getElementById("uploadPreview").style.display = "none";
+      document.getElementById("uploadDone").innerHTML =
+        "<b>" + newCount + " new variable(s) added to your basket.</b> Your basket now has " +
+        loadBasket().length + " variable(s).";
+
+      uploadParsedItems = [];
+      if (uploadFileInput) uploadFileInput.value = "";
+
+      basketPage = 1;
+      renderBasket();
+      renderBasketPagination();
+      updateBasketResultsCount();
+      updateBasketCountUI();
+      updateBasketLimitWarning();
+    });
+  }
+
+  const cancelUploadBtn = document.getElementById("cancelUploadBtn");
+  if (cancelUploadBtn) {
+    cancelUploadBtn.addEventListener("click", closeUploadPanel);
   }
 
   document.getElementById("clearBasketBtn").addEventListener("click", clearBasket);
