@@ -81,10 +81,10 @@ classes: home-page
   <div class="sections-accordion">
 
     <!-- ABOUT -->
-    <div class="sec-row" id="sec-about" style="border-left:4px solid #6a0dad;border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-about">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">📘</span>
-        <span class="sec-title" style="color:#6a0dad;">About This Resource</span>
+        <span class="sec-title">About This Resource</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -100,10 +100,10 @@ classes: home-page
     </div>
 
     <!-- GETTING STARTED -->
-    <div class="sec-row" id="sec-getting-started" style="border-left:4px solid hsl(180,45%,45%);border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-getting-started">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
-        <span class="sec-title" style="color:hsl(180,45%,18%);">Getting Started</span>
+        <span class="sec-title">Getting Started</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -186,10 +186,10 @@ classes: home-page
     </div>
 
     <!-- COVERAGE -->
-    <div class="sec-row" id="sec-coverage" style="border-left:4px solid hsl(125,35%,45%);border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-coverage">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">📊</span>
-        <span class="sec-title" style="color:hsl(125,35%,18%);">Data Coverage</span>
+        <span class="sec-title">Data Coverage</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -199,10 +199,10 @@ classes: home-page
     </div>
 
     <!-- STUDY TIMELINE -->
-    <div class="sec-row" id="sec-timeline" style="border-left:4px solid hsl(190,45%,45%);border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-timeline">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🕰️</span>
-        <span class="sec-title" style="color:hsl(190,45%,18%);">Study Timeline</span>
+        <span class="sec-title">Study Timeline</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -212,10 +212,10 @@ classes: home-page
     </div>
 
     <!-- ACCESSING NSHD DATA -->
-    <div class="sec-row" id="sec-data-access" style="border-left:4px solid hsl(210,45%,45%);border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-data-access">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon"><i class="ti ti-database-share" aria-hidden="true"></i></span>
-        <span class="sec-title" style="color:hsl(210,45%,18%);">Accessing NSHD Data</span>
+        <span class="sec-title">Accessing NSHD Data</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -274,10 +274,10 @@ classes: home-page
     </div>
 
     <!-- SEARCH METHODS -->
-    <div class="sec-row" id="sec-search" style="border-left:4px solid hsl(35,60%,45%);border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-search">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🔍</span>
-        <span class="sec-title" style="color:hsl(35,60%,18%);">Search Methods</span>
+        <span class="sec-title">Search Methods</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -333,7 +333,7 @@ classes: home-page
             <div class="inner-body">
               <p>Longitudinal Search finds only variables collected with <strong>identical question text and coding</strong> across two or more sweeps — grouped by Showcase Field ID, the same strict linkage standard used by the NSHD Showcase. This is a narrower, stricter set than OWL's general Linked &amp; Longitudinal feature, which connects variables for any reason even where coding changed between sweeps.</p>
               <p>Each result expands into a sweep-by-sweep view: a trajectory chart — a line with a min–max band for continuous variables, or a stacked bar showing the full response distribution for categorical variables — plus a detail table with year, age, and summary statistics for every sweep. Variables can be added to the basket individually per sweep or all at once.</p>
-              <a class="inner-link" href="/OWL//docs/search_methods/longitudinal_variables/longitudinal_search_guide/">Go to Longitudinal Search →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/longitudinal_variables/longitudinal_search_guide/">Go to Longitudinal Search →</a>
             </div>
           </div>
 
@@ -367,10 +367,10 @@ classes: home-page
     </div>
 
     <!-- EXPLORE DOCUMENTATION -->
-    <div class="sec-row" id="sec-explore" style="border-left:4px solid hsl(340,45%,50%);border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-explore">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🧭</span>
-        <span class="sec-title" style="color:hsl(340,45%,20%);">Explore Documentation</span>
+        <span class="sec-title">Explore Documentation</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
@@ -407,10 +407,10 @@ classes: home-page
     </div>
 
     <!-- ACCESS -->
-    <div class="sec-row" id="sec-access" style="border-left:4px solid hsl(270,35%,45%);border-radius:0 6px 6px 0;">
+    <div class="sec-row" id="sec-access">
       <button class="sec-trigger" aria-expanded="false">
         <span class="sec-icon">🔐</span>
-        <span class="sec-title" style="color:hsl(270,35%,20%);">Access &amp; Permissions</span>
+        <span class="sec-title">Access &amp; Permissions</span>
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
