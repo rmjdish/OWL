@@ -103,6 +103,16 @@ window.addEventListener("load", function () {
     });
   }
 
+  // ── Toggles the "over 500 variables" banner on the basket page ─────
+  // Called any time the basket's contents might have changed, so the
+  // warning stays in sync with the actual count at all times.
+  function updateBasketLimitWarning() {
+    const basket = loadBasket();
+    const warningEl = document.getElementById("basketLimitWarning");
+    if (!warningEl) return;
+    warningEl.classList.toggle("show", basket.length > 500);
+  }
+
   function updateBasketResultsCount() {
     const basket = loadBasket();
     const total = basket.length;
@@ -144,6 +154,8 @@ window.addEventListener("load", function () {
 
     tbody.innerHTML = "";
     countEl.textContent = basket.length;
+
+    updateBasketLimitWarning();
 
     const start = (basketPage - 1) * basketPageSize;
     const end = start + basketPageSize;
@@ -213,6 +225,7 @@ window.addEventListener("load", function () {
     renderBasketPagination();
     updateBasketResultsCount();
     updateBasketCountUI();
+    updateBasketLimitWarning();
   }
 
   // ── Lazy-load ExcelJS from CDN, only when a download is requested ──
@@ -310,6 +323,20 @@ window.addEventListener("load", function () {
     if (!basket.length) {
       alert("Basket is empty");
       return;
+    }
+
+    // ── Reminder at the point of download: Condor only accepts 500 ──
+    // ── variables per upload, so anything over that must be split  ──
+    // ── into batches manually after this file downloads. Shown as  ──
+    // ── a confirm() so the user can back out and trim the basket   ──
+    // ── first instead, if they'd rather do that before downloading.──
+    if (basket.length > 500) {
+      const proceed = confirm(
+        `Your basket has ${basket.length} variables. Condor only accepts uploads of 500 variables or fewer at a time.\n\n` +
+        `After this downloads, split it into groups of 500 (or fewer) before uploading each group to Condor separately. ` +
+        `Continue with the download?`
+      );
+      if (!proceed) return;
     }
 
     const suggestedName = "NSHD_Data_Dictionary_Saved.xlsx";
@@ -489,5 +516,6 @@ window.addEventListener("load", function () {
   });
 
   renderBasket();
+  updateBasketLimitWarning();
 
 });
