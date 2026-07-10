@@ -72,6 +72,7 @@ classes: home-page
       <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore">🧭 Explore Documentation</a></li>
       <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest">NSHD Questionnaires</a></li>
       <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics">Topics</a></li>
+      <li class="sb-sub"><a href="#doc-documentation" data-sec="sec-explore" data-inner="doc-documentation">Documentation</a></li>
 
       <li><a href="#sec-access" data-sec="sec-access">🔐 Access &amp; Permissions</a></li>
     </ul>
@@ -399,6 +400,19 @@ classes: home-page
               <p>Browse the study's subject areas grouped thematically — physical health, mental wellbeing, cognition, lifestyle, and more. Each topic page sets out what was measured, how it was asked about, and which sweeps it was collected at, giving you an overview of a subject's coverage across the cohort's history before you go looking for individual variables.</p>
               <p>Many topics, like respiratory or cardiovascular health, span several decades of the study, and the topic pages show how the same construct was tracked as study members aged, including any changes in instrument or measurement along the way. This is the natural starting point if you're approaching the data conceptually, rather than by date or variable name.</p>
               <a class="inner-link" href="https://rmjdish.github.io/OWL/docs/topics/">Go to Topics →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="doc-documentation">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon">📝</span>
+              <span class="inner-title">Documentation</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Data notes, cleaning records, and other write-ups that explain how a variable or dataset was actually built — a bug fix, a derivation, a correction — rather than what it measures, which is what Topics and Questionnaires cover instead. Split into variable-level documentation (topsheets and notes about a single variable) and dataset-level documentation (longer write-ups covering a whole derived dataset or a measure repeated across many sweeps).</p>
+              <p>Every document is automatically checked against the data dictionary, so if it names real variables you'll see them listed on the page — high-confidence matches with a checkbox ready to tick, lower-confidence ones flagged separately for a second look — and can add them straight to your basket without leaving the page.</p>
+              <a class="inner-link" href="/OWL/docs/documentation/">Go to Documentation →</a>
             </div>
           </div>
 
