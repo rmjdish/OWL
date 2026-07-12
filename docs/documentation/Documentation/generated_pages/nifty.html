@@ -22,7 +22,7 @@ permalink: /docs/documentation/nifty/
     <ul>
       <li><a href="#document-details"><i class="ti ti-list-details" aria-hidden="true"></i> Document details</a></li><li><a href="#methods"><i class="ti ti-file-text" aria-hidden="true"></i> Methods</a></li><li><a href="#image-processing"><i class="ti ti-notes" aria-hidden="true"></i> Image Processing</a></li><li><a href="#statistical-analysis"><i class="ti ti-bookmark" aria-hidden="true"></i> Statistical analysis</a></li><li><a href="#table-composite-region-centiloid-cl-equations-and-cutpoints"><i class="ti ti-list-details" aria-hidden="true"></i> Table. Composite region Centiloid (CL) equations and cutpoints:</a></li><li><a href="#references"><i class="ti ti-clipboard-text" aria-hidden="true"></i> References</a></li><li><a href="#variables"><i class="ti ti-list-check" aria-hidden="true"></i> Variables in this document</a></li>
     </ul>
-    <a href="/OWL/docs/documentation/browse-documentation/" class="sidebar-back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back to Documentation</a>
+    <a href="/OWL/docs/documentation/" class="sidebar-back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back to Documentation</a>
   </div>
 
   <div class="home-section gs-card-blue" id="document-details"><h2><i class="ti ti-list-details" aria-hidden="true"></i> Document details</h2><details class="doc-details-box" open><summary>Document details <span class="doc-var-hint">(click to collapse)</span></summary><table class="doc-details-table"><tbody><tr><td>Categories of variables</td><td>Longitudinal regional amyloid-beta PET [18F]florbetapir SUVRs and amyloid-beta status for phase 1 and 2 Insight 46 scans.</td></tr><tr><td>Summary of work undertaken</td><td>Cleaning/derivation work undertaken in R (Rmarkdown script provided).  First, source data files were combined. Each source file contains regional SUVRs from a different methodology (different image reconstruction, reference region and partial volume correction).  For sessions that had no usable raw list-mode PET data, NiftyPET reconstruction with psudo-CT (pCT) was not possible. Therefore, in the 36 instances where there were acceptable console reconstructions but missing NiftyPET pCT SUVRs, we imputed NiftyPET pCT SUVR from the console SUVR using the prediction from linear regression based on the high correlation between console and NiftyPET pCT SUVRs in the whole cohort (R2 between 0.93 and 0.99 for all methods). Linear regression was used as some variables were too highly correlated to use multiple imputation.  Following imputation, positive or negative amyloid status was determined using a Gaussian-mixture modelling (see below).  Centiloid values were calculated (see below).  Final dataset was then ordered and exported in wide format.  See below for details of methodology.</td></tr><tr><td>Names of source variables</td><td>Each, source, file, contains, the, following, variables:, subject, session, session_date, exclude, frontal, parietal, precuneus, occipital, temporal, antmidcingulate, postcingulate, insula, hippocampus, thalamus, caudate, putamen, composite, cortical_gm, subcortical_gm, Separate, file, for, each, PET, reconstruction, reference, region, or, PVC, method</td></tr><tr><td>Output variables</td><td>See, data, dictionary, for, full, list, of, names, and, descriptions, in, order:, \\icarus\1946\Test_Data_and_Video_Files\Phase_2\Imaging, Data\, Phase2_Data_Freeze\PHASE2_AMYLOID_SUVR_STATUS_20220809-150732\Insight46_phase2_amyloid-PET_NiftyPET_regional_suvr_20220809-150732_DATADICTIONARY.csv</td></tr><tr><td>Papers using these variables</td><td>N/A</td></tr></tbody></table></details></div>
@@ -119,10 +119,7 @@ Markiewicz, Pawel J., et al. "NiftyPET: a high-throughput software platform for 
 .doc-var-table th { text-align: left; padding: 6px 10px; border-bottom: 2px solid rgba(0,0,0,0.15); }
 .doc-var-table td { padding: 5px 10px; border-bottom: 1px solid rgba(0,0,0,0.08); }
 .doc-var-table td:first-child { font-family: monospace; white-space: nowrap; }
-.doc-var-table td:first-child a { color: #1a4d7a; text-decoration: none; }
-.doc-var-table td:first-child a:hover { text-decoration: underline; }
 .doc-var-table td:last-child { text-align: center; }
-.doc-var-topic-row td { font-family: inherit; font-size: 12px; font-weight: 700; color: #444; background: rgba(0,0,0,0.035); padding: 5px 10px; border-bottom: 1px solid rgba(0,0,0,0.08); }
 .doc-var-checkbox { width: 16px; height: 16px; cursor: pointer; accent-color: #4CAF50; }
 .doc-var-done-msg { color: #27500A; font-weight: 600; margin: 10px 0; }
 </style>
@@ -135,21 +132,6 @@ Markiewicz, Pawel J., et al. "NiftyPET: a high-throughput software platform for 
 (function () {
   var data = JSON.parse(document.getElementById('docVariableData').textContent);
 
-  function tierItems(tier) {
-    return (data[tier] || []).map(function (v) { return { varName: v.variable, label: v.label }; });
-  }
-
-  function updateBulkButton(tier) {
-    var btn = document.querySelector('.doc-var-add-btn[data-tier="' + tier + '"]');
-    if (!btn) return;
-    var items = tierItems(tier);
-    var allIn = items.length > 0 && items.every(function (i) {
-      return typeof isInBasket === 'function' && isInBasket(i.varName);
-    });
-    btn.setAttribute('data-state', allIn ? 'remove' : 'add');
-    btn.textContent = allIn ? 'Remove all from basket' : 'Add all to basket';
-  }
-
   document.querySelectorAll('.doc-var-checkbox').forEach(function (box) {
     if (typeof isInBasket === 'function' && isInBasket(box.getAttribute('data-var'))) {
       box.checked = true;
@@ -157,36 +139,22 @@ Markiewicz, Pawel J., et al. "NiftyPET: a high-throughput software platform for 
     box.addEventListener('change', function () {
       var varName = box.getAttribute('data-var');
       var label = box.getAttribute('data-label');
-      var tier = box.getAttribute('data-tier');
       if (box.checked) { addToBasket(varName, label); }
       else { removeFromBasket(varName); }
-      if (tier) updateBulkButton(tier);
     });
   });
 
-  document.querySelectorAll('.doc-var-add-btn').forEach(function (btn) {
-    var tier = btn.getAttribute('data-tier');
-    updateBulkButton(tier);
-
-    btn.addEventListener('click', function () {
-      var items = tierItems(tier);
-      if (!items.length) return;
-      var removing = btn.getAttribute('data-state') === 'remove';
-
-      if (removing) {
-        items.forEach(function (i) { removeFromBasket(i.varName); });
-      } else {
-        batchAddToBasket(items);
+  window.addAllTier = function (tier) {
+    var items = (data[tier] || []).map(function (v) { return { varName: v.variable, label: v.label }; });
+    if (!items.length) return;
+    batchAddToBasket(items);
+    document.querySelectorAll('.doc-var-checkbox').forEach(function (box) {
+      if (items.some(function (i) { return i.varName === box.getAttribute('data-var'); })) {
+        box.checked = true;
       }
-
-      document.querySelectorAll('.doc-var-checkbox[data-tier="' + tier + '"]').forEach(function (box) {
-        box.checked = !removing;
-      });
-      document.getElementById('basketDoneMsg').textContent =
-        items.length + (removing ? ' variables removed from your basket.' : ' variables added to your basket.');
-      updateBulkButton(tier);
     });
-  });
+    document.getElementById('basketDoneMsg').textContent = items.length + ' variables added to your basket.';
+  };
 })();
 </script>
 
