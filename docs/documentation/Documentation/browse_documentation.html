@@ -1,0 +1,148 @@
+---
+layout: default
+title: Browse documentation
+parent: Documentation
+nav_order: 1
+permalink: /docs/documentation/browse-documentation/
+---
+
+<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/topics.css">
+<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/getting-started.css">
+
+<div class="page-topics page-questionnaire_by_year">
+
+  <div class="hero-banner">
+    <h1><i class="ti ti-compass" aria-hidden="true"></i> Browse documentation</h1>
+    <p>Every document that's been turned into a page, in one searchable list — topsheets, variable notes, multi-sweep documentation, and narrative data notes together. Search by title, topic, or variable category, or filter to one kind of document at a time.</p>
+  </div>
+
+  <div class="home-section gs-card-search" id="doc-search">
+    <div class="doc-search-controls">
+      <input type="search" id="docSearchInput" class="doc-search-input"
+             placeholder="Search by title, topic, or category…" autocomplete="off">
+      <select id="docTypeFilter" class="doc-search-select">
+        <option value="">All document types</option>
+        <option value="topsheet">Topsheets</option>
+        <option value="variable_note">Variable notes</option>
+        <option value="templated_variable_note">Templated variable notes</option>
+        <option value="narrative">Narrative / data notes</option>
+      </select>
+    </div>
+    <p id="docSearchCount" class="doc-search-count"></p>
+    <div id="docSearchResults" class="doc-search-results"></div>
+    <p id="docSearchEmpty" class="doc-search-empty" style="display:none;">No documents match your search.</p>
+    <p id="docSearchError" class="doc-search-empty" style="display:none;">Couldn't load the document index — try refreshing the page.</p>
+  </div>
+
+</div>
+
+<style>
+.doc-search-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+.doc-search-input { flex:1; min-width:220px; padding:9px 12px; font-size:14px; border:1px solid rgba(0,0,0,0.2); border-radius:6px; }
+.doc-search-select { padding:9px 12px; font-size:14px; border:1px solid rgba(0,0,0,0.2); border-radius:6px; background:#fff; }
+.doc-search-count { font-size:12.5px; color:#666; margin:6px 0 14px; }
+.doc-search-empty { font-size:14px; color:#666; font-style:italic; padding:20px 0; }
+.doc-search-results { display:flex; flex-direction:column; gap:8px; }
+.doc-result-card { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border:1px solid rgba(0,0,0,0.1); border-radius:7px; background:#fff; text-decoration:none; transition:border-color .15s, box-shadow .15s; }
+.doc-result-card:hover { border-color:hsl(180 45% 55%); box-shadow:0 1px 6px rgba(0,0,0,0.08); }
+.doc-result-icon { font-size:18px; color:hsl(180 45% 30%); margin-top:2px; flex-shrink:0; }
+.doc-result-body { flex:1; min-width:0; }
+.doc-result-title { font-size:14px; font-weight:600; color:#1a1a1a; margin:0 0 3px; }
+.doc-result-meta { font-size:12px; color:#666; display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; }
+.doc-result-type { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+.doc-type-topsheet { background:hsl(125 35% 90%); color:hsl(125 35% 18%); }
+.doc-type-variable_note { background:hsl(210 45% 92%); color:hsl(210 45% 22%); }
+.doc-type-templated_variable_note { background:hsl(270 40% 92%); color:hsl(270 40% 24%); }
+.doc-type-narrative { background:hsl(35 60% 90%); color:hsl(35 60% 20%); }
+.doc-result-counts { display:flex; gap:5px; }
+.doc-count-badge { font-size:10.5px; font-weight:600; padding:1px 6px; border-radius:8px; }
+.doc-count-high { background:hsl(125 35% 90%); color:hsl(125 35% 18%); }
+.doc-count-medium { background:hsl(210 45% 92%); color:hsl(210 45% 22%); }
+.doc-count-low { background:hsl(35 60% 90%); color:hsl(35 60% 20%); }
+</style>
+
+<script>
+(function () {
+  var DOC_TYPE_LABELS = {
+    topsheet: 'Topsheet',
+    variable_note: 'Variable note',
+    templated_variable_note: 'Templated variable note',
+    narrative: 'Narrative / data note',
+  };
+  var DOC_TYPE_ICONS = {
+    topsheet: 'ti-table',
+    variable_note: 'ti-file-text',
+    templated_variable_note: 'ti-repeat',
+    narrative: 'ti-align-left',
+  };
+
+  var allDocs = [];
+  var input = document.getElementById('docSearchInput');
+  var typeFilter = document.getElementById('docTypeFilter');
+  var resultsEl = document.getElementById('docSearchResults');
+  var countEl = document.getElementById('docSearchCount');
+  var emptyEl = document.getElementById('docSearchEmpty');
+  var errorEl = document.getElementById('docSearchError');
+
+  function countBadges(doc) {
+    var parts = [];
+    if (doc.high) parts.push('<span class="doc-count-badge doc-count-high">' + doc.high + ' high</span>');
+    if (doc.medium) parts.push('<span class="doc-count-badge doc-count-medium">' + doc.medium + ' medium</span>');
+    if (doc.low) parts.push('<span class="doc-count-badge doc-count-low">' + doc.low + ' low</span>');
+    return parts.join('');
+  }
+
+  function renderCard(doc) {
+    var typeLabel = DOC_TYPE_LABELS[doc.doc_type] || doc.doc_type;
+    var typeIcon = DOC_TYPE_ICONS[doc.doc_type] || 'ti-file-description';
+    var metaParts = [
+      '<span class="doc-result-type doc-type-' + doc.doc_type + '">' + typeLabel + '</span>',
+    ];
+    if (doc.topic) metaParts.push('<span>' + doc.topic.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</span>');
+    metaParts.push('<span class="doc-result-counts">' + countBadges(doc) + '</span>');
+
+    return (
+      '<a class="doc-result-card" href="' + doc.permalink + '">' +
+      '<i class="ti ' + typeIcon + ' doc-result-icon" aria-hidden="true"></i>' +
+      '<div class="doc-result-body">' +
+      '<p class="doc-result-title">' + doc.title.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>' +
+      '<div class="doc-result-meta">' + metaParts.join('') + '</div>' +
+      '</div>' +
+      '</a>'
+    );
+  }
+
+  function render() {
+    var query = input.value.trim().toLowerCase();
+    var typeVal = typeFilter.value;
+
+    var filtered = allDocs.filter(function (doc) {
+      if (typeVal && doc.doc_type !== typeVal) return false;
+      if (!query) return true;
+      var haystack = (doc.title + ' ' + doc.topic + ' ' + doc.categories + ' ' + doc.doc_id).toLowerCase();
+      return haystack.indexOf(query) !== -1;
+    });
+
+    countEl.textContent = filtered.length + (filtered.length === 1 ? ' document' : ' documents');
+    resultsEl.innerHTML = filtered.map(renderCard).join('');
+    emptyEl.style.display = filtered.length === 0 ? 'block' : 'none';
+  }
+
+  fetch('{{ site.baseurl }}/assets/data/search_index.json')
+    .then(function (res) {
+      if (!res.ok) throw new Error('failed to load search index');
+      return res.json();
+    })
+    .then(function (data) {
+      allDocs = data;
+      render();
+    })
+    .catch(function () {
+      errorEl.style.display = 'block';
+      countEl.textContent = '';
+    });
+
+  input.addEventListener('input', render);
+  typeFilter.addEventListener('change', render);
+})();
+</script>
