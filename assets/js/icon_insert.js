@@ -39,7 +39,7 @@
 	"study timeline":				"ti-hourglass",
 	"search by year":				"ti-calendar",
 	"search overview":				"ti-search",
-	"explore documentation":		"ti-versions",
+	"browse documentation":		"ti-versions",
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
