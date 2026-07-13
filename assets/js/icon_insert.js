@@ -40,7 +40,7 @@
 	"search by year":				"ti-calendar",
 	"search overview":				"ti-search",
 	"browse documentation":		"ti-versions",
-    "search documentation":		"ti-compass",
+    "documentation search":		"ti-compass",
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
