@@ -35,11 +35,6 @@
 (function () {
   var INDEX_URL = '/OWL/assets/data/variable_documents_index.json';
   var LINK_PATTERN = /\/assets\/variable_metadata\/([^/?#]+)\.html/;
-  var ICON_SVG =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" ' +
-    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-    '<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>' +
-    '<polyline points="13 2 13 9 20 9"></polyline></svg>';
 
   function extractVarName(href) {
     var m = href.match(LINK_PATTERN);
@@ -64,7 +59,7 @@
     var icon = document.createElement('a');
     icon.className = 'var-doc-icon';
     icon.title = 'View documentation';
-    icon.innerHTML = ICON_SVG;
+    icon.innerHTML = '<i class="ti ti-info-circle" aria-hidden="true"></i>';
 
     if (entries.length === 1) {
       icon.href = entries[0].permalink;
@@ -132,7 +127,30 @@
   function run() {
     fetch(INDEX_URL)
       .then(function (res) { return res.ok ? res.json() : {}; })
-      .then(decorate)
+      .then(function (index) {
+        // Several of the pages this needs to run on (Search Data
+        // Dictionary, Search by Year, Popular Variables, Browse by
+        // Category, Longitudinal Variables) show a loading spinner and
+        // build their results table with their own JS *after* the page
+        // has already loaded — the table is still empty at the moment
+        // this script's first pass would run. A single scan on page
+        // load finds nothing on those pages and never looks again.
+        //
+        // A MutationObserver re-runs decorate() every time new content
+        // is added anywhere on the page — including every later page of
+        // results after clicking pagination — so newly-rendered rows get
+        // picked up regardless of when or how many times a page
+        // re-renders its table. decorate() is safe to call repeatedly:
+        // it already skips any link that's already been given an icon.
+        decorate(index);
+
+        var debounceTimer = null;
+        var observer = new MutationObserver(function () {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(function () { decorate(index); }, 150);
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+      })
       .catch(function () {
         // Index not available yet, or a network hiccup — fail silently,
         // the page works exactly as it did before this existed.
