@@ -94,8 +94,32 @@
     return wrap;
   }
 
+  function ensureLegend() {
+    // Injected automatically rather than hand-added to each page's own
+    // template — these results tables are generated per-category (one
+    // file per node in the topic hierarchy, potentially hundreds of
+    // them) or built entirely by each page's own JS, so a hand-edited
+    // snippet would need to be repeated everywhere and re-added to every
+    // future page. The .hero-banner element is the one consistent,
+    // static anchor present across every page type this needs to run
+    // on. Only shown once per page, and only once at least one icon has
+    // actually been added — no point explaining an icon that isn't
+    // there.
+    if (document.querySelector('.var-doc-legend')) return;
+    var heroBanner = document.querySelector('.hero-banner');
+    if (!heroBanner) return;
+    var legend = document.createElement('div');
+    legend.className = 'var-doc-legend';
+    legend.innerHTML =
+      '<i class="ti ti-info-circle" aria-hidden="true"></i>' +
+      '<span>A small <strong>\u24d8</strong> next to a variable name means documentation exists for it ' +
+      '\u2014 hover to check, click to view it.</span>';
+    heroBanner.insertAdjacentElement('afterend', legend);
+  }
+
   function decorate(index) {
     var handled = new WeakSet();
+    var addedAny = false;
     document.querySelectorAll('a[href*="/assets/variable_metadata/"]').forEach(function (link) {
       if (handled.has(link)) return;
       handled.add(link);
@@ -107,6 +131,7 @@
       // Don't double up if this ever runs twice on the same page.
       if (link.nextElementSibling && link.nextElementSibling.classList &&
           link.nextElementSibling.classList.contains('var-doc-icon-wrap')) {
+        addedAny = true;
         return;
       }
 
@@ -119,7 +144,10 @@
       var wrap = buildIcon(entries);
       wrap.classList.add('var-doc-icon-wrap');
       link.insertAdjacentElement('afterend', wrap);
+      addedAny = true;
     });
+
+    if (addedAny) ensureLegend();
   }
 
   document.addEventListener('click', function () { closeAllDropdowns(); });
