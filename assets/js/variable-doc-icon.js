@@ -9,7 +9,7 @@
  * changes to any of those pages' own generators: it works purely by
  * scanning the page's already-rendered HTML for links matching the
  * variable metadata page's known URL pattern
- * (/assets/variable_metadata/{name}.html — the same pattern every one of
+ * (/assets/variable_metadata/{name}, with or without a trailing .html —
  * those pages already uses to make a variable name clickable), then
  * looking each one up in variable_documents_index.json.
  *
@@ -34,7 +34,7 @@
  */
 (function () {
   var INDEX_URL = '/OWL/assets/data/variable_documents_index.json';
-  var LINK_PATTERN = /\/assets\/variable_metadata\/([^/?#]+)\.html/;
+  var LINK_PATTERN = /\/assets\/variable_metadata\/([^/?#]+?)(?:\.html)?(?:[/?#]|$)/;
 
   function extractVarName(href) {
     var m = href.match(LINK_PATTERN);
