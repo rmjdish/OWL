@@ -24,6 +24,11 @@
 
   var allDocs = [];
   var sortState = { column: null, direction: 'asc' };
+  // Which documents currently have their category list expanded — a Set
+  // of doc_id, kept outside render() so re-opening a <details> element
+  // survives a re-render triggered by typing in the search box, changing
+  // the type filter, or clicking a column header.
+  var expandedIds = new Set();
 
   function esc(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -73,11 +78,21 @@
   function renderRow(doc, rowIndex) {
     var meta = typeMeta(doc.doc_type);
     var topics = docTopics(doc);
-    var categoriesHtml = topics.length
-      ? '<div class="doc-result-categories">' +
+
+    var categoriesHtml;
+    if (!topics.length) {
+      categoriesHtml = '';
+    } else if (topics.length === 1) {
+      categoriesHtml = '<div class="doc-result-categories-single">' + esc(topics[0]) + '</div>';
+    } else {
+      var isOpen = expandedIds.has(doc.doc_id);
+      categoriesHtml =
+        '<details class="doc-category-details"' + (isOpen ? ' open' : '') + '>' +
+        '<summary><i class="ti ti-chevron-right" aria-hidden="true"></i>' + topics.length + ' categories</summary>' +
+        '<div class="doc-result-categories">' +
         topics.map(function (t) { return '<span class="doc-category-chip">' + esc(t) + '</span>'; }).join('') +
-        '</div>'
-      : '';
+        '</div></details>';
+    }
 
     var tr = document.createElement('tr');
     tr.className = 'doc-result-row' + (rowIndex % 2 === 1 ? ' doc-row-odd' : '');
@@ -87,9 +102,38 @@
       '<td><div class="doc-conf-cell">' + confidenceBadgesHtml(doc) + '</div></td>' +
       '<td><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span></td>';
 
-    tr.addEventListener('click', function () {
+    // Zebra striping and hover are set here as inline styles with
+    // 'important' priority, rather than left to an external stylesheet
+    // rule. This site's Just the Docs theme ships its own baseline
+    // table CSS that a plain class-based rule kept losing to even after
+    // raising selector specificity and adding !important there too — an
+    // inline style with 'important' priority is the strongest possible
+    // declaration in the CSS cascade, so it wins regardless of what the
+    // theme's own table rule turns out to be.
+    var baseBg = rowIndex % 2 === 1 ? 'rgba(0,0,0,0.06)' : '';
+    if (baseBg) tr.style.setProperty('background-color', baseBg, 'important');
+    tr.addEventListener('mouseenter', function () {
+      tr.style.setProperty('background-color', 'hsl(180, 45%, 94%)', 'important');
+    });
+    tr.addEventListener('mouseleave', function () {
+      if (baseBg) tr.style.setProperty('background-color', baseBg, 'important');
+      else tr.style.removeProperty('background-color');
+    });
+
+    tr.addEventListener('click', function (e) {
+      // Clicking the categories disclosure (or a chip inside it once
+      // open) should expand/collapse it, never navigate away.
+      if (e.target.closest('details')) return;
       window.location.href = doc.permalink;
     });
+
+    var details = tr.querySelector('.doc-category-details');
+    if (details) {
+      details.addEventListener('toggle', function () {
+        if (details.open) expandedIds.add(doc.doc_id);
+        else expandedIds.delete(doc.doc_id);
+      });
+    }
 
     return tr;
   }

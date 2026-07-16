@@ -52,10 +52,9 @@ permalink: /docs/documentation/documentation-search/
 .doc-search-empty { font-size:14px; color:#666; font-style:italic; padding:20px 0; }
 
 /* Real table, not a card list — built for a few hundred rows at once.
-   Zebra striping is per logical document (odd/even data-row-index set
-   in JS), not raw CSS nth-child, so a row that's expanded to show its
-   full category list doesn't throw off the stripe pattern of every row
-   below it. */
+   Zebra striping and hover are applied as inline styles from JS, not
+   here — see the comment in search-documentation.js's renderRow for
+   why a CSS class-based rule wasn't reliable on this site's theme. */
 .doc-result-table { width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed; }
 .doc-result-table th {
   text-align:left; padding:7px 10px; font-size:11.5px; font-weight:700; color:#444;
@@ -65,25 +64,27 @@ permalink: /docs/documentation/documentation-search/
 .doc-th-sortable:hover { color:#000; }
 .doc-sort-icon { font-size:13px; margin-left:2px; vertical-align:-2px; opacity:0.45; }
 .doc-th-sortable.doc-sort-active .doc-sort-icon { opacity:1; color:hsl(180 45% 30%); }
-.doc-result-table col.col-conf { width:150px; }
+.doc-result-table col.col-conf { width:230px; }
 .doc-result-table col.col-type { width:100px; }
 /* col-doc has no explicit width, so it absorbs whatever space the two
    fixed narrow columns don't use — this is what keeps Document as wide
    as possible without any column spilling past its own boundary. */
 .doc-result-table td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.06); vertical-align:top; overflow:hidden; }
-/* Higher specificity + !important: the Just the Docs theme this site
-   runs on ships its own baseline table CSS, and a plain .doc-row-odd
-   class rule was consistently losing to it — scoping through the
-   #doc-search / table / tbody chain and forcing !important is what
-   actually wins regardless of what the theme's own table rule looks
-   like, since that couldn't be inspected directly from here. */
-#doc-search table.doc-result-table tbody tr.doc-row-odd { background:rgba(0,0,0,0.06) !important; }
-#doc-search table.doc-result-table tbody tr.doc-result-row:hover { background:hsl(180 45% 94%) !important; cursor:pointer; }
+.doc-result-table tbody tr.doc-result-row { cursor:pointer; }
 .doc-confidence-legend { display:flex; flex-wrap:wrap; gap:4px 16px; align-items:center; font-size:11.5px; color:#666; margin:2px 0 12px; }
 .doc-legend-label { font-weight:600; color:#444; }
 .doc-legend-item { display:inline-flex; align-items:center; gap:5px; }
 .doc-result-icon { font-size:14px; margin-right:6px; vertical-align:-2px; }
 .doc-result-title { font-weight:600; color:#1a1a1a; }
+.doc-result-categories-single { margin-top:4px; font-size:11px; color:#777; }
+.doc-category-details { margin-top:4px; }
+.doc-category-details summary {
+  cursor:pointer; font-size:11px; font-weight:600; color:#555; list-style:none;
+  display:inline-flex; align-items:center; gap:3px;
+}
+.doc-category-details summary::-webkit-details-marker { display:none; }
+.doc-category-details summary i { font-size:11px; transition:transform 0.1s; }
+.doc-category-details[open] summary i { transform:rotate(90deg); }
 .doc-result-categories { margin-top:5px; display:flex; flex-wrap:wrap; gap:4px; }
 .doc-category-chip { font-size:10.5px; background:hsl(200 55% 94%); color:hsl(200 55% 24%); padding:1px 7px; border-radius:8px; white-space:nowrap; }
 .doc-conf-cell { display:flex; flex-wrap:wrap; gap:4px; align-items:flex-start; }
