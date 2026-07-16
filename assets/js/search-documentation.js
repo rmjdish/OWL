@@ -82,13 +82,12 @@
     var categoriesHtml;
     if (!topics.length) {
       categoriesHtml = '';
-    } else if (topics.length === 1) {
-      categoriesHtml = '<div class="doc-result-categories-single">' + esc(topics[0]) + '</div>';
     } else {
       var isOpen = expandedIds.has(doc.doc_id);
+      var label = topics.length === 1 ? '1 category' : topics.length + ' categories';
       categoriesHtml =
         '<details class="doc-category-details"' + (isOpen ? ' open' : '') + '>' +
-        '<summary><i class="ti ti-chevron-right" aria-hidden="true"></i>' + topics.length + ' categories</summary>' +
+        '<summary><i class="ti ti-chevron-right" aria-hidden="true"></i>' + label + '</summary>' +
         '<div class="doc-result-categories">' +
         topics.map(function (t) { return '<span class="doc-category-chip">' + esc(t) + '</span>'; }).join('') +
         '</div></details>';
