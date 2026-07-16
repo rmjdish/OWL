@@ -10,7 +10,7 @@ permalink: /docs/documentation/documentation-search/
 <div class="page-topics page-questionnaire_by_year">
   <div class="hero-banner">
     <h1><i class="ti ti-compass" aria-hidden="true"></i> Search Documentation</h1>
-    <p>Every document that's been turned into a page, in one searchable list — topsheets, variable notes, multi-sweep documentation, and narrative data notes together. Search by title, topic, category, summary, or variable name, or filter to one kind of document at a time.</p>
+    <p>Every document that's been turned into a page, in one searchable list — topsheets, variable notes, multi-sweep documentation, and narrative data notes together. Search by title, topic, category, summary, or variable name, filter to one kind of document at a time, or click a column header to sort.</p>
   </div>
   <div class="home-section gs-card-search" id="doc-search">
     <div class="doc-search-controls">
@@ -21,7 +21,20 @@ permalink: /docs/documentation/documentation-search/
       </select>
     </div>
     <p id="docSearchCount" class="doc-search-count"></p>
-    <div id="docSearchResults" class="doc-result-list"></div>
+    <table class="doc-result-table">
+      <colgroup>
+        <col class="col-doc"><col class="col-topic"><col class="col-conf"><col class="col-type">
+      </colgroup>
+      <thead>
+        <tr>
+          <th data-sort="title" class="doc-th-sortable">Document <i class="ti ti-selector doc-sort-icon" aria-hidden="true"></i></th>
+          <th data-sort="topic" class="doc-th-sortable">Topic <i class="ti ti-selector doc-sort-icon" aria-hidden="true"></i></th>
+          <th data-sort="confidence" class="doc-th-sortable">Confidence <i class="ti ti-selector doc-sort-icon" aria-hidden="true"></i></th>
+          <th data-sort="type" class="doc-th-sortable">Type <i class="ti ti-selector doc-sort-icon" aria-hidden="true"></i></th>
+        </tr>
+      </thead>
+      <tbody id="docSearchResults"></tbody>
+    </table>
     <p id="docSearchEmpty" class="doc-search-empty" style="display:none;">No documents match your search.</p>
     <p id="docSearchError" class="doc-search-empty" style="display:none;">Couldn't load the document index — try refreshing the page.</p>
   </div>
@@ -33,42 +46,47 @@ permalink: /docs/documentation/documentation-search/
 .doc-search-count { font-size:12.5px; color:#666; margin:6px 0 10px; }
 .doc-search-empty { font-size:14px; color:#666; font-style:italic; padding:20px 0; }
 
-/* Compact dense list — one line per document, built for a few hundred
-   results at once rather than a card grid. Fixed-width topic/badge/type
-   columns keep every row's columns aligned as you scan down the list;
-   the title and topic columns truncate with an ellipsis rather than
-   wrapping, which is what keeps row height constant regardless of how
-   long a document's title or topic path is. */
-.doc-result-list { display:flex; flex-direction:column; border:1px solid rgba(0,0,0,0.1); border-radius:7px; overflow:hidden; }
-.doc-result-row {
-  display:flex; align-items:center; gap:10px; padding:7px 12px;
-  border-bottom:1px solid rgba(0,0,0,0.08);
-  text-decoration:none; color:inherit;
-  background:#fff;
+/* Real table, not a card list — built for a few hundred rows at once.
+   Zebra striping is per logical document (odd/even data-row-index set
+   in JS), not raw CSS nth-child, so a row that's expanded to show its
+   full category list doesn't throw off the stripe pattern of every row
+   below it. */
+.doc-result-table { width:100%; border-collapse:collapse; font-size:13px; table-layout:fixed; }
+.doc-result-table th {
+  text-align:left; padding:7px 10px; font-size:11.5px; font-weight:700; color:#444;
+  border-bottom:2px solid rgba(0,0,0,0.15); white-space:nowrap; user-select:none;
 }
-.doc-result-row:last-child { border-bottom:none; }
-.doc-result-row:hover { background:hsl(180 45% 97%); }
-.doc-result-icon { font-size:15px; flex-shrink:0; }
-.doc-result-title {
-  font-size:13px; font-weight:600; color:#1a1a1a; flex:1; min-width:0;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.doc-th-sortable { cursor:pointer; }
+.doc-th-sortable:hover { color:#000; }
+.doc-sort-icon { font-size:13px; margin-left:2px; vertical-align:-2px; opacity:0.45; }
+.doc-th-sortable.doc-sort-active .doc-sort-icon { opacity:1; color:hsl(180 45% 30%); }
+.doc-result-table col.col-doc { width:34%; }
+.doc-result-table col.col-topic { width:32%; }
+.doc-result-table col.col-conf { width:14%; }
+.doc-result-table col.col-type { width:20%; }
+.doc-result-table td { padding:7px 10px; border-bottom:1px solid rgba(0,0,0,0.06); vertical-align:top; }
+.doc-row-odd { background:rgba(0,0,0,0.02); }
+.doc-result-table tbody tr.doc-result-row:hover { background:hsl(180 45% 96%); cursor:pointer; }
+.doc-result-icon { font-size:14px; margin-right:6px; vertical-align:-2px; }
+.doc-result-title { font-weight:600; color:#1a1a1a; }
+.doc-result-title-cell { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:0; }
+.doc-topic-cell { color:#666; }
+.doc-topic-primary { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; }
+.doc-topic-toggle {
+  display:inline-flex; align-items:center; gap:2px; margin-left:5px; padding:0 5px;
+  font-size:10px; font-weight:600; color:#555; background:rgba(0,0,0,0.06);
+  border:none; border-radius:7px; cursor:pointer; line-height:16px;
 }
-.doc-result-topic {
-  font-size:11.5px; color:#777; flex-shrink:0; width:200px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  display:flex; align-items:center; gap:4px;
-}
-.doc-result-topic-more {
-  flex-shrink:0; font-size:10px; font-weight:600; color:#555;
-  background:rgba(0,0,0,0.06); padding:0 5px; border-radius:7px;
-}
-.doc-count-badge { font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; flex-shrink:0; }
+.doc-topic-toggle:hover { background:rgba(0,0,0,0.12); }
+.doc-topic-toggle i { font-size:11px; }
+.doc-topic-expanded { white-space:normal; margin-top:4px; display:flex; flex-wrap:wrap; gap:4px; }
+.doc-topic-chip { font-size:10.5px; background:hsl(200 55% 94%); color:hsl(200 55% 24%); padding:1px 7px; border-radius:8px; white-space:nowrap; }
+.doc-count-badge { font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; white-space:nowrap; }
 .doc-count-high { background:hsl(125 35% 90%); color:hsl(125 35% 18%); }
 .doc-count-medium { background:hsl(210 45% 92%); color:hsl(210 45% 22%); }
 .doc-count-low { background:hsl(35 60% 90%); color:hsl(35 60% 20%); }
 .doc-result-type {
-  display:inline-block; text-align:center; flex-shrink:0; width:82px;
-  padding:1px 8px; border-radius:9px; font-size:10.5px; font-weight:600;
+  display:inline-block; padding:1px 8px; border-radius:9px; font-size:10.5px; font-weight:600; white-space:nowrap;
 }
 .doc-type-topsheet { background:hsl(125 35% 90%); color:hsl(125 35% 18%); }
 .doc-type-variable_note { background:hsl(210 45% 92%); color:hsl(210 45% 22%); }
@@ -77,7 +95,8 @@ permalink: /docs/documentation/documentation-search/
 .doc-type-other { background:hsl(210 10% 90%); color:hsl(210 10% 25%); }
 
 @media (max-width: 640px) {
-  .doc-result-topic { display:none; }
+  .doc-result-table col.col-topic { display:none; }
+  .doc-result-table th:nth-child(2), .doc-result-table td:nth-child(2) { display:none; }
 }
 </style>
 <script>window.SITE_BASEURL = '{{ site.baseurl }}';</script>
