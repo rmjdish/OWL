@@ -23,11 +23,6 @@
   var sortableHeaders = document.querySelectorAll('.doc-th-sortable');
 
   var allDocs = [];
-  // Which documents currently have their full category list expanded —
-  // a Set of doc_id, kept outside render() so toggling one row's
-  // categories survives a re-render triggered by typing in the search
-  // box or clicking a different column header.
-  var expandedIds = new Set();
   var sortState = { column: null, direction: 'asc' };
 
   function esc(s) {
@@ -52,17 +47,21 @@
     return parts.filter(Boolean).join(' \u2022 ').toLowerCase();
   }
 
-  function topCount(doc) {
-    if (doc.high) return { n: doc.high, tier: 'high' };
-    if (doc.medium) return { n: doc.medium, tier: 'medium' };
-    if (doc.low) return { n: doc.low, tier: 'low' };
-    return null;
+  // All three tiers, not just the highest — a document with 6 high and
+  // 2 medium should show both, not silently drop the medium count just
+  // because a higher tier exists.
+  function confidenceBadgesHtml(doc) {
+    var tiers = [['high', doc.high], ['medium', doc.medium], ['low', doc.low]];
+    var badges = tiers
+      .filter(function (t) { return t[1] > 0; })
+      .map(function (t) { return '<span class="doc-count-badge doc-count-' + t[0] + '">' + t[1] + ' ' + t[0] + '</span>'; });
+    return badges.length ? badges.join('') : '<span class="doc-count-empty">No variables detected</span>';
   }
 
-  // A single numeric score so 'sort by confidence' has one consistent
-  // ordering across tiers — a document with any high-confidence matches
-  // always ranks above one with only medium or low, and ties within a
-  // tier break by count.
+  // A single numeric score so 'sort by variables found' has one
+  // consistent ordering across tiers — a document with any high-
+  // confidence matches always ranks above one with only medium or low,
+  // and ties within a tier break by count.
   function confidenceScore(doc) {
     return (doc.high || 0) * 1e6 + (doc.medium || 0) * 1e3 + (doc.low || 0);
   }
@@ -73,57 +72,24 @@
 
   function renderRow(doc, rowIndex) {
     var meta = typeMeta(doc.doc_type);
-    var count = topCount(doc);
-    var countHtml = count
-      ? '<span class="doc-count-badge doc-count-' + count.tier + '">' + count.n + ' ' + count.tier + '</span>'
-      : '';
-
     var topics = docTopics(doc);
-    var isExpanded = expandedIds.has(doc.doc_id);
-    var moreCount = topics.length - 1;
-
-    var topicCellHtml;
-    if (!topics.length) {
-      topicCellHtml = '';
-    } else if (moreCount <= 0) {
-      topicCellHtml = '<span class="doc-topic-primary">' + esc(topics[0]) + '</span>';
-    } else if (isExpanded) {
-      topicCellHtml =
-        '<button type="button" class="doc-topic-toggle" data-doc-id="' + esc(doc.doc_id) + '">' +
-        '<i class="ti ti-chevron-up" aria-hidden="true"></i>hide</button>' +
-        '<div class="doc-topic-expanded">' +
-        topics.map(function (t) { return '<span class="doc-topic-chip">' + esc(t) + '</span>'; }).join('') +
-        '</div>';
-    } else {
-      topicCellHtml =
-        '<span class="doc-topic-primary">' + esc(topics[0]) +
-        '<button type="button" class="doc-topic-toggle" data-doc-id="' + esc(doc.doc_id) + '">' +
-        '<i class="ti ti-chevron-down" aria-hidden="true"></i>+' + moreCount + '</button></span>';
-    }
+    var categoriesHtml = topics.length
+      ? '<div class="doc-result-categories">' +
+        topics.map(function (t) { return '<span class="doc-category-chip">' + esc(t) + '</span>'; }).join('') +
+        '</div>'
+      : '';
 
     var tr = document.createElement('tr');
     tr.className = 'doc-result-row' + (rowIndex % 2 === 1 ? ' doc-row-odd' : '');
     tr.innerHTML =
-      '<td class="doc-result-title-cell"><i class="ti ' + meta.icon + ' doc-result-icon" aria-hidden="true"></i>' +
-      '<span class="doc-result-title">' + esc(doc.title) + '</span></td>' +
-      '<td class="doc-topic-cell">' + topicCellHtml + '</td>' +
-      '<td>' + countHtml + '</td>' +
+      '<td><i class="ti ' + meta.icon + ' doc-result-icon" aria-hidden="true"></i>' +
+      '<span class="doc-result-title">' + esc(doc.title) + '</span>' + categoriesHtml + '</td>' +
+      '<td><div class="doc-conf-cell">' + confidenceBadgesHtml(doc) + '</div></td>' +
       '<td><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span></td>';
 
-    tr.addEventListener('click', function (e) {
-      if (e.target.closest('.doc-topic-toggle')) return; // handled separately below
+    tr.addEventListener('click', function () {
       window.location.href = doc.permalink;
     });
-
-    var toggle = tr.querySelector('.doc-topic-toggle');
-    if (toggle) {
-      toggle.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (expandedIds.has(doc.doc_id)) expandedIds.delete(doc.doc_id);
-        else expandedIds.add(doc.doc_id);
-        render();
-      });
-    }
 
     return tr;
   }
@@ -152,7 +118,6 @@
 
   var SORT_KEYS = {
     title: function (doc) { return (doc.title || '').toLowerCase(); },
-    topic: function (doc) { return (doc.topic || '').toLowerCase(); },
     confidence: function (doc) { return confidenceScore(doc); },
     type: function (doc) { return typeMeta(doc.doc_type).label.toLowerCase(); },
   };
