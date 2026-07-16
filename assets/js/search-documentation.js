@@ -23,7 +23,7 @@
   var sortableHeaders = document.querySelectorAll('.doc-th-sortable');
 
   var allDocs = [];
-  var sortState = { column: null, direction: 'asc' };
+  var sortState = { column: 'title', direction: 'asc' };
   // Which documents currently have their category list expanded — a Set
   // of doc_id, kept outside render() so re-opening a <details> element
   // survives a re-render triggered by typing in the search box, changing
