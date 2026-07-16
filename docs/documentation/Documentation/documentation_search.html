@@ -5,17 +5,13 @@ parent: Browse documentation
 nav_order: 1
 permalink: /docs/documentation/documentation-search/
 ---
-
 <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/topics.css">
 <link rel="stylesheet" href="{{ site.baseurl }}/assets/css/getting-started.css">
-
 <div class="page-topics page-questionnaire_by_year">
-
   <div class="hero-banner">
     <h1><i class="ti ti-compass" aria-hidden="true"></i> Search Documentation</h1>
     <p>Every document that's been turned into a page, in one searchable list — topsheets, variable notes, multi-sweep documentation, and narrative data notes together. Search by title, topic, category, summary, or variable name, or filter to one kind of document at a time.</p>
   </div>
-
   <div class="home-section gs-card-search" id="doc-search">
     <div class="doc-search-controls">
       <input type="search" id="docSearchInput" class="doc-search-input"
@@ -25,37 +21,64 @@ permalink: /docs/documentation/documentation-search/
       </select>
     </div>
     <p id="docSearchCount" class="doc-search-count"></p>
-    <div id="docSearchResults" class="doc-search-results"></div>
+    <div id="docSearchResults" class="doc-result-list"></div>
     <p id="docSearchEmpty" class="doc-search-empty" style="display:none;">No documents match your search.</p>
     <p id="docSearchError" class="doc-search-empty" style="display:none;">Couldn't load the document index — try refreshing the page.</p>
   </div>
-
 </div>
-
 <style>
 .doc-search-controls { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
 .doc-search-input { flex:1; min-width:220px; padding:9px 12px; font-size:14px; border:1px solid rgba(0,0,0,0.2); border-radius:6px; }
 .doc-search-select { padding:9px 12px; font-size:14px; border:1px solid rgba(0,0,0,0.2); border-radius:6px; background:#fff; }
-.doc-search-count { font-size:12.5px; color:#666; margin:6px 0 14px; }
+.doc-search-count { font-size:12.5px; color:#666; margin:6px 0 10px; }
 .doc-search-empty { font-size:14px; color:#666; font-style:italic; padding:20px 0; }
-.doc-search-results { display:flex; flex-direction:column; gap:8px; }
-.doc-result-card { display:flex; align-items:flex-start; gap:12px; padding:12px 14px; border:1px solid rgba(0,0,0,0.1); border-radius:7px; background:#fff; text-decoration:none; transition:border-color .15s, box-shadow .15s; }
-.doc-result-card:hover { border-color:hsl(180 45% 55%); box-shadow:0 1px 6px rgba(0,0,0,0.08); }
-.doc-result-icon { font-size:18px; color:hsl(180 45% 30%); margin-top:2px; flex-shrink:0; }
-.doc-result-body { flex:1; min-width:0; }
-.doc-result-title { font-size:14px; font-weight:600; color:#1a1a1a; margin:0 0 3px; }
-.doc-result-meta { font-size:12px; color:#666; display:flex; flex-wrap:wrap; gap:6px 10px; align-items:center; }
-.doc-result-type { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; }
+
+/* Compact dense list — one line per document, built for a few hundred
+   results at once rather than a card grid. Fixed-width topic/badge/type
+   columns keep every row's columns aligned as you scan down the list;
+   the title and topic columns truncate with an ellipsis rather than
+   wrapping, which is what keeps row height constant regardless of how
+   long a document's title or topic path is. */
+.doc-result-list { display:flex; flex-direction:column; border:1px solid rgba(0,0,0,0.1); border-radius:7px; overflow:hidden; }
+.doc-result-row {
+  display:flex; align-items:center; gap:10px; padding:7px 12px;
+  border-bottom:1px solid rgba(0,0,0,0.08);
+  text-decoration:none; color:inherit;
+  background:#fff;
+}
+.doc-result-row:last-child { border-bottom:none; }
+.doc-result-row:hover { background:hsl(180 45% 97%); }
+.doc-result-icon { font-size:15px; flex-shrink:0; }
+.doc-result-title {
+  font-size:13px; font-weight:600; color:#1a1a1a; flex:1; min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.doc-result-topic {
+  font-size:11.5px; color:#777; flex-shrink:0; width:200px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  display:flex; align-items:center; gap:4px;
+}
+.doc-result-topic-more {
+  flex-shrink:0; font-size:10px; font-weight:600; color:#555;
+  background:rgba(0,0,0,0.06); padding:0 5px; border-radius:7px;
+}
+.doc-count-badge { font-size:10px; font-weight:600; padding:1px 6px; border-radius:8px; flex-shrink:0; }
+.doc-count-high { background:hsl(125 35% 90%); color:hsl(125 35% 18%); }
+.doc-count-medium { background:hsl(210 45% 92%); color:hsl(210 45% 22%); }
+.doc-count-low { background:hsl(35 60% 90%); color:hsl(35 60% 20%); }
+.doc-result-type {
+  display:inline-block; text-align:center; flex-shrink:0; width:82px;
+  padding:1px 8px; border-radius:9px; font-size:10.5px; font-weight:600;
+}
 .doc-type-topsheet { background:hsl(125 35% 90%); color:hsl(125 35% 18%); }
 .doc-type-variable_note { background:hsl(210 45% 92%); color:hsl(210 45% 22%); }
 .doc-type-templated_variable_note { background:hsl(270 40% 92%); color:hsl(270 40% 24%); }
 .doc-type-narrative { background:hsl(35 60% 90%); color:hsl(35 60% 20%); }
 .doc-type-other { background:hsl(210 10% 90%); color:hsl(210 10% 25%); }
-.doc-result-counts { display:flex; gap:5px; }
-.doc-count-badge { font-size:10.5px; font-weight:600; padding:1px 6px; border-radius:8px; }
-.doc-count-high { background:hsl(125 35% 90%); color:hsl(125 35% 18%); }
-.doc-count-medium { background:hsl(210 45% 92%); color:hsl(210 45% 22%); }
-.doc-count-low { background:hsl(35 60% 90%); color:hsl(35 60% 20%); }
-</style>
 
+@media (max-width: 640px) {
+  .doc-result-topic { display:none; }
+}
+</style>
+<script>window.SITE_BASEURL = '{{ site.baseurl }}';</script>
 <script src="{{ site.baseurl }}/assets/js/search-documentation.js"></script>
