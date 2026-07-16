@@ -122,7 +122,7 @@
         cells.forEach(function (td) { td.style.removeProperty('background-color'); });
       }
     }
-    var baseBg = rowIndex % 2 === 1 ? 'rgba(0,0,0,0.06)' : '';
+    var baseBg = rowIndex % 2 === 1 ? 'rgba(0,0,0,0.035)' : '';
     setRowBg(baseBg);
     tr.addEventListener('mouseenter', function () { setRowBg('hsl(180, 45%, 94%)'); });
     tr.addEventListener('mouseleave', function () { setRowBg(baseBg); });
@@ -212,7 +212,6 @@
     var frag = document.createDocumentFragment();
     matches.forEach(function (doc, i) { frag.appendChild(renderRow(doc, i)); });
     resultsEl.appendChild(frag);
-
 
     countEl.textContent = matches.length + (matches.length === 1 ? ' document' : ' documents');
     emptyEl.style.display = matches.length === 0 ? '' : 'none';
