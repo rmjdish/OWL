@@ -16,14 +16,17 @@
 
   var input = document.getElementById('docSearchInput');
   var typeFilter = document.getElementById('docTypeFilter');
+  var pageSizeSelect = document.getElementById('docPageSize');
   var resultsEl = document.getElementById('docSearchResults');
   var countEl = document.getElementById('docSearchCount');
+  var paginationEl = document.getElementById('docPagination');
   var emptyEl = document.getElementById('docSearchEmpty');
   var errorEl = document.getElementById('docSearchError');
   var sortableHeaders = document.querySelectorAll('.doc-th-sortable');
 
   var allDocs = [];
   var sortState = { column: 'title', direction: 'asc' };
+  var currentPage = 1;
   // Which documents currently have their category list expanded — a Set
   // of doc_id, kept outside render() so re-opening a <details> element
   // survives a re-render triggered by typing in the search box, changing
@@ -196,6 +199,75 @@
     });
   }
 
+  function getPageSize() {
+    var v = pageSizeSelect.value;
+    return v === 'all' ? Infinity : parseInt(v, 10);
+  }
+
+  // Windowed page list: always show page 1 and the last page, plus the
+  // current page and its immediate neighbours, with '…' filling any
+  // gap — the standard compact pagination shape, so a result set with
+  // dozens of pages doesn't render dozens of buttons in a row.
+  function pageWindow(current, total) {
+    var pages = [];
+    var add = function (p) { if (pages[pages.length - 1] !== p) pages.push(p); };
+    add(1);
+    for (var p = current - 1; p <= current + 1; p++) {
+      if (p > 1 && p < total) add(p);
+    }
+    if (total > 1) add(total);
+    var withGaps = [];
+    for (var i = 0; i < pages.length; i++) {
+      if (i > 0 && pages[i] - pages[i - 1] > 1) withGaps.push('…');
+      withGaps.push(pages[i]);
+    }
+    return withGaps;
+  }
+
+  function renderPagination(totalItems, pageSize) {
+    paginationEl.innerHTML = '';
+    if (pageSize === Infinity || totalItems <= pageSize) return;
+
+    var totalPages = Math.ceil(totalItems / pageSize);
+    var frag = document.createDocumentFragment();
+
+    var makeBtn = function (label, targetPage, opts) {
+      opts = opts || {};
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'doc-page-btn' + (opts.active ? ' doc-page-active' : '');
+      btn.textContent = label;
+      btn.disabled = !!opts.disabled;
+      if (!opts.disabled && !opts.active) {
+        btn.addEventListener('click', function () {
+          currentPage = targetPage;
+          render();
+        });
+      }
+      return btn;
+    };
+
+    frag.appendChild(makeBtn('‹ Previous', currentPage - 1, { disabled: currentPage === 1 }));
+    pageWindow(currentPage, totalPages).forEach(function (p) {
+      if (p === '…') {
+        var span = document.createElement('span');
+        span.className = 'doc-page-ellipsis';
+        span.textContent = '…';
+        frag.appendChild(span);
+      } else {
+        frag.appendChild(makeBtn(String(p), p, { active: p === currentPage }));
+      }
+    });
+    frag.appendChild(makeBtn('Next ›', currentPage + 1, { disabled: currentPage === totalPages }));
+
+    paginationEl.appendChild(frag);
+  }
+
+  function resetToFirstPage() {
+    currentPage = 1;
+    render();
+  }
+
   function render() {
     var query = input.value.trim().toLowerCase();
     var typeValue = typeFilter.value;
@@ -207,14 +279,29 @@
     });
     matches = applySort(matches);
 
+    var pageSize = getPageSize();
+    var totalPages = pageSize === Infinity ? 1 : Math.max(1, Math.ceil(matches.length / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    var startIdx = pageSize === Infinity ? 0 : (currentPage - 1) * pageSize;
+    var pageItems = pageSize === Infinity ? matches : matches.slice(startIdx, startIdx + pageSize);
+
     resultsEl.innerHTML = '';
     var frag = document.createDocumentFragment();
-    matches.forEach(function (doc, i) { frag.appendChild(renderRow(doc, i)); });
+    pageItems.forEach(function (doc, i) { frag.appendChild(renderRow(doc, i)); });
     resultsEl.appendChild(frag);
 
-    countEl.textContent = matches.length + (matches.length === 1 ? ' document' : ' documents');
+    if (matches.length === 0) {
+      countEl.textContent = '0 documents';
+    } else if (pageSize === Infinity || matches.length <= pageSize) {
+      countEl.textContent = matches.length + (matches.length === 1 ? ' document' : ' documents');
+    } else {
+      var rangeEnd = Math.min(startIdx + pageSize, matches.length);
+      countEl.textContent = 'Showing ' + (startIdx + 1) + '–' + rangeEnd + ' of ' + matches.length + ' documents';
+    }
     emptyEl.style.display = matches.length === 0 ? '' : 'none';
     updateSortHeaderUI();
+    renderPagination(matches.length, pageSize);
   }
 
   fetch((window.SITE_BASEURL || '') + '/assets/data/search_index.json')
@@ -235,8 +322,9 @@
       console.error('Failed to load documentation search index:', err);
     });
 
-  input.addEventListener('input', render);
-  typeFilter.addEventListener('change', render);
+  input.addEventListener('input', resetToFirstPage);
+  typeFilter.addEventListener('change', resetToFirstPage);
+  pageSizeSelect.addEventListener('change', resetToFirstPage);
   sortableHeaders.forEach(function (th) {
     th.addEventListener('click', function () {
       var col = th.getAttribute('data-sort');
@@ -246,7 +334,7 @@
         sortState.column = col;
         sortState.direction = 'asc';
       }
-      render();
+      resetToFirstPage();
     });
   });
 })();
