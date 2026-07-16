@@ -19,6 +19,7 @@
   var pageSizeSelect = document.getElementById('docPageSize');
   var resultsEl = document.getElementById('docSearchResults');
   var countEl = document.getElementById('docSearchCount');
+  var paginationTopEl = document.getElementById('docPaginationTop');
   var paginationEl = document.getElementById('docPagination');
   var emptyEl = document.getElementById('docSearchEmpty');
   var errorEl = document.getElementById('docSearchError');
@@ -204,38 +205,52 @@
     return v === 'all' ? Infinity : parseInt(v, 10);
   }
 
-  function renderPagination(totalItems, pageSize) {
-    paginationEl.innerHTML = '';
-    if (pageSize === Infinity || totalItems <= pageSize) return;
-
-    var totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  function buildPaginationControl(pageNum, totalPages) {
+    var wrap = document.createDocumentFragment();
 
     var prevBtn = document.createElement('button');
     prevBtn.type = 'button';
     prevBtn.className = 'doc-page-btn';
     prevBtn.textContent = 'Prev';
-    prevBtn.disabled = currentPage <= 1;
+    prevBtn.disabled = pageNum <= 1;
     prevBtn.addEventListener('click', function () {
       currentPage = Math.max(1, currentPage - 1);
       render();
     });
 
     var label = document.createElement('span');
-    label.textContent = 'Page ' + currentPage + ' of ' + totalPages;
+    label.textContent = 'Page ' + pageNum + ' of ' + totalPages;
 
     var nextBtn = document.createElement('button');
     nextBtn.type = 'button';
     nextBtn.className = 'doc-page-btn';
     nextBtn.textContent = 'Next';
-    nextBtn.disabled = currentPage >= totalPages;
+    nextBtn.disabled = pageNum >= totalPages;
     nextBtn.addEventListener('click', function () {
       currentPage = Math.min(totalPages, currentPage + 1);
       render();
     });
 
-    paginationEl.appendChild(prevBtn);
-    paginationEl.appendChild(label);
-    paginationEl.appendChild(nextBtn);
+    wrap.appendChild(prevBtn);
+    wrap.appendChild(label);
+    wrap.appendChild(nextBtn);
+    return wrap;
+  }
+
+  // Rendered above AND below the table, since a long results table
+  // benefits from page controls at the top (no scrolling down just to
+  // move to the next page) as well as the bottom. Each copy needs its
+  // own button elements — a DOM node can only exist in one place at a
+  // time — but they share the same currentPage/render() so clicking
+  // either one keeps both in sync on the next render.
+  function renderPagination(totalItems, pageSize) {
+    paginationTopEl.innerHTML = '';
+    paginationEl.innerHTML = '';
+    if (pageSize === Infinity || totalItems <= pageSize) return;
+
+    var totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    paginationTopEl.appendChild(buildPaginationControl(currentPage, totalPages));
+    paginationEl.appendChild(buildPaginationControl(currentPage, totalPages));
   }
 
   function resetToFirstPage() {
