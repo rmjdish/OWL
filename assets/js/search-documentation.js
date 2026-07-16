@@ -102,23 +102,30 @@
       '<td><div class="doc-conf-cell">' + confidenceBadgesHtml(doc) + '</div></td>' +
       '<td><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span></td>';
 
-    // Zebra striping and hover are set here as inline styles with
-    // 'important' priority, rather than left to an external stylesheet
-    // rule. This site's Just the Docs theme ships its own baseline
-    // table CSS that a plain class-based rule kept losing to even after
-    // raising selector specificity and adding !important there too — an
-    // inline style with 'important' priority is the strongest possible
-    // declaration in the CSS cascade, so it wins regardless of what the
-    // theme's own table rule turns out to be.
+    // Zebra striping and hover are set as inline styles with 'important'
+    // priority on BOTH the row and every cell in it, rather than left to
+    // an external stylesheet rule. This site's Just the Docs theme ships
+    // its own baseline table CSS; row-only styling kept being invisible
+    // even after using !important there too, which points to the theme
+    // (or another rule) giving table cells their own explicit
+    // background — a cell's own background always paints over its
+    // parent row's background in the box-stacking order, regardless of
+    // !important on the row, so the fix has to apply at the cell level
+    // too, not just the row.
+    var cells = tr.querySelectorAll('td');
+    function setRowBg(color) {
+      if (color) {
+        tr.style.setProperty('background-color', color, 'important');
+        cells.forEach(function (td) { td.style.setProperty('background-color', color, 'important'); });
+      } else {
+        tr.style.removeProperty('background-color');
+        cells.forEach(function (td) { td.style.removeProperty('background-color'); });
+      }
+    }
     var baseBg = rowIndex % 2 === 1 ? 'rgba(0,0,0,0.06)' : '';
-    if (baseBg) tr.style.setProperty('background-color', baseBg, 'important');
-    tr.addEventListener('mouseenter', function () {
-      tr.style.setProperty('background-color', 'hsl(180, 45%, 94%)', 'important');
-    });
-    tr.addEventListener('mouseleave', function () {
-      if (baseBg) tr.style.setProperty('background-color', baseBg, 'important');
-      else tr.style.removeProperty('background-color');
-    });
+    setRowBg(baseBg);
+    tr.addEventListener('mouseenter', function () { setRowBg('hsl(180, 45%, 94%)'); });
+    tr.addEventListener('mouseleave', function () { setRowBg(baseBg); });
 
     tr.addEventListener('click', function (e) {
       // Clicking the categories disclosure (or a chip inside it once
@@ -205,6 +212,7 @@
     var frag = document.createDocumentFragment();
     matches.forEach(function (doc, i) { frag.appendChild(renderRow(doc, i)); });
     resultsEl.appendChild(frag);
+
 
     countEl.textContent = matches.length + (matches.length === 1 ? ' document' : ' documents');
     emptyEl.style.display = matches.length === 0 ? '' : 'none';
