@@ -69,24 +69,57 @@
   }
 
   function setupScrollTracking(pairs) {
-    if (!pairs.length || !('IntersectionObserver' in window)) return;
+    if (!pairs.length) return;
 
-    // A thin trigger band near the top of the viewport, rather than the
-    // whole viewport, so "active" reflects whichever section is right
-    // under the reader's eye — not just "on screen somewhere" (which
-    // would often mean two or three sections lighting up at once on a
-    // tall page).
-    var observer = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        var match = pairs.filter(function (p) { return p.section === entry.target; })[0];
-        if (!match) return;
-        pairs.forEach(function (p) { p.link.classList.remove('active'); });
-        match.link.classList.add('active');
+    // The active section is whichever one's top has most recently
+    // scrolled past a fixed reference line near the top of the
+    // viewport — recomputed directly from getBoundingClientRect() on
+    // every scroll frame, not via IntersectionObserver. IntersectionObserver
+    // was tried first, using a thin rootMargin trigger band: found in
+    // testing to skip short sections entirely, since a section shorter
+    // than that band can scroll straight through it between observer
+    // callbacks without ever registering as "intersecting" at all —
+    // the highlight jumped straight to whatever section came after it.
+    // A "largest overlap with a band" comparison was tried next, but
+    // that was worse in a different way: a short section positioned
+    // right at the band's start still loses to whatever taller section
+    // fills the rest of the same band, even at the exact moment of
+    // landing on it via a sidebar-link click — the most common real
+    // way a reader reaches a given section. This single-reference-line
+    // version correctly shows a section as active the instant its top
+    // reaches the line, regardless of that section's own height, which
+    // is what matters most: clicking a link and immediately seeing it
+    // highlighted. Natural scrolling afterwards then gives every
+    // section a highlighted window sized to its own height — brief for
+    // a short section, same as in effectively every other scrollspy
+    // implementation, and not something worth fighting.
+    var REFERENCE_LINE = 100; // px from the top of the viewport
+
+    function updateActive() {
+      var active = pairs[0];
+      for (var i = 0; i < pairs.length; i++) {
+        if (pairs[i].section.getBoundingClientRect().top <= REFERENCE_LINE) {
+          active = pairs[i];
+        }
+      }
+      pairs.forEach(function (p) {
+        p.link.classList.toggle('active', p === active);
       });
-    }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+    }
 
-    pairs.forEach(function (p) { observer.observe(p.section); });
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        updateActive();
+        ticking = false;
+      });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    updateActive();
   }
 
   function run() {
