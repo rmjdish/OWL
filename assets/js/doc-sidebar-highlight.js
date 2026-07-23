@@ -103,9 +103,13 @@
     // scrolling without the URL updating. .doc-pdf-download is a marker
     // unique to render_page()'s own output (the "Download PDF version"
     // button), present on every generated documentation page and no
-    // hand-authored page at all — checking for it keeps this script
-    // from touching anything outside its intended scope.
-    if (!document.querySelector('.doc-pdf-download')) return;
+    // page's own build_pages.py output, present on no hand-authored
+    // page. Checking for several rather than just one guards against a
+    // single marker being absent on some pages (e.g. if PDF generation
+    // failed for a particular document) silently disabling this
+    // entirely.
+    var isDocPage = document.querySelector('.doc-pdf-download, .doc-var-table, .doc-content-body');
+    if (!isDocPage) return;
     setupScrollTracking(colorSidebarLinks());
   }
 
