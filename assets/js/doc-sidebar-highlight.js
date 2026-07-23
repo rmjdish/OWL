@@ -90,6 +90,22 @@
   }
 
   function run() {
+    // Scoped deliberately to generated documentation pages only — every
+    // hand-authored hub page (Getting Started, Search Overview, the
+    // Longitudinal Search Guide, etc.) uses the exact same .page-topics
+    // / .sidebar-summary / gs-card-* building blocks this script looks
+    // for, but several of them already have their own, different
+    // active-highlighting mechanism (a CSS-only :target trick that
+    // activates on click, not on scroll). Running unconditionally would
+    // add a second, independent scroll-triggered highlight to those
+    // pages too — one that never existed there and could show a
+    // different link highlighted than their own :target rule while
+    // scrolling without the URL updating. .doc-pdf-download is a marker
+    // unique to render_page()'s own output (the "Download PDF version"
+    // button), present on every generated documentation page and no
+    // hand-authored page at all — checking for it keeps this script
+    // from touching anything outside its intended scope.
+    if (!document.querySelector('.doc-pdf-download')) return;
     setupScrollTracking(colorSidebarLinks());
   }
 
