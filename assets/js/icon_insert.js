@@ -256,7 +256,7 @@
 	"bone size, mineral and density":   "ti-bone",
 	"pulse wave analysis":              "ti-activity",
 	"pulse wave velocity":              "ti-activity",
-	"Late Gadolinium Enhancement":		"ti-activity",	
+	"late gadolinium enhancement (lge)":		"ti-activity",	
 	"echocardiogram":                   "ti-heartbeat",
 	"carotid ultrasound":               "ti-scan",
 	"carotid intima-media thickness":   "ti-ruler",
