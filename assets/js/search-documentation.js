@@ -6,13 +6,22 @@
     variable_note: { label: 'Variable note', icon: 'ti-file-text' },
     templated_variable_note: { label: 'Multi-sweep', icon: 'ti-repeat' },
     narrative: { label: 'Narrative', icon: 'ti-align-left' },
-    other: { label: 'Other', icon: 'ti-file-description' },
   };
 
-  // Order controls both the type filter dropdown and the badge/icon
-  // fallback below — any doc_type not listed here (an unexpected value
-  // in search_index.json) is treated as 'other' rather than breaking.
+  // Order controls the type filter dropdown's fixed leading options —
+  // any doc_type not listed here (e.g. a custom value straight from the
+  // documents index spreadsheet, like "full_documentation") gets its own
+  // humanized label and its own filter option instead, appended after
+  // these four, rather than being grouped into one generic "Other"
+  // bucket. Each one is still just as filterable and just as visible as
+  // the four structurally auto-detected types — it just isn't hand-
+  // curated with a custom short label the way these four are.
   var DOC_TYPE_ORDER = ['topsheet', 'variable_note', 'templated_variable_note', 'narrative'];
+
+  function humanizeType(type) {
+    if (!type) return 'Unspecified';
+    return type.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
 
   var input = document.getElementById('docSearchInput');
   var typeFilter = document.getElementById('docTypeFilter');
@@ -39,7 +48,7 @@
   }
 
   function typeMeta(docType) {
-    return DOC_TYPE_META[docType] || DOC_TYPE_META.other;
+    return DOC_TYPE_META[docType] || { label: humanizeType(docType), icon: 'ti-file-description' };
   }
 
   // One lowercased search blob per document, built once at load time
@@ -152,11 +161,12 @@
     var present = {};
     docs.forEach(function (d) { present[d.doc_type] = true; });
 
-    var orderedTypes = DOC_TYPE_ORDER.filter(function (t) { return present[t]; });
-    var hasOther = Object.keys(present).some(function (t) { return DOC_TYPE_ORDER.indexOf(t) === -1; });
-    if (hasOther) orderedTypes.push('other');
+    var knownTypes = DOC_TYPE_ORDER.filter(function (t) { return present[t]; });
+    var customTypes = Object.keys(present)
+      .filter(function (t) { return DOC_TYPE_ORDER.indexOf(t) === -1; })
+      .sort(function (a, b) { return humanizeType(a).localeCompare(humanizeType(b)); });
 
-    orderedTypes.forEach(function (t) {
+    knownTypes.concat(customTypes).forEach(function (t) {
       var opt = document.createElement('option');
       opt.value = t;
       opt.textContent = typeMeta(t).label;
@@ -166,7 +176,6 @@
 
   function matchesType(doc, filterValue) {
     if (!filterValue) return true;
-    if (filterValue === 'other') return DOC_TYPE_ORDER.indexOf(doc.doc_type) === -1;
     return doc.doc_type === filterValue;
   }
 
