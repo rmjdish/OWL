@@ -265,7 +265,7 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>The Metadata Enhancement Project is an ongoing programme of work to transform the quality of variable metadata across the full NSHD repository. Around 28,000 variables have been cleaned so far — with expanded labels, age at collection, standardised longitudinal labels, a new hierarchical category structure, derived status flags, missing value codes, value label consistency, and new fields including Units, Notes, sensitive flags, and distribution plots. The remaining ~7,000 variables are available on Condor only while work continues. The project is due for completion at the end of 2026.</p>
+              <p>The Metadata Enhancement Project is an ongoing programme of work to transform the quality of variable metadata across the full NSHD repository. Around 28,000 variables have been cleaned so far — with expanded labels, age at collection, standardised longitudinal labels, a new hierarchical category structure, derived status flags, missing value codes, value label consistency, and new fields including Units, Notes, sensitive flags, and distribution plots. The remaining ~7,000 variables are available on Condor only while work continues. The project is due for completion at the end of 2027.</p>
               <a class="inner-link" href="/OWL/docs/accessing-nshd-data/metadata-enhancement-project/">Go to Metadata Enhancement Project →</a>
             </div>
           </div>
