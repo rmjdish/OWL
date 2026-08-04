@@ -13,7 +13,9 @@
   // documents index spreadsheet, like "full_documentation") gets its own
   // humanized label and its own filter option instead, appended after
   // these four, rather than being grouped into one generic "Other"
-  // bucket.
+  // bucket. Each one is still just as filterable and just as visible as
+  // the four structurally auto-detected types — it just isn't hand-
+  // curated with a custom short label the way these four are.
   var DOC_TYPE_ORDER = ['topsheet', 'variable_note', 'templated_variable_note', 'narrative'];
 
   function humanizeType(type) {
@@ -49,53 +51,18 @@
     return DOC_TYPE_META[docType] || { label: humanizeType(docType), icon: 'ti-file-description' };
   }
 
-  // Converts a raw Pagefind result into the same row shape browse mode
-  // already uses, by reading back the data-pagefind-meta values each
-  // page carries (see build_pages.py) — so renderRow, applySort, and
-  // everything else downstream never needs to know whether a document
-  // came from the browse index or a live search.
-  function pagefindResultToDoc(data) {
-    var meta = data.meta || {};
-    return {
-      doc_id: (data.url || '').replace(/\/$/, '').split('/').pop(),
-      title: data.title,
-      permalink: data.url,
-      doc_type: meta.doc_type || '',
-      topic: (meta.topics || '').split('|')[0] || '',
-      topics: meta.topics ? meta.topics.split('|') : [],
-      high: parseInt(meta.high, 10) || 0,
-      medium: parseInt(meta.medium, 10) || 0,
-      low: parseInt(meta.low, 10) || 0,
-    };
-  }
-
-  var pagefind = null;
-  var pagefindReady = null;
-  function ensurePagefind() {
-    if (!pagefindReady) {
-      pagefindReady = import((window.SITE_BASEURL || '') + '/pagefind/pagefind.js')
-        .then(function (mod) {
-          pagefind = mod;
-          return pagefind.init();
-        });
-    }
-    return pagefindReady;
-  }
-
-  // Runs an actual Pagefind query and resolves to documents in the same
-  // shape as browse mode. NOTE: this assumes an empty query returns no
-  // results (Pagefind's normal behaviour) — callers are responsible for
-  // only invoking this once there's a real query, and falling back to
-  // the browse index otherwise. See render() below.
-  function searchWithPagefind(query) {
-    return ensurePagefind()
-      .then(function () { return pagefind.search(query); })
-      .then(function (searchResults) {
-        return Promise.all(searchResults.results.map(function (r) { return r.data(); }))
-          .then(function (dataList) {
-            return dataList.map(function (data) { return pagefindResultToDoc(data); });
-          });
-      });
+  // One lowercased search blob per document, built once at load time
+  // rather than re-concatenated on every keystroke — with a few hundred
+  // documents this is the difference between a snappy filter and a
+  // noticeable stutter as someone types.
+  function buildHaystack(doc) {
+    var parts = [
+      doc.title, doc.topic, (doc.topics || []).join(' '), doc.categories,
+      doc.summary_of_work, doc.papers_used, doc.source_variable_names,
+      doc.output_variables, (doc.variable_names || []).join(' '),
+      (doc.variable_labels || []).join(' '),
+    ];
+    return parts.filter(Boolean).join(' \u2022 ').toLowerCase();
   }
 
   // All three tiers, not just the highest — a document with 6 high and
@@ -300,11 +267,15 @@
     render();
   }
 
-  // Shared tail end for both modes: sort whatever set of documents it's
-  // given, paginate, and paint the table — completely unaware of
-  // whether those documents came from the browse index or a live
-  // Pagefind search.
-  function renderMatches(matches, totalAvailable) {
+  function render() {
+    var query = input.value.trim().toLowerCase();
+    var typeValue = typeFilter.value;
+
+    var matches = allDocs.filter(function (doc) {
+      if (!matchesType(doc, typeValue)) return false;
+      if (!query) return true;
+      return doc._haystack.indexOf(query) !== -1;
+    });
     matches = applySort(matches);
 
     var pageSize = getPageSize();
@@ -319,69 +290,31 @@
     pageItems.forEach(function (doc, i) { frag.appendChild(renderRow(doc, i)); });
     resultsEl.appendChild(frag);
 
-    countEl.textContent = 'Showing ' + matches.length + ' of ' + totalAvailable + ' documents';
+    countEl.textContent = 'Showing ' + matches.length + ' of ' + allDocs.length + ' documents';
     emptyEl.style.display = matches.length === 0 ? '' : 'none';
     updateSortHeaderUI();
     renderPagination(matches.length, pageSize);
   }
 
-  // Bumped on every render() call so a slow Pagefind response that
-  // resolves after a newer, faster one can be told it's stale and
-  // discarded — without this, typing quickly could let an older
-  // request's results flash back over a more recent search.
-  var renderRequestId = 0;
-
-  function render() {
-    var query = input.value.trim();
-    var typeValue = typeFilter.value;
-    var thisRequest = ++renderRequestId;
-
-    if (!query) {
-      // Browse mode: filter/sort/paginate the small, always-loaded
-      // browse index entirely client-side, exactly as before.
-      var matches = allDocs.filter(function (doc) { return matchesType(doc, typeValue); });
-      renderMatches(matches, allDocs.length);
-      return;
-    }
-
-    // Search mode: query Pagefind, then apply the same type filter,
-    // sort, and pagination to whatever it returns.
-    searchWithPagefind(query)
-      .then(function (docs) {
-        if (thisRequest !== renderRequestId) return; // a newer request has already superseded this one
-        var matches = docs.filter(function (doc) { return matchesType(doc, typeValue); });
-        renderMatches(matches, docs.length);
-      })
-      .catch(function (err) {
-        if (thisRequest !== renderRequestId) return;
-        errorEl.style.display = '';
-        console.error('Pagefind search failed:', err);
-      });
-  }
-
-  fetch((window.SITE_BASEURL || '') + '/assets/data/browse_index.json')
+  fetch((window.SITE_BASEURL || '') + '/assets/data/search_index.json')
     .then(function (res) {
-      if (!res.ok) throw new Error('browse_index.json request failed: ' + res.status);
+      if (!res.ok) throw new Error('search_index.json request failed: ' + res.status);
       return res.json();
     })
     .then(function (docs) {
-      allDocs = docs;
+      allDocs = docs.map(function (d) {
+        d._haystack = buildHaystack(d);
+        return d;
+      });
       populateTypeFilter(allDocs);
       render();
     })
     .catch(function (err) {
       errorEl.style.display = '';
-      console.error('Failed to load documentation browse index:', err);
+      console.error('Failed to load documentation search index:', err);
     });
 
-  // Debounced so a live Pagefind query isn't fired on every single
-  // keystroke — browse mode (empty query) still updates instantly,
-  // since that path never touches the network.
-  var inputDebounceTimer = null;
-  input.addEventListener('input', function () {
-    clearTimeout(inputDebounceTimer);
-    inputDebounceTimer = setTimeout(resetToFirstPage, 200);
-  });
+  input.addEventListener('input', resetToFirstPage);
   typeFilter.addEventListener('change', resetToFirstPage);
   pageSizeSelect.addEventListener('change', resetToFirstPage);
   sortableHeaders.forEach(function (th) {
