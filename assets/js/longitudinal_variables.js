@@ -855,6 +855,14 @@ document.addEventListener("DOMContentLoaded", () => {
     updateMainAddButton(fid);
   }
 
+  // ── Keep checkboxes in sync with the basket even when it changes ────────
+  // elsewhere on the page (e.g. auto-added linked sweeps happening
+  // silently in the background after a single add).
+  window.addEventListener('nshd-basket-changed', () => {
+    renderTable();
+    openPanels.forEach(fid => refreshPanelCheckboxes(fid));
+  });
+
   // ── Pagination ────────────────────────────────────────────────────────────
 
   function renderPagination(totalPages) {
