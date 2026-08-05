@@ -105,18 +105,30 @@ function setAutoAddSiblings(val) {
   localStorage.setItem(AUTO_ADD_SIBLINGS_KEY, val ? "true" : "false");
 }
 
+// Formats a list of variable names for the toast message, e.g.
+// "wt50u", "wt50u and wt52u", "wt50u, wt52u and wt53u", or, once the list
+// gets long, "wt50u, wt52u, wt53u and 4 more".
+function formatVarNameList(items, max) {
+  max = max || 4;
+  const names = items.map(i => i.varName);
+  if (names.length === 1) return names[0];
+  if (names.length <= max) {
+    return names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+  }
+  return names.slice(0, max).join(", ") + ` and ${names.length - max} more`;
+}
+
 // ── Toast shown after siblings get auto-added or auto-removed ──────────────
 // items = [{ varName, label }, ...] — needed (not just names) so an "Undo"
 // after a removal can re-add them with their correct labels intact.
 function showLinkedSweepsToast(items, action) {
   if (!items || items.length === 0) return;
-  const count = items.length;
   let toast = document.getElementById("linkedSweepsToast");
   if (!toast) {
     toast = document.createElement("div");
     toast.id = "linkedSweepsToast";
     Object.assign(toast.style, {
-      position: "fixed", zIndex: "999999",
+      position: "fixed", zIndex: "999999", maxWidth: "360px",
       background: "#E1F5EE", color: "#085041", padding: "10px 14px",
       borderRadius: "6px", fontSize: "12px",
       border: "1px solid #9AD4BE", boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
@@ -126,9 +138,11 @@ function showLinkedSweepsToast(items, action) {
   }
   toast.innerHTML = "";
   const msg = document.createElement("span");
+  msg.style.wordBreak = "break-word";
+  const list = formatVarNameList(items);
   msg.textContent = action === "removed"
-    ? `Also removed ${count} related sweep${count === 1 ? "" : "s"} from your basket`
-    : `Also added ${count} related sweep${count === 1 ? "" : "s"} to your basket`;
+    ? `Also removed ${list} from your basket`
+    : `Also added ${list} to your basket`;
   const undo = document.createElement("a");
   undo.href = "#";
   undo.textContent = "Undo";
@@ -408,17 +422,48 @@ document.addEventListener("DOMContentLoaded", () => {
   autoAddToggle.id = "autoAddSiblingsToggle";
   autoAddToggle.title = "When on, adding or removing one sweep of a longitudinal variable does the same for its other sweeps.";
   Object.assign(autoAddToggle.style, {
-    display: "inline-flex", alignItems: "center", gap: "6px",
+    display: "inline-flex", alignItems: "center", gap: "8px",
     fontSize: "11px", color: "#555", marginRight: "10px", cursor: "pointer", userSelect: "none"
   });
+
   const autoAddInput = document.createElement("input");
   autoAddInput.type = "checkbox";
   autoAddInput.checked = getAutoAddSiblings();
-  autoAddInput.style.cursor = "pointer";
-  autoAddInput.addEventListener("change", () => setAutoAddSiblings(autoAddInput.checked));
+  // Visually hidden but still focusable/clickable/keyboard-operable — the
+  // label wraps it, so native checkbox behavior (space to toggle, click
+  // anywhere in the label) keeps working; only the visible track/thumb
+  // below are styled to look like a switch.
+  Object.assign(autoAddInput.style, {
+    position: "absolute", width: "1px", height: "1px", padding: "0", margin: "-1px",
+    overflow: "hidden", clip: "rect(0,0,0,0)", whiteSpace: "nowrap", border: "0"
+  });
+
+  const track = document.createElement("span");
+  Object.assign(track.style, {
+    width: "30px", height: "17px", borderRadius: "10px", position: "relative",
+    display: "inline-block", flexShrink: "0", transition: "background 0.15s",
+    background: autoAddInput.checked ? "#6a0dad" : "#ccc"
+  });
+  const thumb = document.createElement("span");
+  Object.assign(thumb.style, {
+    width: "13px", height: "13px", borderRadius: "50%", background: "#fff",
+    position: "absolute", top: "2px", transition: "left 0.15s",
+    left: autoAddInput.checked ? "15px" : "2px"
+  });
+  track.appendChild(thumb);
+
+  autoAddInput.addEventListener("change", () => {
+    setAutoAddSiblings(autoAddInput.checked);
+    track.style.background = autoAddInput.checked ? "#6a0dad" : "#ccc";
+    thumb.style.left = autoAddInput.checked ? "15px" : "2px";
+  });
+  autoAddInput.addEventListener("focus", () => { track.style.boxShadow = "0 0 0 2px rgba(106,13,173,0.35)"; });
+  autoAddInput.addEventListener("blur",  () => { track.style.boxShadow = "none"; });
+
   const autoAddText = document.createElement("span");
   autoAddText.textContent = "Keep linked sweeps together";
   autoAddToggle.appendChild(autoAddInput);
+  autoAddToggle.appendChild(track);
   autoAddToggle.appendChild(autoAddText);
   wrapper.insertAdjacentElement("afterend", autoAddToggle);
 
