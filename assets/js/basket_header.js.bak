@@ -37,14 +37,8 @@ function isInBasket(varName) {
 
 function addToBasket(varName, label) {
   const basket = loadBasket();
-  const idx = basket.findIndex(item => item.varName === varName);
-  if (idx === -1) {
+  if (!basket.some(item => item.varName === varName)) {
     basket.push({ varName, label });
-    saveBasket(basket);
-  } else if (label && basket[idx].label !== label) {
-    // Already in the basket — refresh its label in case a more accurate
-    // (e.g. per-sweep) label is now being supplied for this variable.
-    basket[idx].label = label;
     saveBasket(basket);
   }
   updateBasketCountUI();
@@ -89,16 +83,11 @@ function batchAddToBasket(items) {
   // items = [{ varName, label }, ...]
   if (!items || items.length === 0) return;
   const basket = loadBasket();
-  const indexByName = new Map();
-  basket.forEach((item, i) => indexByName.set(item.varName, i));
+  const existing = new Set(basket.map(i => i.varName));
   items.forEach(({ varName, label }) => {
-    if (!varName) return;
-    if (indexByName.has(varName)) {
-      const i = indexByName.get(varName);
-      if (label && basket[i].label !== label) basket[i].label = label;
-    } else {
+    if (varName && !existing.has(varName)) {
       basket.push({ varName, label });
-      indexByName.set(varName, basket.length - 1);
+      existing.add(varName);
     }
   });
   saveBasket(basket);
