@@ -113,11 +113,10 @@ document.addEventListener("DOMContentLoaded", () => {
           };
         }
         const rawLabel   = row['Variable Label'] || '';
-        const sweepLabel = cleanLabel(rawLabel) || rawLabel;
         groups[fid].sweeps.push({
           varname: row['NSHD Variable Name'] || '',
           year:    row['Year of collection']  || '',
-          label:   sweepLabel   // this sweep's own label — NOT the group's shortened label
+          label:   rawLabel   // full, unmodified label for this specific variable — used for the basket
         });
         groups[fid].varnames.push(row['NSHD Variable Name'] || '');
         groups[fid].rawLabels.push(rawLabel);
