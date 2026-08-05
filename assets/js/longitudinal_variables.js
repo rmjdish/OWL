@@ -855,6 +855,19 @@ document.addEventListener("DOMContentLoaded", () => {
     updateMainAddButton(fid);
   }
 
+  // ── Keep checkboxes in sync with the basket even when it changes ──────────
+  // asynchronously after this page's own click handlers have already
+  // finished — specifically, linked sweeps auto-added by basket_header.js
+  // land a moment AFTER the click, once its dictionary lookup resolves.
+  // This just re-runs the existing lightweight sync functions above; it
+  // does NOT rebuild the table, so it stays cheap regardless of basket size.
+  window.addEventListener('nshd-basket-changed', () => {
+    tbody.querySelectorAll('tr[data-field-id]').forEach(tr => {
+      syncRowCheckbox(parseInt(tr.dataset.fieldId));
+    });
+    openPanels.forEach(fid => refreshPanelCheckboxes(fid));
+  });
+
   // ── Pagination ────────────────────────────────────────────────────────────
 
   function renderPagination(totalPages) {
