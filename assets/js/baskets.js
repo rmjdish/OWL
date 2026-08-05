@@ -510,6 +510,7 @@ window.addEventListener("load", function () {
   const LABEL_COL_CANDIDATES = ["variable label", "variable_label", "label"];
 
   let uploadParsedItems = []; // { name, label, isNew }
+  let uploadLinkedSiblings = []; // [{ varName, label }, ...] — computed per file, before confirm
 
   function normCell(v) {
     return (v === null || v === undefined) ? "" : String(v).trim();
@@ -564,6 +565,9 @@ window.addEventListener("load", function () {
     document.getElementById("uploadLimitWarningBox").style.display = "none";
     document.getElementById("uploadPreview").style.display = "none";
     document.getElementById("uploadDone").innerHTML = "";
+    uploadLinkedSiblings = [];
+    const linkedRow = document.getElementById("uploadIncludeLinkedRow");
+    if (linkedRow) linkedRow.style.display = "none";
   }
 
   function closeUploadPanel() {
@@ -667,6 +671,42 @@ window.addEventListener("load", function () {
     }
 
     processUploadRows(rows, uploadBtn);
+  }
+
+  function renderUploadLinkedOption(count) {
+    let row = document.getElementById("uploadIncludeLinkedRow");
+    if (count === 0) {
+      if (row) row.style.display = "none";
+      return;
+    }
+    if (!row) {
+      row = document.createElement("label");
+      row.id = "uploadIncludeLinkedRow";
+      Object.assign(row.style, {
+        display: "flex", alignItems: "center", gap: "8px", padding: "10px 12px",
+        background: "#F3E5F5", borderRadius: "6px", fontSize: "13px",
+        margin: "10px 0", cursor: "pointer"
+      });
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.id = "uploadIncludeLinkedCheckbox";
+      input.checked = true;
+      const text = document.createElement("span");
+      text.id = "uploadIncludeLinkedLabel";
+      row.appendChild(input);
+      row.appendChild(text);
+
+      const previewBody = document.getElementById("uploadPreviewBody");
+      const table = previewBody ? previewBody.closest("table") : null;
+      if (table && table.parentNode) {
+        table.parentNode.insertBefore(row, table);
+      } else {
+        document.getElementById("uploadPreview").insertBefore(row, document.getElementById("uploadPreview").firstChild);
+      }
+    }
+    row.style.display = "flex";
+    document.getElementById("uploadIncludeLinkedLabel").textContent =
+      `Also include ${count} linked sweep${count === 1 ? "" : "s"} of longitudinal variables in this file`;
   }
 
   function processUploadRows(rows, uploadBtn) {
@@ -790,7 +830,16 @@ window.addEventListener("load", function () {
     document.getElementById("uploadAlreadyCount").textContent = uploadParsedItems.length - newCount;
     document.getElementById("uploadCurrentCount").textContent = existingBasket.length;
     document.getElementById("uploadPreviewBody").innerHTML = previewRows;
+
+    uploadLinkedSiblings = [];
+    renderUploadLinkedOption(0);
     document.getElementById("uploadPreview").style.display = "block";
+
+    const previewItems = uploadParsedItems.map(v => ({ varName: v.name, label: v.label }));
+    expandBasketItemsWithSiblings(previewItems).then(function (siblings) {
+      uploadLinkedSiblings = siblings;
+      renderUploadLinkedOption(siblings.length);
+    });
   }
 
   const uploadBtn = document.getElementById("uploadBasketBtn");
@@ -816,15 +865,20 @@ window.addEventListener("load", function () {
       if (uploadParsedItems.length === 0) return;
 
       const items = uploadParsedItems.map(v => ({ varName: v.name, label: v.label }));
-      batchAddToBasket(items); // single localStorage read+write, defined in basket_header.js
+      const includeLinkedEl = document.getElementById("uploadIncludeLinkedCheckbox");
+      const includeLinked = includeLinkedEl ? includeLinkedEl.checked : false;
+      const finalItems = includeLinked ? items.concat(uploadLinkedSiblings) : items;
 
-      const newCount = uploadParsedItems.filter(v => v.isNew).length;
+      // expandSiblings: false — we've already decided inclusion above via the checkbox
+      const addedNames = batchAddToBasket(finalItems, { expandSiblings: false });
+
       document.getElementById("uploadPreview").style.display = "none";
       document.getElementById("uploadDone").innerHTML =
-        "<b>" + newCount + " new variable(s) added to your basket.</b> Your basket now has " +
+        "<b>" + addedNames.length + " new variable(s) added to your basket.</b> Your basket now has " +
         loadBasket().length + " variable(s).";
 
       uploadParsedItems = [];
+      uploadLinkedSiblings = [];
       if (uploadFileInput) uploadFileInput.value = "";
 
       basketPage = 1;
