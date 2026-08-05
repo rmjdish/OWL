@@ -392,10 +392,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // From a partial state, clicking always completes the set (adds remaining sweeps).
         // From empty, clicking adds all. From full, unclicking removes all.
         if (wasPartial || cb.checked) {
-          names.forEach(n => addToBasket(n, field ? getVarLabel(field, n) : n));
+          names.forEach(n => addToBasket(n, field ? getVarLabel(field, n) : n, { expandSiblings: false }));
           cb.checked = true;
         } else {
-          names.forEach(n => removeFromBasket(n));
+          names.forEach(n => removeFromBasket(n, { expandSiblings: false }));
         }
 
         cb.classList.remove('check-partial');
@@ -669,8 +669,8 @@ document.addEventListener("DOMContentLoaded", () => {
           const vn    = cb.dataset.varname;
           const label = cb.dataset.label;
           if (!vn) return;
-          if (cb.checked) addToBasket(vn, label);
-          else            removeFromBasket(vn);
+          if (cb.checked) addToBasket(vn, label, { expandSiblings: false });
+          else            removeFromBasket(vn, { expandSiblings: false });
           updateBasketCountUI();
           updateMainAddButton(fid);
           syncRowCheckbox(fid);
@@ -775,12 +775,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (allIn) {
       // Currently full — remove every sweep
-      validNames.forEach(n => removeFromBasket(n));
+      validNames.forEach(n => removeFromBasket(n, { expandSiblings: false }));
       document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
         .forEach(cb => { cb.checked = false; });
     } else {
       // Not full — add every sweep, each with its own label
-      validNames.forEach(n => addToBasket(n, getVarLabel(field, n)));
+      validNames.forEach(n => addToBasket(n, getVarLabel(field, n), { expandSiblings: false }));
       document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
         .forEach(cb => { cb.checked = true; });
     }
