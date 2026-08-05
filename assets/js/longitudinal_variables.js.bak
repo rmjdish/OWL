@@ -34,14 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return yr ? String(yr - 1946) : '';
   }
 
-  // Look up an individual variable's own label (not the group's shortened
-  // Field-ID-level label). Falls back to the group label only if a sweep
-  // entry can't be found, which shouldn't normally happen.
-  function getVarLabel(field, varname) {
-    const sweep = field.sweeps.find(s => s.varname === varname);
-    return (sweep && sweep.label) ? sweep.label : field.label;
-  }
-
   function stripId(s) {
     return (s || '').replace(/\s*\[.*?\]/g, '').trim();
   }
@@ -112,15 +104,12 @@ document.addEventListener("DOMContentLoaded", () => {
             rawLabels:  []   // collected so we can pick the cleanest one below
           };
         }
-        const rawLabel   = row['Variable Label'] || '';
-        const sweepLabel = cleanLabel(rawLabel) || rawLabel;
         groups[fid].sweeps.push({
           varname: row['NSHD Variable Name'] || '',
-          year:    row['Year of collection']  || '',
-          label:   sweepLabel   // this sweep's own label — NOT the group's shortened label
+          year:    row['Year of collection']  || ''
         });
         groups[fid].varnames.push(row['NSHD Variable Name'] || '');
-        groups[fid].rawLabels.push(rawLabel);
+        groups[fid].rawLabels.push(row['Variable Label'] || '');
       });
 
       allFields = Object.values(groups)
@@ -326,7 +315,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td class="col-check">
           <input type="checkbox" class="row-check ${checkboxClass}"
                  data-varnames="${f.varnames.join(',')}"
-                 data-field-id="${f.fieldId}"
+                 data-label="${f.label.replace(/"/g, '&quot;')}"
                  title="${checkboxTitle}"
                  ${checkboxChecked}
                  style="width:14px;height:14px;">
@@ -386,14 +375,13 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.querySelectorAll('.row-check').forEach(cb => {
       cb.onchange = () => {
         const names = cb.dataset.varnames.split(',').filter(Boolean);
-        const fid   = parseInt(cb.dataset.fieldId);
-        const field = allFields.find(f => f.fieldId === fid);
+        const label = cb.dataset.label;
         const wasPartial = cb.classList.contains('check-partial');
 
         // From a partial state, clicking always completes the set (adds remaining sweeps).
         // From empty, clicking adds all. From full, unclicking removes all.
         if (wasPartial || cb.checked) {
-          names.forEach(n => addToBasket(n, field ? getVarLabel(field, n) : n));
+          names.forEach(n => addToBasket(n, label));
           cb.checked = true;
         } else {
           names.forEach(n => removeFromBasket(n));
@@ -404,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateBasketCountUI();
 
         // Refresh the expanded panel's sweep checkboxes if open
+        const fid = parseInt(cb.closest('tr').dataset.fieldId);
         if (openPanels.has(fid)) refreshPanelCheckboxes(fid);
       };
     });
@@ -455,7 +444,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const sweepData = field.sweeps.map((s, i) => ({
         varname:   s.varname,
         year:      s.year,
-        label:     s.label,
         age:       yearToAge(s.year),
         mean:      sidecars[i]?.mean        ?? null,
         sd:        sidecars[i]?.sd          ?? null,
@@ -493,7 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const checkCell = `<td class="sweep-add-col" style="border-bottom:1px solid #C4ADE8;border-right:1px solid #C4ADE8;">
           <input type="checkbox" class="sweep-check"
                  data-varname="${s.varname}"
-                 data-label="${(s.label || field.label).replace(/"/g,'&quot;')}"
+                 data-label="${field.label.replace(/"/g,'&quot;')}"
                  data-fid="${fid}"
                  ${inBasket ? 'checked' : ''}>
         </td>`;
@@ -780,8 +768,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
         .forEach(cb => { cb.checked = false; });
     } else {
-      // Not full — add every sweep, each with its own label
-      validNames.forEach(n => addToBasket(n, getVarLabel(field, n)));
+      // Not full — add every sweep
+      validNames.forEach(n => addToBasket(n, field.label));
       document.querySelectorAll(`#panel-content-${fid} .sweep-check`)
         .forEach(cb => { cb.checked = true; });
     }
