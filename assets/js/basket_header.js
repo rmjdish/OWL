@@ -403,10 +403,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateBasketCountUI();
 
-  // ── Auto-add linked sweeps toggle, placed right next to the basket icon ──
+  // ── Keep linked sweeps together toggle, placed right next to the basket icon ──
   const autoAddToggle = document.createElement("label");
   autoAddToggle.id = "autoAddSiblingsToggle";
-  autoAddToggle.title = "When on, adding one sweep of a longitudinal variable also adds its other sweeps.";
+  autoAddToggle.title = "When on, adding or removing one sweep of a longitudinal variable does the same for its other sweeps.";
   Object.assign(autoAddToggle.style, {
     display: "inline-flex", alignItems: "center", gap: "6px",
     fontSize: "11px", color: "#555", marginRight: "10px", cursor: "pointer", userSelect: "none"
@@ -417,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
   autoAddInput.style.cursor = "pointer";
   autoAddInput.addEventListener("change", () => setAutoAddSiblings(autoAddInput.checked));
   const autoAddText = document.createElement("span");
-  autoAddText.textContent = "Auto-add linked sweeps";
+  autoAddText.textContent = "Keep linked sweeps together";
   autoAddToggle.appendChild(autoAddInput);
   autoAddToggle.appendChild(autoAddText);
   wrapper.insertAdjacentElement("afterend", autoAddToggle);
