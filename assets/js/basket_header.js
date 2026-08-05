@@ -105,35 +105,62 @@ function setAutoAddSiblings(val) {
   localStorage.setItem(AUTO_ADD_SIBLINGS_KEY, val ? "true" : "false");
 }
 
-// ── Toast shown after siblings get auto-added ───────────────────────────────
-function showLinkedSweepsToast(count, varNames) {
-  if (!count) return;
+// ── Toast shown after siblings get auto-added or auto-removed ──────────────
+// items = [{ varName, label }, ...] — needed (not just names) so an "Undo"
+// after a removal can re-add them with their correct labels intact.
+function showLinkedSweepsToast(items, action) {
+  if (!items || items.length === 0) return;
+  const count = items.length;
   let toast = document.getElementById("linkedSweepsToast");
   if (!toast) {
     toast = document.createElement("div");
     toast.id = "linkedSweepsToast";
     Object.assign(toast.style, {
-      position: "fixed", bottom: "20px", right: "20px", zIndex: "999999",
+      position: "fixed", zIndex: "999999",
       background: "#E1F5EE", color: "#085041", padding: "10px 14px",
-      borderRadius: "6px", fontSize: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      borderRadius: "6px", fontSize: "12px",
+      border: "1px solid #9AD4BE", boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
       display: "flex", alignItems: "center", gap: "10px"
     });
     document.body.appendChild(toast);
   }
   toast.innerHTML = "";
   const msg = document.createElement("span");
-  msg.textContent = `Also added ${count} related sweep${count === 1 ? "" : "s"} to your basket`;
+  msg.textContent = action === "removed"
+    ? `Also removed ${count} related sweep${count === 1 ? "" : "s"} from your basket`
+    : `Also added ${count} related sweep${count === 1 ? "" : "s"} to your basket`;
   const undo = document.createElement("a");
   undo.href = "#";
   undo.textContent = "Undo";
   Object.assign(undo.style, { color: "#085041", textDecoration: "underline" });
   undo.addEventListener("click", e => {
     e.preventDefault();
-    batchRemoveFromBasket(varNames);
+    if (action === "removed") {
+      batchAddToBasket(items, { expandSiblings: false });
+    } else {
+      batchRemoveFromBasket(items.map(i => i.varName), { expandSiblings: false });
+    }
     toast.style.display = "none";
   });
   toast.appendChild(msg);
   toast.appendChild(undo);
+
+  // Anchor under the basket icon rather than a fixed screen corner, so it
+  // reads as feedback from the basket specifically, not a generic page toast.
+  const anchor = document.getElementById("basketWrapper") || document.getElementById("basketTop");
+  if (anchor) {
+    const rect = anchor.getBoundingClientRect();
+    toast.style.top = (rect.bottom + 8) + "px";
+    toast.style.left = rect.left + "px";
+    toast.style.right = "auto";
+    toast.style.bottom = "auto";
+  } else {
+    toast.style.top = "auto";
+    toast.style.left = "auto";
+    toast.style.right = "20px";
+    toast.style.bottom = "20px";
+  }
+
   toast.style.display = "flex";
   clearTimeout(toast._hideTimer);
   toast._hideTimer = setTimeout(() => { toast.style.display = "none"; }, 6000);
@@ -177,6 +204,27 @@ function _pulseBasketUI() {
   }
 }
 
+function _shakeBasketUI() {
+  updateBasketCountUI();
+  const basketTop = document.getElementById("basketTop");
+  if (basketTop) {
+    basketTop.classList.add("shake");
+    setTimeout(() => basketTop.classList.remove("shake"), 400);
+  }
+}
+
+// Removes a set of varNames from the basket in one write, returning the
+// full {varName,label} items that were actually removed (for toast/undo).
+function _removeBasketItems(varNames) {
+  const removeSet = new Set(varNames);
+  const basket = loadBasket();
+  const removedItems = basket.filter(item => removeSet.has(item.varName));
+  if (removedItems.length === 0) return [];
+  const remaining = basket.filter(item => !removeSet.has(item.varName));
+  saveBasket(remaining);
+  return removedItems;
+}
+
 function addToBasket(varName, label, opts) {
   opts = opts || {};
   _upsertBasketItems([{ varName, label }]);
@@ -188,23 +236,28 @@ function addToBasket(varName, label, opts) {
       const addedNames = _upsertBasketItems(siblingItems);
       if (addedNames.length > 0) {
         _pulseBasketUI();
-        showLinkedSweepsToast(addedNames.length, addedNames);
+        const addedItems = siblingItems.filter(i => addedNames.includes(i.varName));
+        showLinkedSweepsToast(addedItems, "added");
       }
     });
   }
 }
 
-function removeFromBasket(varName) {
-  let basket = loadBasket();
-  basket = basket.filter(item => item.varName !== varName);
-  saveBasket(basket);
-  updateBasketCountUI();
+function removeFromBasket(varName, opts) {
+  opts = opts || {};
+  _removeBasketItems([varName]);
+  _shakeBasketUI();
 
-  // ⭐ Shake animation on removal
-  const basketTop = document.getElementById("basketTop");
-  if (basketTop) {
-    basketTop.classList.add("shake");
-    setTimeout(() => basketTop.classList.remove("shake"), 400);
+  if (opts.expandSiblings !== false && getAutoAddSiblings()) {
+    loadLongitudinalSiblings().then(map => {
+      const siblings = map.get(varName);
+      if (!siblings || siblings.length === 0) return;
+      const removedItems = _removeBasketItems(siblings.map(s => s.varName));
+      if (removedItems.length > 0) {
+        _shakeBasketUI();
+        showLinkedSweepsToast(removedItems, "removed");
+      }
+    });
   }
 }
 
@@ -229,7 +282,8 @@ function batchAddToBasket(items, opts) {
       const siblingAdded = _upsertBasketItems(siblingItems);
       if (siblingAdded.length > 0) {
         _pulseBasketUI();
-        showLinkedSweepsToast(siblingAdded.length, siblingAdded);
+        const addedItems = siblingItems.filter(i => siblingAdded.includes(i.varName));
+        showLinkedSweepsToast(addedItems, "added");
       }
     });
   }
@@ -237,21 +291,63 @@ function batchAddToBasket(items, opts) {
   return addedNames;
 }
 
-function batchRemoveFromBasket(varNames) {
+function batchRemoveFromBasket(varNames, opts) {
   // varNames = ["ht82", "wt82", ...]
+  opts = opts || {};
   if (!varNames || varNames.length === 0) return;
-  const removeSet = new Set(varNames);
-  let basket = loadBasket();
-  basket = basket.filter(item => !removeSet.has(item.varName));
-  saveBasket(basket);
-  updateBasketCountUI();
+  _removeBasketItems(varNames);
+  _shakeBasketUI();
 
-  const basketTop = document.getElementById("basketTop");
-  if (basketTop) {
-    basketTop.classList.add("shake");
-    setTimeout(() => basketTop.classList.remove("shake"), 400);
+  if (opts.expandSiblings !== false && getAutoAddSiblings()) {
+    expandBasketItemsWithSiblings(varNames).then(siblingItems => {
+      if (siblingItems.length === 0) return;
+      const removedItems = _removeBasketItems(siblingItems.map(s => s.varName));
+      if (removedItems.length > 0) {
+        _shakeBasketUI();
+        showLinkedSweepsToast(removedItems, "removed");
+      }
+    });
   }
 }
+
+// ── Site-wide checkbox sync ─────────────────────────────────────────────────
+// Runs on every basket change, on every page. Deliberately lightweight —
+// only toggles checked/class state on existing DOM nodes already on the
+// page, no re-rendering, no re-fetching. Works with any checkbox that
+// follows the convention already used on the longitudinal page:
+//   data-varname="xyz"              single variable, plain checked toggle
+//   data-varnames="a,b,c"           group of variables, gets check-full /
+//                                    check-partial classes for partial state
+// Any future page just needs to use these attributes — no extra JS required
+// on that page for its checkboxes to stay in sync with siblings added or
+// removed elsewhere (e.g. via the toast's Undo, or another tab).
+function refreshBasketCheckboxesUI() {
+  const basketSet = new Set(loadBasket().map(item => item.varName));
+
+  document.querySelectorAll('input[type="checkbox"][data-varname]').forEach(cb => {
+    const vn = cb.dataset.varname;
+    if (!vn) return;
+    cb.checked = basketSet.has(vn);
+  });
+
+  document.querySelectorAll('input[type="checkbox"][data-varnames]').forEach(cb => {
+    const names = (cb.dataset.varnames || "").split(",").filter(Boolean);
+    if (names.length === 0) return;
+    const inCount = names.filter(n => basketSet.has(n)).length;
+    cb.classList.remove("check-full", "check-partial");
+    if (inCount === names.length) {
+      cb.checked = true;
+      cb.classList.add("check-full");
+    } else if (inCount > 0) {
+      cb.checked = false;
+      cb.classList.add("check-partial");
+    } else {
+      cb.checked = false;
+    }
+  });
+}
+
+window.addEventListener("nshd-basket-changed", refreshBasketCheckboxesUI);
 
 document.addEventListener("DOMContentLoaded", () => {
   const wrapper = document.getElementById("basketWrapper");
