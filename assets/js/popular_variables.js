@@ -304,6 +304,18 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("downloadCsvBtn")
       .addEventListener("click", downloadFilteredCSV);
 
+    // ============================================================
+    // Keep "Add all" button in sync with basket changes made
+    // elsewhere — e.g. linked longitudinal sweeps auto-added/removed via
+    // basket_header.js after this page's own handlers have already run.
+    // Checkbox .checked state itself is handled by
+    // refreshBasketCheckboxesUI() in basket_header.js (data-name is one
+    // of the conventions it recognizes).
+    // ============================================================
+    window.addEventListener("nshd-basket-changed", () => {
+      updateAddAllButtonLabel();
+    });
+
     renderTable();
   } // end initUI
 

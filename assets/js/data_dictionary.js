@@ -542,6 +542,21 @@ document.getElementById("addAllBtn").addEventListener("click", () => {
 });
 
 // ============================================================
+// Keep basket cache + "Add all" button in sync with changes made
+// elsewhere on the page or on other pages — e.g. linked longitudinal
+// sweeps auto-added/removed via basket_header.js after this page's own
+// handlers have already run. Checkbox .checked state itself is handled
+// by refreshBasketCheckboxesUI() in basket_header.js (data-var-name is
+// one of the conventions it recognizes); this just keeps this page's
+// own cache and button label consistent with that.
+// ============================================================
+
+window.addEventListener("nshd-basket-changed", () => {
+  refreshBasketCache();
+  updateAddAllButtonLabel();
+});
+
+// ============================================================
 // Make search methods label appear when Data Dictionary is active
 // ============================================================
 
