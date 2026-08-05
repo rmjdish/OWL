@@ -313,14 +313,15 @@ function batchRemoveFromBasket(varNames, opts) {
 // ── Site-wide checkbox sync ─────────────────────────────────────────────────
 // Runs on every basket change, on every page. Deliberately lightweight —
 // only toggles checked/class state on existing DOM nodes already on the
-// page, no re-rendering, no re-fetching. Works with any checkbox that
-// follows the convention already used on the longitudinal page:
-//   data-varname="xyz"              single variable, plain checked toggle
-//   data-varnames="a,b,c"           group of variables, gets check-full /
-//                                    check-partial classes for partial state
-// Any future page just needs to use these attributes — no extra JS required
-// on that page for its checkboxes to stay in sync with siblings added or
-// removed elsewhere (e.g. via the toast's Undo, or another tab).
+// page, no re-rendering, no re-fetching. The site has grown a few different
+// checkbox conventions across pages built at different times, so this
+// covers all of them:
+//   data-varname="xyz"              longitudinal page, single variable
+//   data-varnames="a,b,c"           longitudinal page, grouped row checkbox,
+//                                    gets check-full / check-partial classes
+//   data-var-name="xyz"             Search Data Dictionary page
+//   data-name="xyz"                 View Popular / Browse by Category pages
+// Any future page just needs to use one of these — no extra JS required.
 function refreshBasketCheckboxesUI() {
   const basketSet = new Set(loadBasket().map(item => item.varName));
 
@@ -344,6 +345,18 @@ function refreshBasketCheckboxesUI() {
     } else {
       cb.checked = false;
     }
+  });
+
+  document.querySelectorAll('input[type="checkbox"][data-var-name]').forEach(cb => {
+    const vn = cb.dataset.varName;
+    if (!vn) return;
+    cb.checked = basketSet.has(vn);
+  });
+
+  document.querySelectorAll('input[type="checkbox"][data-name]').forEach(cb => {
+    const vn = cb.dataset.name;
+    if (!vn) return;
+    cb.checked = basketSet.has(vn);
   });
 }
 
