@@ -146,10 +146,14 @@ function showLinkedSweepsToast(items, action) {
   toast.innerHTML = "";
   const msg = document.createElement("span");
   msg.style.wordBreak = "break-word";
+  const total = items.length;
   const list = formatVarNameList(items);
+  // State the total up front so it's never something the user has to work
+  // out themselves from a truncated list — the number here is always
+  // items.length directly, not reconstructed from "N shown + M more".
   msg.textContent = action === "removed"
-    ? `Also removed ${list} from your basket`
-    : `Also added ${list} to your basket`;
+    ? `Also removed ${total} related sweep${total === 1 ? "" : "s"} from your basket: ${list}`
+    : `Also added ${total} related sweep${total === 1 ? "" : "s"} to your basket: ${list}`;
   const undo = document.createElement("a");
   undo.href = "#";
   undo.textContent = "Undo";
