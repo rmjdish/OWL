@@ -335,6 +335,7 @@ function batchRemoveFromBasket(varNames, opts) {
 //                                    gets check-full / check-partial classes
 //   data-var-name="xyz"             Search Data Dictionary page
 //   data-name="xyz"                 View Popular / Browse by Category pages
+//   data-var="xyz"                  Documentation pages
 // Any future page just needs to use one of these — no extra JS required.
 function refreshBasketCheckboxesUI() {
   const basketSet = new Set(loadBasket().map(item => item.varName));
@@ -369,6 +370,12 @@ function refreshBasketCheckboxesUI() {
 
   document.querySelectorAll('input[type="checkbox"][data-name]').forEach(cb => {
     const vn = cb.dataset.name;
+    if (!vn) return;
+    cb.checked = basketSet.has(vn);
+  });
+
+  document.querySelectorAll('input[type="checkbox"][data-var]').forEach(cb => {
+    const vn = cb.dataset.var;
     if (!vn) return;
     cb.checked = basketSet.has(vn);
   });
