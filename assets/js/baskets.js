@@ -923,4 +923,24 @@ window.addEventListener("load", function () {
   renderBasket();
   updateBasketLimitWarning();
 
+  // ── Keep the visible list in sync with async basket changes ─────────────
+  // The Remove button above calls renderBasket() synchronously right after
+  // removeFromBasket() — but sibling removal (when Sync linked sweeps is
+  // on) happens asynchronously afterward, once the dictionary lookup in
+  // basket_header.js resolves. That's why the toast and header counter
+  // updated correctly (they're driven directly by that same async code)
+  // while this page's own table kept showing rows that were already gone
+  // from storage. This listener re-renders once that async step lands,
+  // for removals, additions (e.g. an upload's linked-sweeps expansion),
+  // or a toast's Undo — any of which can change the basket after this
+  // page's own handlers have already finished running.
+  window.addEventListener("nshd-basket-changed", () => {
+    const b = loadBasket();
+    const maxPage = Math.ceil(b.length / basketPageSize) || 1;
+    if (basketPage > maxPage) basketPage = maxPage;
+    renderBasket();
+    renderBasketPagination();
+    updateBasketResultsCount();
+  });
+
 });
