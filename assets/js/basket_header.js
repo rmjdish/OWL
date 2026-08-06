@@ -188,7 +188,7 @@ function showLinkedSweepsToast(items, action) {
 
   toast.style.display = "flex";
   clearTimeout(toast._hideTimer);
-  toast._hideTimer = setTimeout(() => { toast.style.display = "none"; }, 6000);
+  toast._hideTimer = setTimeout(() => { toast.style.display = "none"; }, 10000);
 }
 
 // ── Shared upsert core — used by both addToBasket and batchAddToBasket ─────
