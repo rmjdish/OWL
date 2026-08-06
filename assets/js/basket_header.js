@@ -48,7 +48,14 @@ let longitudinalSiblingsPromise = null;
 
 function loadLongitudinalSiblings() {
   if (!longitudinalSiblingsPromise) {
-    longitudinalSiblingsPromise = fetch(DATA_DICTIONARY_URL)
+    // Cache-bust: fetch() responses are subject to normal HTTP caching,
+    // completely separate from the ?v= on the <script> tag that loads this
+    // file. A stale cached copy of the dictionary here wouldn't error —
+    // it would just silently produce an incomplete sibling map, which
+    // looks exactly like undercounted toast totals. One fresh fetch per
+    // page load (this promise is cached for the rest of the page's life)
+    // is a small, one-time cost worth paying for correctness.
+    longitudinalSiblingsPromise = fetch(DATA_DICTIONARY_URL + "?_=" + Date.now())
       .then(r => r.json())
       .then(data => {
         const groups = {};
