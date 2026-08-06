@@ -123,9 +123,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const visibleRows = filteredData.slice(start, end);
 
       if (allVisibleRowsSelected()) {
-        visibleRows.forEach(row => removeFromBasket(row.name));
+        // Single localStorage read+write, and a single sibling-expansion
+        // pass — avoids N separate async toast calls racing each other
+        // and overwriting one another's displayed count.
+        const varNames = visibleRows.map(row => row.name).filter(Boolean);
+        batchRemoveFromBasket(varNames);
       } else {
-        visibleRows.forEach(row => addToBasket(row.name, row.label));
+        const items = visibleRows
+          .filter(row => row.name)
+          .map(row => ({ varName: row.name, label: row.label }));
+        batchAddToBasket(items);
       }
 
       updateBasketCountUI();
