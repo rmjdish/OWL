@@ -511,6 +511,7 @@ window.addEventListener("load", function () {
 
   let uploadParsedItems = []; // { name, label, isNew }
   let uploadLinkedSiblings = []; // [{ varName, label }, ...] — computed per file, before confirm
+  let uploadFileRowsHtml = ""; // the file's own preview rows, kept separate so sync rows can be prepended without rebuilding these
   let uploadExistingVarNames = new Set(); // basket contents at the moment this file was parsed
 
   function normCell(v) {
@@ -568,6 +569,7 @@ window.addEventListener("load", function () {
     document.getElementById("uploadDone").innerHTML = "";
     uploadLinkedSiblings = [];
     uploadExistingVarNames = new Set();
+    uploadFileRowsHtml = "";
     const linkedRow = document.getElementById("uploadIncludeLinkedRow");
     if (linkedRow) linkedRow.style.display = "none";
     const syncAddedBox = document.getElementById("uploadSyncAddedBox");
@@ -727,18 +729,41 @@ window.addEventListener("load", function () {
   // already excludes the latter). Showing a sibling here that the user
   // already had in their basket for unrelated reasons would overstate
   // what this specific upload is actually adding.
+  // Single source of truth for "which siblings are genuinely new and would
+  // actually be added" — used by both the detail box and the preview table,
+  // so the two can never disagree with each other.
+  function getNewFromSyncItems() {
+    const checkbox = document.getElementById("uploadIncludeLinkedCheckbox");
+    const includeLinked = checkbox ? checkbox.checked : false;
+    return includeLinked
+      ? uploadLinkedSiblings.filter(s => !uploadExistingVarNames.has(s.varName))
+      : [];
+  }
+
+  // Rebuilds the preview table with sync-added rows at the top, followed by
+  // the file's own rows (stored separately in uploadFileRowsHtml so they
+  // never need re-parsing). Sync rows get a distinct purple status and a
+  // link icon instead of a row number, so they read clearly as "not from
+  // your file" at a glance, without needing to open the detail box.
+  function rebuildPreviewTableBody() {
+    const newFromSync = getNewFromSyncItems();
+    const syncRowsHtml = newFromSync.map(function (s) {
+      return '<tr class="sync-added-row">' +
+        '<td style="text-align:center;"><i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
+        "<td>" + s.varName + "</td><td>" + (s.label || "") + "</td>" +
+        '<td class="status-sync">Linked sweep (auto)</td></tr>';
+    }).join("");
+    document.getElementById("uploadPreviewBody").innerHTML = syncRowsHtml + uploadFileRowsHtml;
+  }
+
   function updateSyncAddedBox() {
     const box = document.getElementById("uploadSyncAddedBox");
     const summary = document.getElementById("uploadSyncAddedSummary");
     const detail = document.getElementById("uploadSyncAddedDetail");
     if (!box || !summary || !detail) return;
 
-    const checkbox = document.getElementById("uploadIncludeLinkedCheckbox");
-    const includeLinked = checkbox ? checkbox.checked : false;
-
-    const newFromSync = includeLinked
-      ? uploadLinkedSiblings.filter(s => !uploadExistingVarNames.has(s.varName))
-      : [];
+    const newFromSync = getNewFromSyncItems();
+    rebuildPreviewTableBody();
 
     if (newFromSync.length === 0) {
       box.style.display = "none";
@@ -753,7 +778,7 @@ window.addEventListener("load", function () {
       "These aren't in the file itself and aren't already in your basket — they're sibling sweeps included because Sync linked sweeps is on: " +
       names.slice(0, 50).join(", ") +
       (names.length > 50 ? ", ...and " + (names.length - 50) + " more" : "") +
-      ". Untick \"Also include linked sweeps\" above to add only what's literally in the file.";
+      ". Untick \"Also include linked sweeps\" above to add only what's literally in the file. They're also shown at the top of the table below.";
   }
 
   function processUploadRows(rows, uploadBtn) {
@@ -891,7 +916,8 @@ window.addEventListener("load", function () {
     document.getElementById("uploadNewCount").textContent = newCount;
     document.getElementById("uploadAlreadyCount").textContent = uploadParsedItems.length - newCount;
     document.getElementById("uploadCurrentCount").textContent = existingBasket.length;
-    document.getElementById("uploadPreviewBody").innerHTML = previewRows;
+    uploadFileRowsHtml = previewRows;
+    rebuildPreviewTableBody();
 
     uploadLinkedSiblings = [];
     renderUploadLinkedOption(0);
