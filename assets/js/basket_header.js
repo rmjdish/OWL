@@ -474,6 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setAutoAddSiblings(autoAddInput.checked);
     track.style.background = autoAddInput.checked ? "#6a0dad" : "#ccc";
     thumb.style.left = autoAddInput.checked ? "15px" : "2px";
+    window.dispatchEvent(new CustomEvent("nshd-sync-toggle-changed", { detail: { on: autoAddInput.checked } }));
   });
   autoAddInput.addEventListener("focus", () => { track.style.boxShadow = "0 0 0 2px rgba(106,13,173,0.35)"; });
   autoAddInput.addEventListener("blur",  () => { track.style.boxShadow = "none"; });

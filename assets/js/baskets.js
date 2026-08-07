@@ -699,7 +699,7 @@ window.addEventListener("load", function () {
       const input = document.createElement("input");
       input.type = "checkbox";
       input.id = "uploadIncludeLinkedCheckbox";
-      input.checked = true;
+      input.checked = (typeof getAutoAddSiblings === "function") ? getAutoAddSiblings() : true;
       input.addEventListener("change", updateSyncAddedBox);
       const text = document.createElement("span");
       text.id = "uploadIncludeLinkedLabel";
@@ -729,25 +729,26 @@ window.addEventListener("load", function () {
   // already excludes the latter). Showing a sibling here that the user
   // already had in their basket for unrelated reasons would overstate
   // what this specific upload is actually adding.
-  // Single source of truth for "which siblings are genuinely new and would
-  // actually be added" — used by both the detail box and the preview table,
-  // so the two can never disagree with each other.
-  function getNewFromSyncItems() {
+  // The siblings that WOULD be new additions if included — independent of
+  // whether the checkbox happens to be ticked right now. Used to decide
+  // whether the detail box has anything to say at all.
+  function getSyncCandidateItems() {
+    return uploadLinkedSiblings.filter(s => !uploadExistingVarNames.has(s.varName));
+  }
+
+  function isIncludeLinkedChecked() {
     const checkbox = document.getElementById("uploadIncludeLinkedCheckbox");
-    const includeLinked = checkbox ? checkbox.checked : false;
-    return includeLinked
-      ? uploadLinkedSiblings.filter(s => !uploadExistingVarNames.has(s.varName))
-      : [];
+    return checkbox ? checkbox.checked : false;
   }
 
   // Rebuilds the preview table with sync-added rows at the top, followed by
   // the file's own rows (stored separately in uploadFileRowsHtml so they
-  // never need re-parsing). Sync rows get a distinct purple status and a
-  // link icon instead of a row number, so they read clearly as "not from
-  // your file" at a glance, without needing to open the detail box.
+  // never need re-parsing). Sync rows only appear here when they'll
+  // actually be added — i.e. the checkbox is ticked — since the table
+  // represents what confirming will really do, not what's merely possible.
   function rebuildPreviewTableBody() {
-    const newFromSync = getNewFromSyncItems();
-    const syncRowsHtml = newFromSync.map(function (s) {
+    const rowsToShow = isIncludeLinkedChecked() ? getSyncCandidateItems() : [];
+    const syncRowsHtml = rowsToShow.map(function (s) {
       return '<tr class="sync-added-row">' +
         '<td style="text-align:center;"><i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
         "<td>" + s.varName + "</td><td>" + (s.label || "") + "</td>" +
@@ -762,23 +763,35 @@ window.addEventListener("load", function () {
     const detail = document.getElementById("uploadSyncAddedDetail");
     if (!box || !summary || !detail) return;
 
-    const newFromSync = getNewFromSyncItems();
     rebuildPreviewTableBody();
 
-    if (newFromSync.length === 0) {
+    const candidates = getSyncCandidateItems();
+    if (candidates.length === 0) {
       box.style.display = "none";
       return;
     }
 
+    const names = candidates.map(s => s.varName);
+    const nameList = names.slice(0, 50).join(", ") +
+      (names.length > 50 ? ", ...and " + (names.length - 50) + " more" : "");
+
     box.style.display = "block";
-    document.getElementById("uploadSyncAddedSummary").textContent =
-      newFromSync.length + " extra variable(s) will be added because of Sync linked sweeps:";
-    const names = newFromSync.map(s => s.varName);
-    detail.textContent =
-      "These aren't in the file itself and aren't already in your basket — they're sibling sweeps included because Sync linked sweeps is on: " +
-      names.slice(0, 50).join(", ") +
-      (names.length > 50 ? ", ...and " + (names.length - 50) + " more" : "") +
-      ". Untick \"Also include linked sweeps\" above to add only what's literally in the file. They're also shown at the top of the table below.";
+
+    if (isIncludeLinkedChecked()) {
+      document.getElementById("uploadSyncAddedSummary").textContent =
+        candidates.length + " extra variable(s) will be added because of Sync linked sweeps:";
+      detail.textContent =
+        "These aren't in the file itself and aren't already in your basket — they're sibling sweeps included because Sync linked sweeps is on: " +
+        nameList +
+        ". Untick \"Also include linked sweeps\" above to add only what's literally in the file. They're also shown at the top of the table below.";
+    } else {
+      document.getElementById("uploadSyncAddedSummary").textContent =
+        candidates.length + " linked sweep(s) found, but won't be added — Sync linked sweeps is off:";
+      detail.textContent =
+        "These sibling sweeps of variables in your file won't be added, because Sync linked sweeps is off for this upload: " +
+        nameList +
+        ". Turn on the toggle next to the basket icon if you want this on generally, or tick \"Also include linked sweeps\" above to include them for this upload only.";
+    }
   }
 
   function processUploadRows(rows, uploadBtn) {
@@ -1029,6 +1042,18 @@ window.addEventListener("load", function () {
     renderBasket();
     renderBasketPagination();
     updateBasketResultsCount();
+  });
+
+  // ── Mirror the global Sync toggle into an open upload panel ──────────────
+  // One-directional: the toggle drives the checkbox (on → checked, off →
+  // unchecked), but ticking/unticking the checkbox itself never touches the
+  // toggle — it's meant as a one-time, this-upload-only override, not a
+  // way to change the persistent site-wide setting.
+  window.addEventListener("nshd-sync-toggle-changed", (e) => {
+    const checkbox = document.getElementById("uploadIncludeLinkedCheckbox");
+    if (!checkbox) return;
+    checkbox.checked = !!(e.detail && e.detail.on);
+    updateSyncAddedBox();
   });
 
 });
