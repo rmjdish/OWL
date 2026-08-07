@@ -511,6 +511,7 @@ window.addEventListener("load", function () {
 
   let uploadParsedItems = []; // { name, label, isNew }
   let uploadLinkedSiblings = []; // [{ varName, label }, ...] — computed per file, before confirm
+  let uploadExistingVarNames = new Set(); // basket contents at the moment this file was parsed
 
   function normCell(v) {
     return (v === null || v === undefined) ? "" : String(v).trim();
@@ -566,8 +567,13 @@ window.addEventListener("load", function () {
     document.getElementById("uploadPreview").style.display = "none";
     document.getElementById("uploadDone").innerHTML = "";
     uploadLinkedSiblings = [];
+    uploadExistingVarNames = new Set();
     const linkedRow = document.getElementById("uploadIncludeLinkedRow");
     if (linkedRow) linkedRow.style.display = "none";
+    const syncAddedBox = document.getElementById("uploadSyncAddedBox");
+    if (syncAddedBox) syncAddedBox.style.display = "none";
+    const syncNote = document.getElementById("uploadSyncNote");
+    if (syncNote) syncNote.style.display = "none";
   }
 
   function closeUploadPanel() {
@@ -677,6 +683,7 @@ window.addEventListener("load", function () {
     let row = document.getElementById("uploadIncludeLinkedRow");
     if (count === 0) {
       if (row) row.style.display = "none";
+      updateSyncAddedBox();
       return;
     }
     if (!row) {
@@ -691,6 +698,7 @@ window.addEventListener("load", function () {
       input.type = "checkbox";
       input.id = "uploadIncludeLinkedCheckbox";
       input.checked = true;
+      input.addEventListener("change", updateSyncAddedBox);
       const text = document.createElement("span");
       text.id = "uploadIncludeLinkedLabel";
       row.appendChild(input);
@@ -707,6 +715,45 @@ window.addEventListener("load", function () {
     row.style.display = "flex";
     document.getElementById("uploadIncludeLinkedLabel").textContent =
       `Also include ${count} linked sweep${count === 1 ? "" : "s"} of longitudinal variables in this file`;
+    updateSyncAddedBox();
+  }
+
+  // ── "Extra variables added because of Sync linked sweeps" check ─────────
+  // Deliberately narrower than uploadLinkedSiblings: that list is every
+  // sibling of a variable in the file, full stop. This box should only
+  // ever show siblings that would be a genuinely NEW addition — i.e. not
+  // already sitting in the user's basket before this upload, and not
+  // already one of the file's own listed variables (uploadLinkedSiblings
+  // already excludes the latter). Showing a sibling here that the user
+  // already had in their basket for unrelated reasons would overstate
+  // what this specific upload is actually adding.
+  function updateSyncAddedBox() {
+    const box = document.getElementById("uploadSyncAddedBox");
+    const summary = document.getElementById("uploadSyncAddedSummary");
+    const detail = document.getElementById("uploadSyncAddedDetail");
+    if (!box || !summary || !detail) return;
+
+    const checkbox = document.getElementById("uploadIncludeLinkedCheckbox");
+    const includeLinked = checkbox ? checkbox.checked : false;
+
+    const newFromSync = includeLinked
+      ? uploadLinkedSiblings.filter(s => !uploadExistingVarNames.has(s.varName))
+      : [];
+
+    if (newFromSync.length === 0) {
+      box.style.display = "none";
+      return;
+    }
+
+    box.style.display = "block";
+    document.getElementById("uploadSyncAddedSummary").textContent =
+      newFromSync.length + " extra variable(s) will be added because of Sync linked sweeps:";
+    const names = newFromSync.map(s => s.varName);
+    detail.textContent =
+      "These aren't in the file itself and aren't already in your basket — they're sibling sweeps included because Sync linked sweeps is on: " +
+      names.slice(0, 50).join(", ") +
+      (names.length > 50 ? ", ...and " + (names.length - 50) + " more" : "") +
+      ". Untick \"Also include linked sweeps\" above to add only what's literally in the file.";
   }
 
   function processUploadRows(rows, uploadBtn) {
@@ -729,6 +776,21 @@ window.addEventListener("load", function () {
     const requireY = reqIdx !== -1;
     const existingBasket = loadBasket();
     const existingSet = new Set(existingBasket.map(item => item.varName));
+    uploadExistingVarNames = existingSet;
+
+    const syncNote = document.getElementById("uploadSyncNote");
+    if (syncNote) {
+      if (typeof getAutoAddSiblings === "function" && getAutoAddSiblings()) {
+        syncNote.style.display = "block";
+        syncNote.innerHTML =
+          '<i class="ti ti-info-circle" aria-hidden="true"></i> Sync linked sweeps is currently <b>on</b> — ' +
+          "this upload may add more variables than are literally marked in your file, since linked sweeps of " +
+          "longitudinal variables get included automatically. You'll see exactly which ones below before confirming, " +
+          "and can turn the toggle off (next to the basket icon) if you only want what's in the file.";
+      } else {
+        syncNote.style.display = "none";
+      }
+    }
 
     uploadParsedItems = [];
     let previewRows = "";
