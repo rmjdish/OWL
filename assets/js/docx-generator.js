@@ -170,15 +170,33 @@ async function generateDocx(topsheet, blocks) {
 
   const body = [
     ...buildTitleLines(),
+    new Paragraph({ children: [] }), // spacer before table
     buildTopsheetTable(topsheet),
     new Paragraph({ children: [] }), // spacer after table
   ];
 
   blocks.forEach(block => {
     body.push(...blockToDocxElements(block));
+    body.push(new Paragraph({ children: [] })); // blank line after every block
   });
 
   const doc = new Document({
+    styles: {
+      paragraphStyles: [{
+        // Heading 2 stays a genuine Word "Heading 2" style reference
+        // (so build_docs.py's style-name check still recognises it
+        // correctly) — this only customises how that style itself
+        // renders, matching the bold+underlined look of the other
+        // three subheading options for visual consistency.
+        id: 'Heading2',
+        name: 'Heading 2',
+        basedOn: 'Normal',
+        next: 'Normal',
+        quickFormat: true,
+        run: { bold: true, underline: {}, size: 26 },
+        paragraph: { spacing: { before: 240, after: 120 } },
+      }],
+    },
     numbering: {
       config: [{
         reference: 'doc-numbered-list',

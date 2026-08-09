@@ -130,11 +130,20 @@ function renderBlockEditor(block, index, total) {
       break;
 
     case 'paragraph': {
-      const text = (block.runs || []).map(r => r.text).join('');
-      body = `<label class="db-block-label">Paragraph text
-        <textarea class="db-input" rows="3" data-id="${block.id}" data-prop="paragraphText">${escHtml(text)}</textarea>
-      </label>
-      <p class="db-hint">Plain text for now — select text after typing to bold/italicise it.</p>`;
+      const runs = block.runs && block.runs.length ? block.runs : [{ text: '' }];
+      const runRows = runs.map((run, i) => `
+        <div class="db-run-row" data-run-index="${i}">
+          <input type="text" class="db-input db-run-text" data-id="${block.id}" data-run-index="${i}" value="${escHtml(run.text)}" placeholder="${i === 0 ? 'Start typing…' : 'Next segment…'}">
+          <label class="db-run-toggle"><input type="checkbox" data-id="${block.id}" data-run-index="${i}" data-run-prop="bold" ${run.bold ? 'checked' : ''}><strong>B</strong></label>
+          <label class="db-run-toggle"><input type="checkbox" data-id="${block.id}" data-run-index="${i}" data-run-prop="italic" ${run.italic ? 'checked' : ''}><em>I</em></label>
+          <label class="db-run-toggle"><input type="checkbox" data-id="${block.id}" data-run-index="${i}" data-run-prop="underline" ${run.underline ? 'checked' : ''}><u>U</u></label>
+          <button type="button" class="db-btn-icon db-btn-danger" data-action="remove-run" data-id="${block.id}" data-run-index="${i}" ${runs.length <= 1 ? 'disabled' : ''}>✕</button>
+        </div>
+      `).join('');
+      body = `<label class="db-block-label">Paragraph text</label>
+      <p class="db-hint">Built from one or more segments, in order. Tick B / I / U on a segment to format just that part — split a new segment off wherever the formatting needs to change.</p>
+      ${runRows}
+      <button type="button" class="db-btn-add-item" data-action="add-run" data-id="${block.id}">+ Add segment</button>`;
       break;
     }
 
@@ -163,7 +172,7 @@ function renderBlockEditor(block, index, total) {
         </tr>
       `).join('');
       body = `<label class="db-block-label">Table (first row is treated as the header)</label>
-        <table class="db-table-editor"><tbody>${rows}</tbody></table>
+        <div class="db-table-scroll"><table class="db-table-editor"><tbody>${rows}</tbody></table></div>
         <div class="db-table-buttons">
           <button type="button" class="db-btn-add-item" data-action="add-row" data-id="${block.id}">+ Add row</button>
           <button type="button" class="db-btn-add-item" data-action="add-col" data-id="${block.id}">+ Add column</button>
@@ -227,11 +236,28 @@ function attachHandlers() {
   });
 
   document.querySelectorAll('[data-prop="paragraphText"]').forEach(el => {
+    // legacy — no longer rendered, kept only so old saved state (if any) doesn't error
+  });
+  document.querySelectorAll('.db-run-text').forEach(el => {
     el.addEventListener('input', () => {
       const block = findBlock(el.dataset.id);
-      if (block) { block.runs = [{ text: el.value }]; syncPreviewOnly(); }
+      if (block) { block.runs[parseInt(el.dataset.runIndex, 10)].text = el.value; syncPreviewOnly(); }
     });
   });
+  document.querySelectorAll('[data-run-prop]').forEach(el => {
+    el.addEventListener('change', () => {
+      const block = findBlock(el.dataset.id);
+      if (block) { block.runs[parseInt(el.dataset.runIndex, 10)][el.dataset.runProp] = el.checked; syncPreviewOnly(); }
+    });
+  });
+  document.querySelectorAll('[data-action="add-run"]').forEach(el => el.addEventListener('click', () => {
+    const block = findBlock(el.dataset.id);
+    if (block) { block.runs.push({ text: '' }); renderAll(); }
+  }));
+  document.querySelectorAll('[data-action="remove-run"]').forEach(el => el.addEventListener('click', () => {
+    const block = findBlock(el.dataset.id);
+    if (block) { block.runs.splice(parseInt(el.dataset.runIndex, 10), 1); renderAll(); }
+  }));
 
   // List items
   document.querySelectorAll('[data-prop="item"]').forEach(el => {
