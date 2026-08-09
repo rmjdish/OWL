@@ -41,6 +41,8 @@
 	"search overview":				"ti-search",
 	"browse documentation":		"ti-versions",
     "documentation search":		"ti-compass",
+    "writing documentation for owl":		"ti-file-pencil",
+
     /* Section labels handled separately */
     /* Questionnaire waves */
     "explore nshd questionnaires":  "ti-clipboard-list",
