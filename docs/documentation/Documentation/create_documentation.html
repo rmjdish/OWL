@@ -1,0 +1,118 @@
+---
+layout: default
+title: Create Documentation Online
+parent: Browse documentation
+nav_order: 3
+permalink: /docs/documentation/create-documentation/
+---
+<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/topics.css">
+<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/getting-started.css">
+
+<div class="page-topics page-questionnaire_by_year">
+  <div class="hero-banner">
+    <h1><i class="ti ti-file-pencil" aria-hidden="true"></i> Create Documentation Online</h1>
+    <p>Build your topsheet and documentation directly in the browser — add sections, subheadings, lists, tables, and images through the form below, and see exactly how it will look as you go. When you're happy with it, download it as a real Word document to send to us.</p>
+  </div>
+
+  <div class="home-section gs-card-download" id="db-offline-note">
+    <h2><i class="ti ti-device-floppy" aria-hidden="true"></i> Prefer to work offline?</h2>
+    <p>Nothing here is saved automatically, and nothing is uploaded anywhere while you work — everything happens in your own browser. You're also completely free to download the Word document at any point and keep editing it directly in Word instead, the same as any other documentation you'd write from scratch. Use this page for as much or as little of the process as is useful to you.</p>
+    <p>New to writing documentation for OWL? The <a href="{{ site.baseurl }}/docs/documentation/writing-documentation-for-owl/">full guide</a> explains what each part is for and includes a real worked example.</p>
+  </div>
+
+  <div class="home-section gs-card-search" id="db-builder">
+    <h2><i class="ti ti-forms" aria-hidden="true"></i> Build your document</h2>
+
+    <div class="db-layout">
+      <div class="db-editor-pane">
+        <h3>Topsheet</h3>
+        <div id="db-topsheet-form"></div>
+
+        <h3>Content</h3>
+        <div id="db-block-list"></div>
+
+        <div class="db-add-block-row">
+          <button type="button" class="db-add-block-btn" data-add-block="section">+ Section (Heading 1)</button>
+          <button type="button" class="db-add-block-btn" data-add-block="subheading">+ Subheading</button>
+          <button type="button" class="db-add-block-btn" data-add-block="paragraph">+ Paragraph</button>
+          <button type="button" class="db-add-block-btn" data-add-block="bulleted_list">+ Bulleted list</button>
+          <button type="button" class="db-add-block-btn" data-add-block="numbered_list">+ Numbered list</button>
+          <button type="button" class="db-add-block-btn" data-add-block="table">+ Table</button>
+          <button type="button" class="db-add-block-btn" data-add-block="image">+ Image</button>
+        </div>
+
+        <div class="db-download-row">
+          <button type="button" id="db-download-btn">Download as Word document</button>
+        </div>
+      </div>
+
+      <div class="db-preview-pane">
+        <h3>Live preview</h3>
+        <div id="db-live-preview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Page-specific editor styling — kept here rather than in
+   getting-started.css since, like Documentation Search's own table
+   and search-control styling, none of this is shared with any other
+   page on the site. */
+.db-layout { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+.db-editor-pane { flex: 1 1 480px; min-width: 0; }
+.db-preview-pane { flex: 1 1 420px; min-width: 0; position: sticky; top: 10px; border: 1px solid #ddd; border-radius: 8px; padding: 16px; background: #fff; max-height: 85vh; overflow-y: auto; }
+.db-preview-pane h3 { margin-top: 0; }
+
+.db-topsheet-section { border: 1px solid #ddd; border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+.db-topsheet-public { border-color: hsl(125 35% 55%); background: hsl(125 35% 97%); }
+.db-topsheet-private summary { cursor: pointer; font-size: 13px; color: #666; margin-bottom: 8px; }
+
+.db-field-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #333; }
+.db-input { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; padding: 7px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit; }
+
+.db-block { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px; overflow: hidden; background: #fff; }
+.db-block-header { display: flex; justify-content: space-between; align-items: center; background: #f5f5f5; padding: 6px 10px; }
+.db-block-type { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #555; letter-spacing: 0.03em; }
+.db-block-controls { display: flex; gap: 4px; }
+.db-btn-icon { border: 1px solid #ccc; background: #fff; border-radius: 4px; width: 26px; height: 26px; cursor: pointer; font-size: 13px; }
+.db-btn-icon:disabled { opacity: 0.3; cursor: default; }
+.db-btn-danger { color: #b00020; }
+.db-block-body { padding: 12px; }
+.db-block-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 10px; color: #333; }
+.db-hint { font-size: 12px; color: #777; font-style: italic; margin: -4px 0 8px; }
+
+.db-list-item-row { display: flex; gap: 6px; margin-bottom: 6px; align-items: center; }
+.db-list-item-row .db-input { margin: 0; }
+.db-btn-add-item { border: 1px dashed #999; background: #fafafa; border-radius: 5px; padding: 6px 12px; font-size: 13px; cursor: pointer; margin-top: 4px; }
+
+.db-table-editor { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+.db-table-editor td { padding: 2px; }
+.db-table-cell { margin: 0; }
+.db-table-buttons { display: flex; gap: 8px; }
+
+.db-image-preview { max-width: 200px; display: block; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; }
+
+.db-add-block-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.db-add-block-btn { border: 1px solid hsl(210 45% 55%); background: hsl(210 45% 95%); color: hsl(210 45% 25%); border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.db-add-block-btn:hover { background: hsl(210 45% 90%); }
+
+.db-download-row { margin: 20px 0; }
+#db-download-btn { background: hsl(125 45% 35%); color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 15px; font-weight: 700; cursor: pointer; }
+#db-download-btn:disabled { opacity: 0.6; cursor: default; }
+
+.doc-details-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+.doc-details-table td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+.doc-details-table td:first-child { font-weight: 600; width: 30%; white-space: nowrap; }
+.doc-content-body h2 { color: #1a4d7a; margin-top: 20px; font-size: 16px; }
+.doc-content-body h3 { color: #333; font-size: 14px; }
+.doc-subheading { font-weight: normal; }
+.doc-content-body table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+.doc-content-body td, .doc-content-body th { border: 1px solid #ccc; padding: 6px 10px; }
+.doc-details-box, .doc-content-body { font-size: 14px; }
+</style>
+
+<script src="{{ site.baseurl }}/assets/js/docx.iife.js"></script>
+<script src="{{ site.baseurl }}/assets/js/docx-generator.js"></script>
+<script src="{{ site.baseurl }}/assets/js/live-preview.js"></script>
+<script src="{{ site.baseurl }}/assets/js/editor.js"></script>
