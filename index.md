@@ -412,6 +412,7 @@ classes: home-page
             <div class="inner-body">
               <p>Data notes, cleaning records, and other write-ups that explain how a variable or dataset was actually built — a bug fix, a derivation, a correction — rather than what it measures, which is what Topics and Questionnaires cover instead. Split into variable-level documentation (topsheets and notes about a single variable) and dataset-level documentation (longer write-ups covering a whole derived dataset or a measure repeated across many sweeps).</p>
               <p>Every document is automatically checked against the data dictionary, so if it names real variables you'll see them listed on the page — high-confidence matches with a checkbox ready to tick, lower-confidence ones flagged separately for a second look — and can add them straight to your basket without leaving the page.</p>
+              <p>Writing documentation rather than reading it? <strong>Create Documentation Online</strong> lets you build a topsheet and its accompanying document directly in the browser, with a live preview of how it'll look once published, and <strong>Page Proof</strong> checks a document you've already written in Word for common formatting mistakes before you send it in.</p>
               <a class="inner-link" href="/OWL/docs/documentation/">Go to Documentation →</a>
             </div>
           </div>
