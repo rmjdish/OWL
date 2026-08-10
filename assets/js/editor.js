@@ -98,9 +98,47 @@ function renderTopsheetForm() {
 
 /* ---------- Block list rendering ---------- */
 
-function renderBlockEditor(block, index, total) {
+/* Same 5-colour rotation live-preview.js uses (also excluding
+   gs-card-explore, reserved for the outer page section) — strong for
+   the Section block itself, a much lighter version of the same hue
+   for the blocks that belong to it, so a whole section reads as one
+   family of colour without collapsing into one flat undifferentiated
+   block. */
+const EDITOR_SECTION_COLORS = [
+  { strong: 'hsl(180 45% 45%)', light: 'hsl(180 45% 96%)' },
+  { strong: 'hsl(340 45% 50%)', light: 'hsl(340 45% 97%)' },
+  { strong: 'hsl(125 35% 45%)', light: 'hsl(125 35% 96%)' },
+  { strong: 'hsl(210 45% 45%)', light: 'hsl(210 45% 96%)' },
+  { strong: 'hsl(270 35% 50%)', light: 'hsl(270 35% 97%)' },
+];
+
+function computeBlockDisplayInfo(blocks) {
+  // Returns a Map from block.id -> { color, hidden, isSection }
+  const info = new Map();
+  let colorIndex = -1;
+  let currentColor = null;
+  let currentCollapsed = false;
+  blocks.forEach(block => {
+    if (block.type === 'section') {
+      colorIndex++;
+      currentColor = EDITOR_SECTION_COLORS[colorIndex % EDITOR_SECTION_COLORS.length];
+      currentCollapsed = !!block.collapsed;
+      info.set(block.id, { color: currentColor, hidden: false, isSection: true });
+    } else {
+      info.set(block.id, { color: currentColor, hidden: currentCollapsed, isSection: false });
+    }
+  });
+  return info;
+}
+
+function renderBlockEditor(block, index, total, displayInfo) {
+  const isSection = block.type === 'section';
+  const collapseToggle = isSection
+    ? `<button type="button" class="db-btn-icon" data-action="toggle-collapse" data-id="${block.id}" title="${block.collapsed ? 'Expand section' : 'Collapse section'}">${block.collapsed ? '▶' : '▼'}</button>`
+    : '';
   const controls = `
     <div class="db-block-controls">
+      ${collapseToggle}
       <button type="button" class="db-btn-icon" data-action="up" data-id="${block.id}" ${index === 0 ? 'disabled' : ''} title="Move up">↑</button>
       <button type="button" class="db-btn-icon" data-action="down" data-id="${block.id}" ${index === total - 1 ? 'disabled' : ''} title="Move down">↓</button>
       <button type="button" class="db-btn-icon db-btn-danger" data-action="remove" data-id="${block.id}" title="Remove">✕</button>
@@ -110,9 +148,13 @@ function renderBlockEditor(block, index, total) {
   let body = '';
   switch (block.type) {
     case 'section':
-      body = `<label class="db-block-label">Section title (Heading 1)
+      if (block.collapsed) {
+        body = `<p class="db-collapsed-summary">"${escHtml(block.title) || '(untitled section)'}" — ${block._childCount || 0} item${block._childCount === 1 ? '' : 's'} hidden. Click ▶ to expand.</p>`;
+      } else {
+        body = `<label class="db-block-label">Section title (Heading 1)
         <input type="text" class="db-input" data-id="${block.id}" data-prop="title" value="${escHtml(block.title)}" placeholder="e.g. Background and Rationale">
       </label>`;
+      }
       break;
 
     case 'subheading':
@@ -198,8 +240,19 @@ function renderBlockEditor(block, index, total) {
   const typeLabel = { section: 'Section (Heading 1)', subheading: 'Subheading', paragraph: 'Paragraph',
     bulleted_list: 'Bulleted list', numbered_list: 'Numbered list', table: 'Table', image: 'Image' }[block.type];
 
-  return `<div class="db-block" data-block-id="${block.id}">
-    <div class="db-block-header"><span class="db-block-type">${typeLabel}</span>${controls}</div>
+  let styleAttr = '';
+  let headerStyleAttr = '';
+  if (displayInfo && displayInfo.color) {
+    if (isSection) {
+      styleAttr = ` style="border-left: 5px solid ${displayInfo.color.strong};"`;
+      headerStyleAttr = ` style="background: ${displayInfo.color.strong}; color: white;"`;
+    } else {
+      styleAttr = ` style="border-left: 5px solid ${displayInfo.color.strong}; background: ${displayInfo.color.light};"`;
+    }
+  }
+
+  return `<div class="db-block${isSection ? ' db-block-section' : ''}" data-block-id="${block.id}"${styleAttr}>
+    <div class="db-block-header"${headerStyleAttr}><span class="db-block-type">${typeLabel}</span>${controls}</div>
     <div class="db-block-body">${body}</div>
   </div>`;
 }
@@ -208,9 +261,25 @@ function renderBlockEditor(block, index, total) {
 
 function renderAll() {
   document.getElementById('db-topsheet-form').innerHTML = renderTopsheetForm();
-  document.getElementById('db-block-list').innerHTML = state.blocks
-    .map((b, i) => renderBlockEditor(b, i, state.blocks.length))
+
+  const displayInfo = computeBlockDisplayInfo(state.blocks);
+  // Attach a child count to each collapsed section block, for its summary line
+  let lastSectionId = null;
+  state.blocks.forEach(b => {
+    if (b.type === 'section') {
+      lastSectionId = b.id;
+      b._childCount = 0;
+    } else if (lastSectionId) {
+      const sectionBlock = state.blocks.find(sb => sb.id === lastSectionId);
+      if (sectionBlock) sectionBlock._childCount = (sectionBlock._childCount || 0) + 1;
+    }
+  });
+
+  const visibleBlocks = state.blocks.filter(b => !displayInfo.get(b.id).hidden);
+  document.getElementById('db-block-list').innerHTML = visibleBlocks
+    .map(b => renderBlockEditor(b, state.blocks.indexOf(b), state.blocks.length, displayInfo.get(b.id)))
     .join('') || '<p class="db-hint">No blocks yet — add your first section below.</p>';
+
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
   attachHandlers();
 }
@@ -228,6 +297,10 @@ function attachHandlers() {
   document.querySelectorAll('[data-action="up"]').forEach(el => el.addEventListener('click', () => moveBlock(el.dataset.id, -1)));
   document.querySelectorAll('[data-action="down"]').forEach(el => el.addEventListener('click', () => moveBlock(el.dataset.id, 1)));
   document.querySelectorAll('[data-action="remove"]').forEach(el => el.addEventListener('click', () => removeBlock(el.dataset.id)));
+  document.querySelectorAll('[data-action="toggle-collapse"]').forEach(el => el.addEventListener('click', () => {
+    const block = findBlock(el.dataset.id);
+    if (block) { block.collapsed = !block.collapsed; renderAll(); }
+  }));
 
   // Simple field edits (title, subheading style/text, paragraph text, caption)
   document.querySelectorAll('[data-prop="title"], [data-prop="text"], [data-prop="style"], [data-prop="caption"]').forEach(el => {
@@ -330,6 +403,68 @@ function syncPreviewOnly() {
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
 }
 
+function dataUrlToBytes(dataUrl) {
+  const base64 = dataUrl.split(',')[1];
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
+
+function saveProgress() {
+  // imageBytes (a Uint8Array) isn't meaningfully JSON-serialisable —
+  // dataUrl already carries the same image as a base64 string, so
+  // imageBytes is dropped here and reconstructed from dataUrl on load
+  // instead, rather than saving the same image data twice.
+  const payload = {
+    _type: 'owl-doc-builder-progress',
+    _version: 1,
+    topsheet: state.topsheet,
+    blocks: state.blocks.map(b => {
+      if (b.type === 'image') {
+        const { imageBytes, ...rest } = b;
+        return rest;
+      }
+      return b;
+    }),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const filename = (state.topsheet.title || 'documentation-progress').replace(/[^A-Za-z0-9 _-]/g, '').trim() || 'documentation-progress';
+  a.download = filename + '.owlprogress.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function resumeProgress(file) {
+  let payload;
+  try {
+    payload = JSON.parse(await file.text());
+  } catch (e) {
+    alert('That file doesn\'t look like a valid saved-progress file (couldn\'t be read as JSON).');
+    return;
+  }
+  if (payload._type !== 'owl-doc-builder-progress') {
+    alert('That file doesn\'t look like a saved-progress file from this tool. If you meant to continue editing a downloaded Word document, that can only be done in Word — it can\'t be re-uploaded here.');
+    return;
+  }
+  if (state.blocks.length > 0 || Object.values(state.topsheet).some(v => (v || '').trim())) {
+    if (!confirm('This replaces everything currently in the form with the saved progress. Continue?')) return;
+  }
+  state.topsheet = Object.assign({}, payload.topsheet);
+  state.blocks = (payload.blocks || []).map(b => {
+    if (b.type === 'image' && b.dataUrl) {
+      return Object.assign({}, b, { imageBytes: dataUrlToBytes(b.dataUrl) });
+    }
+    return b;
+  });
+  renderAll();
+}
+
 async function handleDownload() {
   const btn = document.getElementById('db-download-btn');
   btn.disabled = true;
@@ -384,4 +519,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (loadBtn) loadBtn.addEventListener('click', loadAtopyExample);
   const clearBtn = document.getElementById('db-clear-form-btn');
   if (clearBtn) clearBtn.addEventListener('click', clearForm);
+  const saveBtn = document.getElementById('db-save-progress-btn');
+  if (saveBtn) saveBtn.addEventListener('click', saveProgress);
+  const resumeInput = document.getElementById('db-resume-progress-input');
+  if (resumeInput) resumeInput.addEventListener('change', () => {
+    if (resumeInput.files[0]) resumeProgress(resumeInput.files[0]);
+    resumeInput.value = '';
+  });
 });
