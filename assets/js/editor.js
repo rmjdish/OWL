@@ -166,10 +166,6 @@ function renderBlockEditor(block, index, total) {
     }
 
     case 'table': {
-      const colCount = (block.rows[0] || []).length;
-      const wideWarning = colCount > 4
-        ? `<p class="db-hint db-hint-warning">This table has ${colCount} columns. On the published page, wide tables can overflow past the edge of their coloured section rather than shrinking to fit — keeping tables to around 4 columns or fewer avoids this.</p>`
-        : '';
       const rows = block.rows.map((row, ri) => `
         <tr>
           ${row.map((cell, ci) => `<td><input type="text" class="db-input db-table-cell" data-id="${block.id}" data-prop="cell" data-row="${ri}" data-col="${ci}" value="${escHtml(cell)}"></td>`).join('')}
@@ -177,7 +173,6 @@ function renderBlockEditor(block, index, total) {
         </tr>
       `).join('');
       body = `<label class="db-block-label">Table (first row is treated as the header)</label>
-        ${wideWarning}
         <div class="db-table-scroll"><table class="db-table-editor"><tbody>${rows}</tbody></table></div>
         <div class="db-table-buttons">
           <button type="button" class="db-btn-add-item" data-action="add-row" data-id="${block.id}">+ Add row</button>
