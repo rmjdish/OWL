@@ -16,6 +16,18 @@ const TOPSHEET_PUBLIC_FIELDS = [
   ['papers', 'Papers using these variables'],
 ];
 
+function renderHeroBanner(topsheet) {
+  const title = escHtml(topsheet.title) || '<span style="opacity:0.5;font-style:italic;">Untitled document — fill in the Document title field above</span>';
+  const bylineParts = [topsheet.name, topsheet.date].filter(p => (p || '').trim()).map(escHtml);
+  const byline = bylineParts.length ? `<p class="doc-byline">${bylineParts.join(' &middot; ')}</p>` : '';
+  return `
+    <div class="hero-banner">
+      <h1>${title}</h1>
+      ${byline}
+    </div>
+  `;
+}
+
 function renderDetailsTable(topsheet) {
   const rows = TOPSHEET_PUBLIC_FIELDS
     .filter(([key]) => (topsheet[key] || '').trim())
@@ -136,6 +148,7 @@ function renderLivePreview(topsheet, blocks) {
   }).join('\n');
 
   return `
+    ${renderHeroBanner(topsheet)}
     <div class="doc-details-box">
       <h2 id="live-preview-details">Document details</h2>
       ${detailsHtml || '<p style="color:#999;font-style:italic;">No public fields filled in yet.</p>'}

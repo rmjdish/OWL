@@ -4,7 +4,7 @@
 
 const state = {
   topsheet: {
-    categories: '', summary: '', date: '', name: '', sourceFiles: '',
+    title: '', categories: '', summary: '', date: '', name: '', sourceFiles: '',
     sourceFilesDate: '', sourceVars: '', syntaxProvided: '', syntaxLocation: '',
     syntaxDate: '', syntaxFormat: '', outputDataProvided: '', outputDate: '',
     outputLocation: '', outputFormat: '', docProvided: '', papers: '', outputVars: '',
@@ -48,13 +48,14 @@ function findBlock(id) { return state.blocks.find(b => b.id === id); }
 /* ---------- Topsheet form ---------- */
 
 const TOPSHEET_FORM_FIELDS = [
+  ['title', 'Document title (shown at the top of the page)', 'text', true],
   ['categories', 'Categories of variables', 'text', true],
   ['summary', 'Summary of work undertaken', 'textarea', true],
   ['sourceVars', 'Names of source variables (one per line)', 'textarea', true],
   ['outputVars', 'Output variables (one per line)', 'textarea', true],
   ['papers', 'Papers using these variables', 'textarea', true],
-  ['date', 'Date of submitting documentation', 'text', false],
-  ['name', 'Name of person responsible for cleaning/derivation', 'text', false],
+  ['name', 'Name of person responsible for cleaning/derivation', 'text', true],
+  ['date', 'Date of submitting documentation', 'text', true],
   ['sourceFiles', 'Source data file(s)', 'text', false],
   ['sourceFilesDate', 'Date source file(s) created', 'text', false],
   ['syntaxProvided', 'Syntax provided (Yes/No)', 'text', false],
@@ -342,7 +343,7 @@ async function handleDownload() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    const filename = (state.topsheet.categories || 'Documentation').replace(/[^A-Za-z0-9 _-]/g, '').trim() || 'Documentation';
+    const filename = (state.topsheet.title || state.topsheet.categories || 'Documentation').replace(/[^A-Za-z0-9 _-]/g, '').trim() || 'Documentation';
     a.download = filename + '.docx';
     document.body.appendChild(a);
     a.click();
