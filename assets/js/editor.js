@@ -35,11 +35,64 @@ function removeBlock(id) {
   renderAll();
 }
 
+/* Splits the flat block list into groups: an (optional) preamble group
+   for anything before the first section, then one group per section
+   (the section header itself, plus every block that belongs to it up
+   to the next section or the end of the list). Used so moving a block
+   up/down can respect section boundaries, rather than treating the
+   whole document as one undifferentiated list. */
+function groupBlocksForOrdering(blocks) {
+  const groups = [];
+  let current = null;
+  blocks.forEach(block => {
+    if (block.type === 'section') {
+      current = { sectionBlock: block, children: [] };
+      groups.push(current);
+    } else if (current) {
+      current.children.push(block);
+    } else {
+      if (!groups.length || groups[0].sectionBlock) groups.unshift({ sectionBlock: null, children: [] });
+      groups[0].children.push(block);
+    }
+  });
+  return groups;
+}
+
+function flattenGroups(groups) {
+  const flat = [];
+  groups.forEach(g => {
+    if (g.sectionBlock) flat.push(g.sectionBlock);
+    flat.push(...g.children);
+  });
+  return flat;
+}
+
 function moveBlock(id, direction) {
-  const idx = state.blocks.findIndex(b => b.id === id);
-  const swapWith = idx + direction;
-  if (swapWith < 0 || swapWith >= state.blocks.length) return;
-  [state.blocks[idx], state.blocks[swapWith]] = [state.blocks[swapWith], state.blocks[idx]];
+  const groups = groupBlocksForOrdering(state.blocks);
+  const block = findBlock(id);
+  if (!block) return;
+
+  if (block.type === 'section') {
+    // Move the whole section (its header plus every child) relative
+    // to the adjacent section — sections never interleave with each
+    // other's content.
+    const groupIdx = groups.findIndex(g => g.sectionBlock && g.sectionBlock.id === id);
+    const swapWith = groupIdx + direction;
+    if (swapWith < 0 || swapWith >= groups.length || !groups[swapWith].sectionBlock) return;
+    [groups[groupIdx], groups[swapWith]] = [groups[swapWith], groups[groupIdx]];
+  } else {
+    // Move only within this block's own group of children — never
+    // into a different section's children, and never past its own
+    // section header.
+    const group = groups.find(g => g.children.some(c => c.id === id));
+    if (!group) return;
+    const idx = group.children.findIndex(c => c.id === id);
+    const swapWith = idx + direction;
+    if (swapWith < 0 || swapWith >= group.children.length) return;
+    [group.children[idx], group.children[swapWith]] = [group.children[swapWith], group.children[idx]];
+  }
+
+  state.blocks = flattenGroups(groups);
   renderAll();
 }
 
@@ -105,11 +158,11 @@ function renderTopsheetForm() {
    family of colour without collapsing into one flat undifferentiated
    block. */
 const EDITOR_SECTION_COLORS = [
-  { strong: 'hsl(180 45% 45%)', light: 'hsl(180 45% 96%)' },
-  { strong: 'hsl(340 45% 50%)', light: 'hsl(340 45% 97%)' },
-  { strong: 'hsl(125 35% 45%)', light: 'hsl(125 35% 96%)' },
-  { strong: 'hsl(210 45% 45%)', light: 'hsl(210 45% 96%)' },
-  { strong: 'hsl(270 35% 50%)', light: 'hsl(270 35% 97%)' },
+  { strong: 'hsl(180 45% 45%)', light: 'hsl(180 45% 88%)' },
+  { strong: 'hsl(340 45% 50%)', light: 'hsl(340 45% 89%)' },
+  { strong: 'hsl(125 35% 45%)', light: 'hsl(125 35% 87%)' },
+  { strong: 'hsl(210 45% 45%)', light: 'hsl(210 45% 88%)' },
+  { strong: 'hsl(270 35% 50%)', light: 'hsl(270 35% 89%)' },
 ];
 
 function computeBlockDisplayInfo(blocks) {
@@ -131,7 +184,7 @@ function computeBlockDisplayInfo(blocks) {
   return info;
 }
 
-function renderBlockEditor(block, index, total, displayInfo) {
+function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
   const isSection = block.type === 'section';
   const collapseToggle = isSection
     ? `<button type="button" class="db-btn-icon" data-action="toggle-collapse" data-id="${block.id}" title="${block.collapsed ? 'Expand section' : 'Collapse section'}">${block.collapsed ? '▶' : '▼'}</button>`
@@ -139,8 +192,8 @@ function renderBlockEditor(block, index, total, displayInfo) {
   const controls = `
     <div class="db-block-controls">
       ${collapseToggle}
-      <button type="button" class="db-btn-icon" data-action="up" data-id="${block.id}" ${index === 0 ? 'disabled' : ''} title="Move up">↑</button>
-      <button type="button" class="db-btn-icon" data-action="down" data-id="${block.id}" ${index === total - 1 ? 'disabled' : ''} title="Move down">↓</button>
+      <button type="button" class="db-btn-icon" data-action="up" data-id="${block.id}" ${canMoveUp ? '' : 'disabled'} title="${isSection ? 'Move section up' : 'Move up (within this section)'}">↑</button>
+      <button type="button" class="db-btn-icon" data-action="down" data-id="${block.id}" ${canMoveDown ? '' : 'disabled'} title="${isSection ? 'Move section down' : 'Move down (within this section)'}">↓</button>
       <button type="button" class="db-btn-icon db-btn-danger" data-action="remove" data-id="${block.id}" title="Remove">✕</button>
     </div>
   `;
@@ -259,10 +312,27 @@ function renderBlockEditor(block, index, total, displayInfo) {
 
 /* ---------- Rendering ---------- */
 
+function computeMoveFlags(blocks) {
+  const groups = groupBlocksForOrdering(blocks);
+  const flags = new Map();
+  groups.forEach((group, groupIdx) => {
+    if (group.sectionBlock) {
+      const prevIsSection = groupIdx > 0 && !!groups[groupIdx - 1].sectionBlock;
+      const nextIsSection = groupIdx < groups.length - 1 && !!groups[groupIdx + 1].sectionBlock;
+      flags.set(group.sectionBlock.id, { up: prevIsSection, down: nextIsSection });
+    }
+    group.children.forEach((child, childIdx) => {
+      flags.set(child.id, { up: childIdx > 0, down: childIdx < group.children.length - 1 });
+    });
+  });
+  return flags;
+}
+
 function renderAll() {
   document.getElementById('db-topsheet-form').innerHTML = renderTopsheetForm();
 
   const displayInfo = computeBlockDisplayInfo(state.blocks);
+  const moveFlags = computeMoveFlags(state.blocks);
   // Attach a child count to each collapsed section block, for its summary line
   let lastSectionId = null;
   state.blocks.forEach(b => {
@@ -277,7 +347,10 @@ function renderAll() {
 
   const visibleBlocks = state.blocks.filter(b => !displayInfo.get(b.id).hidden);
   document.getElementById('db-block-list').innerHTML = visibleBlocks
-    .map(b => renderBlockEditor(b, state.blocks.indexOf(b), state.blocks.length, displayInfo.get(b.id)))
+    .map(b => {
+      const flags = moveFlags.get(b.id) || { up: false, down: false };
+      return renderBlockEditor(b, flags.up, flags.down, displayInfo.get(b.id));
+    })
     .join('') || '<p class="db-hint">No blocks yet — add your first section below.</p>';
 
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
