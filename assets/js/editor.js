@@ -48,36 +48,37 @@ function findBlock(id) { return state.blocks.find(b => b.id === id); }
 /* ---------- Topsheet form ---------- */
 
 const TOPSHEET_FORM_FIELDS = [
-  ['title', 'Document title (shown at the top of the page)', 'text', true],
-  ['categories', 'Categories of variables', 'text', true],
-  ['summary', 'Summary of work undertaken', 'textarea', true],
-  ['sourceVars', 'Names of source variables (one per line)', 'textarea', true],
-  ['outputVars', 'Output variables (one per line)', 'textarea', true],
-  ['papers', 'Papers using these variables', 'textarea', true],
-  ['name', 'Name of person responsible for cleaning/derivation', 'text', true],
-  ['date', 'Date of submitting documentation', 'text', true],
-  ['sourceFiles', 'Source data file(s)', 'text', false],
-  ['sourceFilesDate', 'Date source file(s) created', 'text', false],
-  ['syntaxProvided', 'Syntax provided (Yes/No)', 'text', false],
-  ['syntaxLocation', 'Location of syntax file', 'text', false],
-  ['syntaxDate', 'Date syntax file created', 'text', false],
-  ['syntaxFormat', 'Format of syntax', 'text', false],
-  ['outputDataProvided', 'Output data file provided (Yes/No)', 'text', false],
-  ['outputDate', 'Date output file created', 'text', false],
-  ['outputLocation', 'Location of output file', 'text', false],
-  ['outputFormat', 'Format of output file', 'text', false],
-  ['docProvided', 'Documentation provided (Yes/No)', 'text', false],
+  ['title', 'Document title (shown at the top of the page)', 'text', true, 'e.g. Atopy Documentation Example'],
+  ['categories', 'Categories of variables', 'text', true, 'e.g. Health'],
+  ['summary', 'Summary of work undertaken', 'textarea', true, 'Briefly describe what work was undertaken and why...'],
+  ['sourceVars', 'Names of source variables (one per line)', 'textarea', true, 'eczema53\nasthma53\nhayfever53'],
+  ['outputVars', 'Output variables (one per line)', 'textarea', true, 'atopy_life_69\natopy_cum_score_69'],
+  ['papers', 'Papers using these variables', 'textarea', true, 'Author A, et al. Title of paper. Journal. Year.'],
+  ['name', 'Name of person responsible for cleaning/derivation', 'text', true, 'e.g. Dr J. Fielding'],
+  ['date', 'Date of submitting documentation', 'text', true, 'e.g. 14/03/2023'],
+  ['sourceFiles', 'Source data file(s)', 'text', false, 'e.g. Z:\\NSHD\\raw\\atopy_raw_2023.sav'],
+  ['sourceFilesDate', 'Date source file(s) created', 'text', false, 'e.g. 02/02/2023'],
+  ['syntaxProvided', 'Syntax provided (Yes/No)', 'text', false, 'Yes or No'],
+  ['syntaxLocation', 'Location of syntax file', 'text', false, 'e.g. Z:\\NSHD\\syntax\\atopy_derivation.sps'],
+  ['syntaxDate', 'Date syntax file created', 'text', false, 'e.g. 02/02/2023'],
+  ['syntaxFormat', 'Format of syntax', 'text', false, 'e.g. SPSS'],
+  ['outputDataProvided', 'Output data file provided (Yes/No)', 'text', false, 'Yes or No'],
+  ['outputDate', 'Date output file created', 'text', false, 'e.g. 14/03/2023'],
+  ['outputLocation', 'Location of output file', 'text', false, 'e.g. Z:\\NSHD\\output\\atopy_final.sav'],
+  ['outputFormat', 'Format of output file', 'text', false, 'e.g. SPSS'],
+  ['docProvided', 'Documentation provided (Yes/No)', 'text', false, 'Yes or No'],
 ];
 
 function renderTopsheetForm() {
   const publicFields = TOPSHEET_FORM_FIELDS.filter(f => f[3]);
   const privateFields = TOPSHEET_FORM_FIELDS.filter(f => !f[3]);
 
-  function fieldHtml([key, label, type]) {
+  function fieldHtml([key, label, type, isPublic, placeholder]) {
     const value = escHtml(state.topsheet[key] || '');
+    const ph = escHtml(placeholder || '');
     const input = type === 'textarea'
-      ? `<textarea data-field="${key}" rows="3" class="db-input">${value}</textarea>`
-      : `<input type="text" data-field="${key}" value="${value}" class="db-input">`;
+      ? `<textarea data-field="${key}" rows="3" class="db-input" placeholder="${ph}">${value}</textarea>`
+      : `<input type="text" data-field="${key}" value="${value}" class="db-input" placeholder="${ph}">`;
     return `<label class="db-field-label">${escHtml(label)}${input}</label>`;
   }
 
@@ -353,10 +354,34 @@ async function handleDownload() {
   }
 }
 
+function loadAtopyExample() {
+  const hasContent = state.blocks.length > 0 || Object.values(state.topsheet).some(v => (v || '').trim());
+  if (hasContent && !confirm('This replaces everything currently in the form with the Atopy example. Continue?')) {
+    return;
+  }
+  const example = getAtopyExample();
+  state.topsheet = Object.assign({}, example.topsheet);
+  state.blocks = example.blocks;
+  renderAll();
+}
+
+function clearForm() {
+  if (!confirm('This clears the form back to blank, placeholder-only fields. Continue?')) {
+    return;
+  }
+  Object.keys(state.topsheet).forEach(k => { state.topsheet[k] = ''; });
+  state.blocks = [];
+  renderAll();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   renderAll();
   document.getElementById('db-download-btn').addEventListener('click', handleDownload);
   document.querySelectorAll('[data-add-block]').forEach(btn => {
     btn.addEventListener('click', () => addBlock(btn.dataset.addBlock));
   });
+  const loadBtn = document.getElementById('db-load-example-btn');
+  if (loadBtn) loadBtn.addEventListener('click', loadAtopyExample);
+  const clearBtn = document.getElementById('db-clear-form-btn');
+  if (clearBtn) clearBtn.addEventListener('click', clearForm);
 });
