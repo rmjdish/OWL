@@ -86,18 +86,61 @@ function renderBlock(block) {
   }
 }
 
+// Same 6-colour rotation build_pages.py itself cycles sections
+// through — the actual colour a given section ends up with, once
+// published, depends on how many sections come before it across the
+// document, so this preview's assignment is illustrative (showing
+// sections ARE visually distinct from each other), not a guarantee of
+// which exact colour a given section will get live.
+const SECTION_COLORS = ['gs-card-search', 'gs-card-explore', 'gs-card-sidebar',
+                         'gs-card-basket', 'gs-card-blue', 'gs-card-lavender'];
+
+function groupBlocksBySection(blocks) {
+  const groups = [];
+  let current = null;
+  blocks.forEach(block => {
+    if (block.type === 'section') {
+      current = { title: block.title, blocks: [] };
+      groups.push(current);
+    } else if (current) {
+      current.blocks.push(block);
+    } else {
+      // Content before the first section block — no colour, matching
+      // Page Proof's own warning that this content won't belong to
+      // any section once published.
+      if (!groups.length || groups[0].title !== null) groups.unshift({ title: null, blocks: [] });
+      groups[0].blocks.push(block);
+    }
+  });
+  return groups;
+}
+
 function renderLivePreview(topsheet, blocks) {
   const detailsHtml = renderDetailsTable(topsheet);
-  const bodyHtml = blocks.map(renderBlock).join('\n');
+  const groups = groupBlocksBySection(blocks);
+
+  let colorIndex = 0;
+  const sectionsHtml = groups.map(group => {
+    const bodyHtml = group.blocks.map(renderBlock).join('\n');
+    if (group.title === null) {
+      // Preamble content — rendered plainly, no section colour, to
+      // visually reinforce that it sits outside any section.
+      return `<div class="doc-content-body">${bodyHtml}</div>`;
+    }
+    const color = SECTION_COLORS[colorIndex % SECTION_COLORS.length];
+    colorIndex++;
+    return `<div class="home-section ${color}">
+      <h2>${escHtml(group.title)}</h2>
+      <div class="doc-content-body">${bodyHtml}</div>
+    </div>`;
+  }).join('\n');
 
   return `
     <div class="doc-details-box">
       <h2 id="live-preview-details">Document details</h2>
       ${detailsHtml || '<p style="color:#999;font-style:italic;">No public fields filled in yet.</p>'}
     </div>
-    <div class="doc-content-body">
-      ${bodyHtml || '<p style="color:#999;font-style:italic;">Add a block below to start writing.</p>'}
-    </div>
+    ${sectionsHtml || '<p style="color:#999;font-style:italic;">Add a block below to start writing.</p>'}
   `;
 }
 
