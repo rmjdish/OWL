@@ -104,7 +104,12 @@ function renderBlock(block) {
 // document, so this preview's assignment is illustrative (showing
 // sections ARE visually distinct from each other), not a guarantee of
 // which exact colour a given section will get live.
-const SECTION_COLORS = ['gs-card-search', 'gs-card-explore', 'gs-card-sidebar',
+// Same colour rotation build_pages.py itself cycles sections
+// through, MINUS gs-card-explore — that colour is used by the outer
+// "Live preview" section on the page itself, so a simulated section
+// inside the preview using the same colour would visually blend into
+// its own container rather than reading as a distinct section.
+const SECTION_COLORS = ['gs-card-search', 'gs-card-sidebar',
                          'gs-card-basket', 'gs-card-blue', 'gs-card-lavender'];
 
 function groupBlocksBySection(blocks) {
