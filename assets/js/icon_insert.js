@@ -42,6 +42,7 @@
 	"browse documentation":		"ti-versions",
     "documentation search":		"ti-compass",
     "writing documentation for owl":		"ti-file-pencil",
+	"create documentation":		"ti-forms",
 
     /* Section labels handled separately */
     /* Questionnaire waves */
