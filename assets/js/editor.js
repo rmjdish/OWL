@@ -366,6 +366,14 @@ function clearAutoSave() {
   try { localStorage.removeItem(AUTOSAVE_KEY); } catch (e) { /* ignore */ }
 }
 
+function showAutoSaveNotice(when) {
+  const el = document.getElementById('db-autosave-notice');
+  if (!el) return;
+  el.querySelector('.db-autosave-notice-text').textContent =
+    `Restored your unsaved work from ${when}. Not what you wanted? Use Clear form below to start fresh instead.`;
+  el.style.display = 'flex';
+}
+
 function offerAutoSaveRestore() {
   let saved;
   try {
@@ -381,10 +389,11 @@ function offerAutoSaveRestore() {
     || Object.values(saved.topsheet || {}).some(v => (v || '').trim());
   if (!hasSavedContent) { clearAutoSave(); return false; }
 
-  const when = saved._savedAt ? new Date(saved._savedAt).toLocaleString() : 'earlier';
-  if (!confirm(`This browser has unsaved work from ${when} — restore it? (Choose Cancel to start with a blank form instead; the saved copy stays available either way.)`)) {
-    return false;
-  }
+  // Restored automatically, no confirmation gate — this is the normal
+  // "pick back up where I left off" case, not a destructive action.
+  // A dismissible notice explains what happened rather than silently
+  // swapping content with no explanation; Clear form is the one-click
+  // way to discard it and start fresh if that's what's actually wanted.
   state.topsheet = Object.assign({}, saved.topsheet);
   state.blocks = (saved.blocks || []).map(b => {
     if (b.type === 'image' && b.dataUrl) {
@@ -392,6 +401,8 @@ function offerAutoSaveRestore() {
     }
     return b;
   });
+  const when = saved._savedAt ? new Date(saved._savedAt).toLocaleString() : 'your last visit';
+  showAutoSaveNotice(when);
   renderAll();
   return true;
 }
@@ -658,12 +669,8 @@ function clearForm() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const draftExisted = !!localStorage.getItem(AUTOSAVE_KEY);
   const restored = offerAutoSaveRestore();
-  // If a draft existed but the person declined it, render the blank
-  // form without letting auto-save immediately clear that declined
-  // draft — it should stay available to restore on a future visit.
-  if (!restored) renderAll(draftExisted);
+  if (!restored) renderAll();
   document.getElementById('db-download-btn').addEventListener('click', handleDownload);
   document.querySelectorAll('[data-add-block]').forEach(btn => {
     btn.addEventListener('click', () => addBlock(btn.dataset.addBlock));
@@ -678,5 +685,9 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resumeInput) resumeInput.addEventListener('change', () => {
     if (resumeInput.files[0]) resumeProgress(resumeInput.files[0]);
     resumeInput.value = '';
+  });
+  const dismissBtn = document.getElementById('db-autosave-notice-dismiss');
+  if (dismissBtn) dismissBtn.addEventListener('click', () => {
+    document.getElementById('db-autosave-notice').style.display = 'none';
   });
 });
