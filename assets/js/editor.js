@@ -10,6 +10,7 @@ const state = {
     outputLocation: '', outputFormat: '', docProvided: '', papers: '', outputVars: '',
   },
   blocks: [],
+  privateFieldsOpen: false,
 };
 
 let blockIdCounter = 0;
@@ -188,13 +189,15 @@ function renderTopsheetForm() {
     return `<label class="db-field-label">${escHtml(label)}${input}</label>`;
   }
 
+  const privateFilledCount = privateFields.filter(([key]) => (state.topsheet[key] || '').trim()).length;
+
   return `
     <div class="db-topsheet-section db-topsheet-public">
       <h3>Public fields (shown on the page)</h3>
       ${publicFields.map(fieldHtml).join('')}
     </div>
-    <details class="db-topsheet-private">
-      <summary>Private fields (kept internal, never published) — click to expand</summary>
+    <details class="db-topsheet-private" id="db-private-details"${state.privateFieldsOpen ? ' open' : ''}>
+      <summary>Private fields \u2014 ${privateFilledCount} of ${privateFields.length} filled in. Kept internal, never published, but still needed by NSHD for record-keeping.</summary>
       <div class="db-topsheet-section">
         ${privateFields.map(fieldHtml).join('')}
       </div>
@@ -431,6 +434,10 @@ function showAutoSaveNotice(when) {
   el.style.display = 'flex';
 }
 
+function hasAnyPrivateFieldFilled(topsheet) {
+  return TOPSHEET_FORM_FIELDS.filter(f => !f[3]).some(([key]) => (topsheet[key] || '').trim());
+}
+
 function offerAutoSaveRestore() {
   let saved;
   try {
@@ -458,6 +465,7 @@ function offerAutoSaveRestore() {
     }
     return b;
   });
+  if (hasAnyPrivateFieldFilled(state.topsheet)) state.privateFieldsOpen = true;
   const when = saved._savedAt ? new Date(saved._savedAt).toLocaleString() : 'your last visit';
   showAutoSaveNotice(when);
   renderAll();
@@ -533,8 +541,13 @@ function attachHandlers() {
     el.addEventListener('input', () => {
       state.topsheet[el.dataset.field] = el.value;
       syncPreviewOnly();
+      updatePrivateFieldsSummary();
     });
   });
+  const privateDetails = document.getElementById('db-private-details');
+  if (privateDetails) {
+    privateDetails.addEventListener('toggle', () => { state.privateFieldsOpen = privateDetails.open; });
+  }
 
   // Drag-to-reorder. draggable="true" sits on the whole block (required
   // for the block itself to be the thing that moves), but a mousedown
@@ -683,6 +696,15 @@ function attachHandlers() {
   });
 }
 
+function updatePrivateFieldsSummary() {
+  const privateFields = TOPSHEET_FORM_FIELDS.filter(f => !f[3]);
+  const filledCount = privateFields.filter(([key]) => (state.topsheet[key] || '').trim()).length;
+  const summaryEl = document.querySelector('#db-private-details summary');
+  if (summaryEl) {
+    summaryEl.textContent = `Private fields \u2014 ${filledCount} of ${privateFields.length} filled in. Kept internal, never published, but still needed by NSHD for record-keeping.`;
+  }
+}
+
 function syncPreviewOnly() {
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
   autoSaveToBrowser();
@@ -747,6 +769,7 @@ async function resumeProgress(file) {
     }
     return b;
   });
+  if (hasAnyPrivateFieldFilled(state.topsheet)) state.privateFieldsOpen = true;
   renderAll();
 }
 
@@ -780,12 +803,14 @@ async function handleDownload() {
 
 function loadAtopyExample() {
   const hasContent = state.blocks.length > 0 || Object.values(state.topsheet).some(v => (v || '').trim());
-  if (hasContent && !confirm('This replaces everything currently in the form with the Atopy example. Continue?')) {
+  const message = 'This replaces everything currently in the form with the Atopy example \u2014 including example values in the private fields below (source file, syntax details, and so on). Remember to replace those with your own before submitting. Continue?';
+  if (hasContent && !confirm(message)) {
     return;
   }
   const example = getAtopyExample();
   state.topsheet = Object.assign({}, example.topsheet);
   state.blocks = example.blocks;
+  state.privateFieldsOpen = true;
   renderAll();
 }
 
@@ -795,6 +820,7 @@ function clearForm() {
   }
   Object.keys(state.topsheet).forEach(k => { state.topsheet[k] = ''; });
   state.blocks = [];
+  state.privateFieldsOpen = false;
   clearAutoSave();
   renderAll();
 }
