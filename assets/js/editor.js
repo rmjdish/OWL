@@ -15,6 +15,37 @@ const state = {
 let blockIdCounter = 0;
 function newBlockId() { return 'blk-' + (++blockIdCounter); }
 
+function duplicateSection(id) {
+  const groups = groupBlocksForOrdering(state.blocks);
+  const groupIdx = groups.findIndex(g => g.sectionBlock && g.sectionBlock.id === id);
+  if (groupIdx === -1) return;
+  const group = groups[groupIdx];
+
+  function cloneBlock(block) {
+    const clone = JSON.parse(JSON.stringify(block, (key, value) => {
+      // imageBytes is a Uint8Array — JSON.stringify would mangle it into
+      // a plain {0:.., 1:..} object, so it's excluded here and restored
+      // by reference afterwards instead (the two copies can safely share
+      // the same underlying image data, since neither ever mutates it).
+      if (key === 'imageBytes') return undefined;
+      return value;
+    }));
+    clone.id = newBlockId();
+    if (block.type === 'image') clone.imageBytes = block.imageBytes;
+    return clone;
+  }
+
+  const sectionClone = cloneBlock(group.sectionBlock);
+  const childClones = group.children.map(cloneBlock);
+
+  const insertAfterId = group.children.length
+    ? group.children[group.children.length - 1].id
+    : group.sectionBlock.id;
+  const insertAt = state.blocks.findIndex(b => b.id === insertAfterId) + 1;
+  state.blocks.splice(insertAt, 0, sectionClone, ...childClones);
+  renderAll();
+}
+
 function addBlock(type) {
   const base = { id: newBlockId(), type };
   const defaults = {
@@ -31,7 +62,29 @@ function addBlock(type) {
 }
 
 function removeBlock(id) {
-  state.blocks = state.blocks.filter(b => b.id !== id);
+  const block = findBlock(id);
+  if (!block) return;
+  let message = 'Remove this block? This can\'t be undone.';
+  if (block.type === 'section') {
+    const childCount = block._childCount || 0;
+    message = childCount > 0
+      ? `Remove "${block.title || '(untitled section)'}" and everything in it (${childCount} item${childCount === 1 ? '' : 's'})? This can't be undone.`
+      : `Remove "${block.title || '(untitled section)'}"? This can't be undone.`;
+  }
+  if (!confirm(message)) return;
+
+  if (block.type === 'section') {
+    // Remove the section's whole range (header + every block that
+    // belongs to it) — not just the header, which would otherwise
+    // silently orphan its children into whatever section precedes it.
+    const groups = groupBlocksForOrdering(state.blocks);
+    const idsToRemove = new Set([id]);
+    const group = groups.find(g => g.sectionBlock && g.sectionBlock.id === id);
+    if (group) group.children.forEach(c => idsToRemove.add(c.id));
+    state.blocks = state.blocks.filter(b => !idsToRemove.has(b.id));
+  } else {
+    state.blocks = state.blocks.filter(b => b.id !== id);
+  }
   renderAll();
 }
 
@@ -189,11 +242,15 @@ function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
   const collapseToggle = isSection
     ? `<button type="button" class="db-btn-icon" data-action="toggle-collapse" data-id="${block.id}" title="${block.collapsed ? 'Expand section' : 'Collapse section'}">${block.collapsed ? '▶' : '▼'}</button>`
     : '';
+  const duplicateBtn = isSection
+    ? `<button type="button" class="db-btn-icon" data-action="duplicate" data-id="${block.id}" title="Duplicate this section">⧉</button>`
+    : '';
   const controls = `
     <div class="db-block-controls">
       ${collapseToggle}
       <button type="button" class="db-btn-icon" data-action="up" data-id="${block.id}" ${canMoveUp ? '' : 'disabled'} title="${isSection ? 'Move section up' : 'Move up (within this section)'}">↑</button>
       <button type="button" class="db-btn-icon" data-action="down" data-id="${block.id}" ${canMoveDown ? '' : 'disabled'} title="${isSection ? 'Move section down' : 'Move down (within this section)'}">↓</button>
+      ${duplicateBtn}
       <button type="button" class="db-btn-icon db-btn-danger" data-action="remove" data-id="${block.id}" title="Remove">✕</button>
     </div>
   `;
@@ -304,8 +361,8 @@ function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
     }
   }
 
-  return `<div class="db-block${isSection ? ' db-block-section' : ''}" data-block-id="${block.id}"${styleAttr}>
-    <div class="db-block-header"${headerStyleAttr}><span class="db-block-type">${typeLabel}</span>${controls}</div>
+  return `<div class="db-block${isSection ? ' db-block-section' : ''}" data-block-id="${block.id}" draggable="true"${styleAttr}>
+    <div class="db-block-header"${headerStyleAttr}><span class="db-drag-handle" title="Drag to reorder">\u22ee\u22ee</span><span class="db-block-type">${typeLabel}</span>${controls}</div>
     <div class="db-block-body">${body}</div>
   </div>`;
 }
@@ -437,12 +494,85 @@ function renderAll(skipAutoSave) {
   if (!skipAutoSave) autoSaveToBrowser();
 }
 
+function reorderBlockByDrag(draggedId, targetId) {
+  if (draggedId === targetId) return;
+  const groups = groupBlocksForOrdering(state.blocks);
+  const draggedBlock = findBlock(draggedId);
+  const targetBlock = findBlock(targetId);
+  if (!draggedBlock || !targetBlock) return;
+
+  if (draggedBlock.type === 'section') {
+    // Sections can only be reordered among other sections.
+    if (targetBlock.type !== 'section') return;
+    const fromIdx = groups.findIndex(g => g.sectionBlock && g.sectionBlock.id === draggedId);
+    const toIdx = groups.findIndex(g => g.sectionBlock && g.sectionBlock.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = groups.splice(fromIdx, 1);
+    groups.splice(toIdx, 0, moved);
+  } else {
+    // Non-section blocks can only be reordered within their own
+    // section's children — never into a different section's list,
+    // matching exactly what the up/down arrows already enforce.
+    if (targetBlock.type === 'section') return;
+    const fromGroup = groups.find(g => g.children.some(c => c.id === draggedId));
+    const toGroup = groups.find(g => g.children.some(c => c.id === targetId));
+    if (!fromGroup || !toGroup || fromGroup !== toGroup) return;
+    const fromIdx = fromGroup.children.findIndex(c => c.id === draggedId);
+    const toIdx = fromGroup.children.findIndex(c => c.id === targetId);
+    const [moved] = fromGroup.children.splice(fromIdx, 1);
+    fromGroup.children.splice(toIdx, 0, moved);
+  }
+
+  state.blocks = flattenGroups(groups);
+  renderAll();
+}
+
 function attachHandlers() {
   // Topsheet fields
   document.querySelectorAll('#db-topsheet-form [data-field]').forEach(el => {
     el.addEventListener('input', () => {
       state.topsheet[el.dataset.field] = el.value;
       syncPreviewOnly();
+    });
+  });
+
+  // Drag-to-reorder. draggable="true" sits on the whole block (required
+  // for the block itself to be the thing that moves), but a mousedown
+  // on any interactive element inside it temporarily disables dragging
+  // so selecting text in an input, or using its own controls, is never
+  // mistaken for an attempt to drag the block.
+  document.querySelectorAll('.db-block').forEach(blockEl => {
+    blockEl.querySelectorAll('input, textarea, select, button').forEach(interactive => {
+      interactive.addEventListener('mousedown', () => { blockEl.draggable = false; });
+      interactive.addEventListener('mouseup', () => { blockEl.draggable = true; });
+    });
+
+    blockEl.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', blockEl.dataset.blockId);
+      e.dataTransfer.effectAllowed = 'move';
+      blockEl.classList.add('db-dragging');
+    });
+    blockEl.addEventListener('dragend', () => {
+      blockEl.classList.remove('db-dragging');
+      document.querySelectorAll('.db-drop-target').forEach(el => el.classList.remove('db-drop-target', 'db-drop-invalid'));
+    });
+    blockEl.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain') || document.querySelector('.db-dragging')?.dataset.blockId;
+      const draggedBlock = findBlock(draggedId);
+      const targetBlock = findBlock(blockEl.dataset.blockId);
+      const validDrop = draggedBlock && targetBlock && draggedId !== blockEl.dataset.blockId
+        && (draggedBlock.type === 'section') === (targetBlock.type === 'section');
+      blockEl.classList.add('db-drop-target');
+      blockEl.classList.toggle('db-drop-invalid', !validDrop);
+    });
+    blockEl.addEventListener('dragleave', () => {
+      blockEl.classList.remove('db-drop-target', 'db-drop-invalid');
+    });
+    blockEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const draggedId = e.dataTransfer.getData('text/plain');
+      reorderBlockByDrag(draggedId, blockEl.dataset.blockId);
     });
   });
 
@@ -454,6 +584,7 @@ function attachHandlers() {
     const block = findBlock(el.dataset.id);
     if (block) { block.collapsed = !block.collapsed; renderAll(); }
   }));
+  document.querySelectorAll('[data-action="duplicate"]').forEach(el => el.addEventListener('click', () => duplicateSection(el.dataset.id)));
 
   // Simple field edits (title, subheading style/text, paragraph text, caption)
   document.querySelectorAll('[data-prop="title"], [data-prop="text"], [data-prop="style"], [data-prop="caption"]').forEach(el => {

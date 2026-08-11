@@ -132,6 +132,94 @@ function groupBlocksBySection(blocks) {
   return groups;
 }
 
+function renderVariablesBox(topsheet) {
+  const vars = (topsheet.outputVars || '').split('\n').map(v => v.trim()).filter(Boolean);
+  if (!vars.length) return '';
+  const rows = vars.map(v => `<tr><td>${escHtml(v)}</td><td><span class="doc-conf-badge doc-conf-high">high</span></td></tr>`).join('');
+  return `
+    <div class="doc-variables-box">
+      <h2 id="live-preview-variables">Variables in this document</h2>
+      <table class="doc-details-table">
+        <thead><tr><th>Variable</th><th>Confidence</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="doc-variables-note"><i>Only variables listed in the Output variables field are shown here, since those are the only ones this preview can identify with certainty. The real published page also checks bold headings, sweep-year patterns, and plain-text mentions against the live NSHD data dictionary to find further variables at medium and low confidence \u2014 something this offline preview has no access to do.</i></p>
+    </div>
+  `;
+}
+
+const PUBLIC_FIELD_CHECK_LABELS = [
+  ['categories', 'Categories of variables'],
+  ['summary', 'Summary of work undertaken'],
+  ['sourceVars', 'Names of source variables'],
+  ['outputVars', 'Output variables'],
+  ['papers', 'Papers using these variables'],
+];
+
+function runFormattingChecks(topsheet, blocks) {
+  const findings = [];
+
+  // Matches report.py's check_public_fields exactly.
+  PUBLIC_FIELD_CHECK_LABELS.forEach(([key, label]) => {
+    if ((topsheet[key] || '').trim()) {
+      findings.push({ level: 'good', text: `\u201c${label}\u201d is filled in.` });
+    } else {
+      findings.push({ level: 'warning', text: `\u201c${label}\u201d is empty or missing. This will show as blank on the live page.` });
+    }
+  });
+
+  // Matches report.py's check_section_count exactly, adapted to blocks:
+  // a Section block is a named section; any content block before the
+  // first Section is preamble content, same distinction Page Proof
+  // itself draws between a real section and unplaced content.
+  const sectionTitles = [];
+  let sawFirstSection = false;
+  let hasPreamble = false;
+  blocks.forEach(b => {
+    if (b.type === 'section') {
+      sawFirstSection = true;
+      if ((b.title || '').trim()) sectionTitles.push(b.title.trim());
+    } else if (!sawFirstSection) {
+      hasPreamble = true;
+    }
+  });
+  if (!sectionTitles.length) {
+    findings.push({
+      level: 'warning',
+      text: 'No sections were found. If the document has intended sections, add a Section (Heading 1) block for each one.',
+    });
+  } else {
+    findings.push({
+      level: 'good',
+      text: `${sectionTitles.length} section${sectionTitles.length !== 1 ? 's' : ''} found: ${sectionTitles.map(t => `\u201c${t}\u201d`).join(', ')}.`,
+    });
+  }
+  if (hasPreamble) {
+    findings.push({
+      level: 'warning',
+      text: 'Some content appears before your first Section block and won\u2019t be grouped under any section title once published. If this was meant to be part of a section, move it after that section\u2019s heading, or add a Section block before it.',
+    });
+  }
+
+  return findings;
+}
+
+function renderFormattingChecksBox(topsheet, blocks) {
+  const findings = runFormattingChecks(topsheet, blocks);
+  const warnings = findings.filter(f => f.level === 'warning');
+  const good = findings.filter(f => f.level === 'good');
+  const rows = warnings.concat(good).map(f =>
+    `<li class="db-check-${f.level}"><i class="ti ${f.level === 'warning' ? 'ti-alert-triangle' : 'ti-circle-check'}" aria-hidden="true"></i> ${escHtml(f.text)}</li>`
+  ).join('');
+  return `
+    <div class="db-checks-box">
+      <h2 id="live-preview-checks">Formatting checks</h2>
+      <p class="db-checks-intro">The same checks <a href="${(typeof window !== 'undefined' && window.SITE_BASEURL) || ''}/docs/documentation/#page-proof">Page Proof</a> runs on a downloaded document, shown live as you build \u2014 not a guarantee nothing else needs a look, just a head start.</p>
+      <ul class="db-checks-list">${rows}</ul>
+    </div>
+  `;
+}
+
 function renderLivePreview(topsheet, blocks) {
   const detailsHtml = renderDetailsTable(topsheet);
   const groups = groupBlocksBySection(blocks);
@@ -153,11 +241,13 @@ function renderLivePreview(topsheet, blocks) {
   }).join('\n');
 
   return `
+    ${renderFormattingChecksBox(topsheet, blocks)}
     ${renderHeroBanner(topsheet)}
     <div class="doc-details-box">
       <h2 id="live-preview-details">Document details</h2>
       ${detailsHtml || '<p style="color:#999;font-style:italic;">No public fields filled in yet.</p>'}
     </div>
+    ${renderVariablesBox(topsheet)}
     ${sectionsHtml || '<p style="color:#999;font-style:italic;">Add a block below to start writing.</p>'}
   `;
 }
