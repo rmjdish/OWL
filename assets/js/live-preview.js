@@ -135,15 +135,21 @@ function groupBlocksBySection(blocks) {
 function renderVariablesBox(topsheet) {
   const vars = (topsheet.outputVars || '').split('\n').map(v => v.trim()).filter(Boolean);
   if (!vars.length) return '';
-  const rows = vars.map(v => `<tr><td>${escHtml(v)}</td><td><span class="doc-conf-badge doc-conf-high">high</span></td></tr>`).join('');
+  const rows = vars.map(v => `<tr>
+    <td>${escHtml(v)}</td>
+    <td><em class="doc-var-label-placeholder">(label for this variable)</em></td>
+    <td>topsheet field</td>
+    <td><input type="checkbox" class="doc-var-checkbox" disabled title="Illustrative only \u2014 not a real basket in this preview"></td>
+  </tr>`).join('');
   return `
     <div class="doc-variables-box">
       <h2 id="live-preview-variables">Variables in this document</h2>
-      <table class="doc-details-table">
-        <thead><tr><th>Variable</th><th>Confidence</th></tr></thead>
+      <p class="doc-variables-count">${vars.length} high-confidence match${vars.length !== 1 ? 'es' : ''}</p>
+      <table class="doc-details-table doc-variables-table">
+        <thead><tr><th>Variable</th><th>Label</th><th>How it was found</th><th>Add</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <p class="doc-variables-note"><i>Only variables listed in the Output variables field are shown here, since those are the only ones this preview can identify with certainty. The real published page also checks bold headings, sweep-year patterns, and plain-text mentions against the live NSHD data dictionary to find further variables at medium and low confidence \u2014 something this offline preview has no access to do.</i></p>
+      <p class="doc-variables-note"><i>Only variables listed in the Output variables field are shown here, since those are the only ones this preview can identify with certainty. Labels shown are placeholders \u2014 the real page fills these in from the live NSHD data dictionary, which this offline preview has no access to. The real published page also checks bold headings, sweep-year patterns, and plain-text mentions to find further variables at medium and low confidence.</i></p>
     </div>
   `;
 }
@@ -247,8 +253,8 @@ function renderLivePreview(topsheet, blocks) {
       <h2 id="live-preview-details">Document details</h2>
       ${detailsHtml || '<p style="color:#999;font-style:italic;">No public fields filled in yet.</p>'}
     </div>
-    ${renderVariablesBox(topsheet)}
     ${sectionsHtml || '<p style="color:#999;font-style:italic;">Add a block below to start writing.</p>'}
+    ${renderVariablesBox(topsheet)}
   `;
 }
 
