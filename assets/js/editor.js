@@ -328,7 +328,75 @@ function computeMoveFlags(blocks) {
   return flags;
 }
 
-function renderAll() {
+const AUTOSAVE_KEY = 'owl-doc-builder-autosave';
+
+function autoSaveToBrowser() {
+  const hasContent = state.blocks.length > 0 || Object.values(state.topsheet).some(v => (v || '').trim());
+  if (!hasContent) {
+    clearAutoSave();
+    return;
+  }
+  // Same shape as saveProgress()'s file, minus imageBytes (not JSON-safe,
+  // and dataUrl already carries the same image data as a base64 string).
+  const payload = {
+    _type: 'owl-doc-builder-progress',
+    _version: 1,
+    _savedAt: new Date().toISOString(),
+    topsheet: state.topsheet,
+    blocks: state.blocks.map(b => {
+      if (b.type === 'image') {
+        const { imageBytes, ...rest } = b;
+        return rest;
+      }
+      return b;
+    }),
+  };
+  try {
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
+  } catch (e) {
+    // Quota exceeded or storage disabled — auto-save is a convenience,
+    // not the primary save path, so fail silently rather than interrupt
+    // the person's work. Save progress (the explicit file) still works
+    // regardless.
+    console.warn('Auto-save to this browser failed:', e);
+  }
+}
+
+function clearAutoSave() {
+  try { localStorage.removeItem(AUTOSAVE_KEY); } catch (e) { /* ignore */ }
+}
+
+function offerAutoSaveRestore() {
+  let saved;
+  try {
+    const raw = localStorage.getItem(AUTOSAVE_KEY);
+    if (!raw) return false;
+    saved = JSON.parse(raw);
+  } catch (e) {
+    clearAutoSave();
+    return false;
+  }
+  if (!saved || saved._type !== 'owl-doc-builder-progress') { clearAutoSave(); return false; }
+  const hasSavedContent = (saved.blocks && saved.blocks.length > 0)
+    || Object.values(saved.topsheet || {}).some(v => (v || '').trim());
+  if (!hasSavedContent) { clearAutoSave(); return false; }
+
+  const when = saved._savedAt ? new Date(saved._savedAt).toLocaleString() : 'earlier';
+  if (!confirm(`This browser has unsaved work from ${when} — restore it? (Choose Cancel to start with a blank form instead; the saved copy stays available either way.)`)) {
+    return false;
+  }
+  state.topsheet = Object.assign({}, saved.topsheet);
+  state.blocks = (saved.blocks || []).map(b => {
+    if (b.type === 'image' && b.dataUrl) {
+      return Object.assign({}, b, { imageBytes: dataUrlToBytes(b.dataUrl) });
+    }
+    return b;
+  });
+  renderAll();
+  return true;
+}
+
+function renderAll(skipAutoSave) {
   document.getElementById('db-topsheet-form').innerHTML = renderTopsheetForm();
 
   const displayInfo = computeBlockDisplayInfo(state.blocks);
@@ -355,6 +423,7 @@ function renderAll() {
 
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
   attachHandlers();
+  if (!skipAutoSave) autoSaveToBrowser();
 }
 
 function attachHandlers() {
@@ -362,7 +431,7 @@ function attachHandlers() {
   document.querySelectorAll('#db-topsheet-form [data-field]').forEach(el => {
     el.addEventListener('input', () => {
       state.topsheet[el.dataset.field] = el.value;
-      document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
+      syncPreviewOnly();
     });
   });
 
@@ -474,6 +543,7 @@ function attachHandlers() {
 
 function syncPreviewOnly() {
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
+  autoSaveToBrowser();
 }
 
 function dataUrlToBytes(dataUrl) {
@@ -553,6 +623,10 @@ async function handleDownload() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    // The document is now finished and handed off — clear the
+    // browser's auto-saved draft so it doesn't linger and get
+    // confusingly offered back on a future visit.
+    clearAutoSave();
   } catch (e) {
     alert('Something went wrong building the document: ' + e.message);
     console.error(e);
@@ -579,11 +653,17 @@ function clearForm() {
   }
   Object.keys(state.topsheet).forEach(k => { state.topsheet[k] = ''; });
   state.blocks = [];
+  clearAutoSave();
   renderAll();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  renderAll();
+  const draftExisted = !!localStorage.getItem(AUTOSAVE_KEY);
+  const restored = offerAutoSaveRestore();
+  // If a draft existed but the person declined it, render the blank
+  // form without letting auto-save immediately clear that declined
+  // draft — it should stay available to restore on a future visit.
+  if (!restored) renderAll(draftExisted);
   document.getElementById('db-download-btn').addEventListener('click', handleDownload);
   document.querySelectorAll('[data-add-block]').forEach(btn => {
     btn.addEventListener('click', () => addBlock(btn.dataset.addBlock));
