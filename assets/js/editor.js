@@ -543,6 +543,7 @@ function openPreviewWindow() {
       .doc-content-body h3 { color: #333; font-size: 14px; font-weight: bold; text-decoration: underline; margin-bottom: 14px; }
       .doc-subheading { margin-bottom: 14px; }
       .doc-content-body p { margin-bottom: 14px; }
+      .doc-content-body p:empty { min-height: 1em; }
       .doc-content-body ul, .doc-content-body ol { margin-bottom: 14px; }
       .doc-content-body table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 10px 0 14px; font-size: 13px; }
       .doc-content-body td, .doc-content-body th { word-wrap: break-word; overflow-wrap: break-word; border: 1px solid #ccc; padding: 6px 10px; }
