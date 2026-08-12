@@ -43,7 +43,7 @@ function isInBasket(varName) {
 // "which variables are sweeps of the same longitudinal Field ID" — the
 // longitudinal page does NOT duplicate this logic; it just calls addToBasket
 // per variable, and expansion happens here.
-const DATA_DICTIONARY_URL = "/OWL/docs/search_methods/data_dictionary/NSHD_Data_Dictionary_Public.json";
+const DATA_DICTIONARY_URL = "/OWL/assets/data/search_methods/data_dictionary/NSHD_Data_Dictionary_Public.json";
 let longitudinalSiblingsPromise = null;
 
 function loadLongitudinalSiblings() {
