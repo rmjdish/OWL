@@ -525,7 +525,7 @@ function openPreviewWindow() {
       .db-check-warning { color: hsl(35 80% 30%); }
       .db-check-good { color: hsl(125 35% 25%); }
     </style>
-    </head><body><div id="db-live-preview"></div></body></html>`);
+    </head><body><div class="page-topics"><div id="db-live-preview"></div></div></body></html>`);
   previewWindow.document.close();
   updatePreviewWindow();
 }
@@ -914,10 +914,34 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('db-autosave-notice').style.display = 'none';
   });
 
-  ['db-open-preview-window-btn', 'db-sidebar-preview-window-btn'].forEach(id => {
-    const btn = document.getElementById(id);
-    if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); openPreviewWindow(); updatePreviewButtonState(); });
-  });
+  const mainPreviewBtn = document.getElementById('db-open-preview-window-btn');
+  if (mainPreviewBtn) mainPreviewBtn.addEventListener('click', () => { openPreviewWindow(); updatePreviewButtonState(); });
+
+  const sidebarTrigger = document.getElementById('db-sidebar-preview-trigger');
+  const sidebarMenu = document.getElementById('db-sidebar-preview-menu');
+  if (sidebarTrigger && sidebarMenu) {
+    sidebarTrigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      sidebarMenu.classList.toggle('db-menu-open');
+    });
+    sidebarMenu.querySelectorAll('[data-preview-action]').forEach(opt => {
+      opt.addEventListener('click', () => {
+        sidebarMenu.classList.remove('db-menu-open');
+        if (opt.dataset.previewAction === 'scroll') {
+          document.getElementById('db-preview-section').scrollIntoView({ behavior: 'smooth' });
+          history.replaceState(null, '', '#db-preview-section');
+        } else if (opt.dataset.previewAction === 'popup') {
+          openPreviewWindow();
+          updatePreviewButtonState();
+        }
+      });
+    });
+    document.addEventListener('click', (e) => {
+      if (!sidebarTrigger.contains(e.target) && !sidebarMenu.contains(e.target)) {
+        sidebarMenu.classList.remove('db-menu-open');
+      }
+    });
+  }
   setInterval(updatePreviewButtonState, 1000);
 });
 
@@ -925,6 +949,4 @@ function updatePreviewButtonState() {
   const open = isPreviewWindowOpen();
   const mainBtn = document.getElementById('db-open-preview-window-btn');
   if (mainBtn) mainBtn.textContent = open ? 'Preview window open — click to focus it' : 'Open live preview in a new window';
-  const sideBtn = document.getElementById('db-sidebar-preview-window-btn');
-  if (sideBtn) sideBtn.classList.toggle('db-sidebar-preview-active', open);
 }
