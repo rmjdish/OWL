@@ -472,6 +472,70 @@ function offerAutoSaveRestore() {
   return true;
 }
 
+let previewWindow = null;
+
+function isPreviewWindowOpen() {
+  return previewWindow && !previewWindow.closed;
+}
+
+function openPreviewWindow() {
+  if (isPreviewWindowOpen()) {
+    previewWindow.focus();
+    return;
+  }
+  previewWindow = window.open('', 'owlLivePreview', 'width=760,height=920,resizable=yes,scrollbars=yes');
+  if (!previewWindow) {
+    alert('This browser blocked the preview window from opening. Allow pop-ups for this site and try again.');
+    return;
+  }
+  const baseurl = (typeof window !== 'undefined' && window.SITE_BASEURL) || '';
+  previewWindow.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Live preview \u2014 Create Documentation Online</title>
+    <link rel="stylesheet" href="${baseurl}/assets/css/topics.css">
+    <link rel="stylesheet" href="${baseurl}/assets/css/getting-started.css">
+    <style>
+      body { margin: 0; padding: 20px 28px; font-family: Calibri, Arial, sans-serif; }
+      .doc-details-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+      .doc-details-table td { padding: 6px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+      .doc-details-table td:first-child { font-weight: 600; width: 30%; white-space: nowrap; }
+      .doc-content-body h2 { color: #1a4d7a; margin-top: 20px; margin-bottom: 14px; font-size: 16px; }
+      .doc-content-body h3 { color: #333; font-size: 14px; font-weight: bold; text-decoration: underline; margin-bottom: 14px; }
+      .doc-subheading { margin-bottom: 14px; }
+      .doc-content-body p { margin-bottom: 14px; }
+      .doc-content-body ul, .doc-content-body ol { margin-bottom: 14px; }
+      .doc-content-body table { border-collapse: collapse; width: 100%; table-layout: fixed; margin: 10px 0 14px; font-size: 13px; }
+      .doc-content-body td, .doc-content-body th { word-wrap: break-word; overflow-wrap: break-word; border: 1px solid #ccc; padding: 6px 10px; }
+      .doc-content-body img { margin-bottom: 14px; }
+      .doc-details-box, .doc-content-body { font-size: 14px; }
+      .doc-details-box { margin-top: 20px; margin-bottom: 20px; padding: 14px 18px; border: 1px solid #ddd; border-left: 4px solid #6a0dad; border-radius: 8px; background: #faf7ff; }
+      .doc-details-box h2 { margin-top: 0; }
+      .doc-byline { color: #666; font-size: 13px; margin: 2px 0 0; }
+      .doc-variables-box { margin-bottom: 20px; padding: 14px 18px; border: 1px solid #ddd; border-left: 4px solid hsl(125 35% 45%); border-radius: 8px; background: hsl(125 35% 97%); }
+      .doc-variables-box h2 { margin-top: 0; color: hsl(125 35% 22%); }
+      .doc-variables-count { font-weight: 700; font-size: 13px; color: #333; margin: -6px 0 10px; }
+      .doc-variables-table th:nth-child(4), .doc-variables-table td:nth-child(4) { text-align: center; width: 60px; }
+      .doc-var-checkbox { width: 16px; height: 16px; }
+      .doc-var-label-placeholder { color: #999; }
+      .db-checks-box { margin-bottom: 20px; padding: 14px 18px; border: 1px solid #ddd; border-left: 4px solid hsl(35 70% 50%); border-radius: 8px; background: #fff; }
+      .db-checks-box h2 { margin-top: 0; color: #333; }
+      .db-checks-intro { font-size: 12px; color: #666; margin: -4px 0 12px; }
+      .db-checks-list { list-style: none; margin: 0; padding: 0; }
+      .db-checks-list li { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+      .db-checks-list li:last-child { border-bottom: none; }
+      .db-check-warning { color: hsl(35 80% 30%); }
+      .db-check-good { color: hsl(125 35% 25%); }
+    </style>
+    </head><body><div id="db-live-preview"></div></body></html>`);
+  previewWindow.document.close();
+  updatePreviewWindow();
+}
+
+function updatePreviewWindow() {
+  if (!isPreviewWindowOpen()) return;
+  const target = previewWindow.document.getElementById('db-live-preview');
+  if (target) target.innerHTML = renderLivePreview(state.topsheet, state.blocks);
+}
+
 function renderAll(skipAutoSave) {
   document.getElementById('db-topsheet-form').innerHTML = renderTopsheetForm();
 
@@ -498,6 +562,7 @@ function renderAll(skipAutoSave) {
     .join('') || '<p class="db-hint">No blocks yet — add your first section below.</p>';
 
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
+  updatePreviewWindow();
   attachHandlers();
   if (!skipAutoSave) autoSaveToBrowser();
 }
@@ -707,6 +772,7 @@ function updatePrivateFieldsSummary() {
 
 function syncPreviewOnly() {
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
+  updatePreviewWindow();
   autoSaveToBrowser();
 }
 
@@ -847,4 +913,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (dismissBtn) dismissBtn.addEventListener('click', () => {
     document.getElementById('db-autosave-notice').style.display = 'none';
   });
+
+  ['db-open-preview-window-btn', 'db-sidebar-preview-window-btn'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); openPreviewWindow(); updatePreviewButtonState(); });
+  });
+  setInterval(updatePreviewButtonState, 1000);
 });
+
+function updatePreviewButtonState() {
+  const open = isPreviewWindowOpen();
+  const mainBtn = document.getElementById('db-open-preview-window-btn');
+  if (mainBtn) mainBtn.textContent = open ? 'Preview window open — click to focus it' : 'Open live preview in a new window';
+  const sideBtn = document.getElementById('db-sidebar-preview-window-btn');
+  if (sideBtn) sideBtn.classList.toggle('db-sidebar-preview-active', open);
+}
