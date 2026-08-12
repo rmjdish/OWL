@@ -254,7 +254,7 @@ window.logSubtopicValues = logSubtopicValues;
 // Data load
 // ============================================================
 
-fetch("/OWL/assets/data/NSHD_Data_Dictionary_Public.json")
+fetch("/OWL/assets/data/search_methods/search_by_year/NSHD_Data_Dictionary_Public.json")
   .then(r => r.json())
   .then(data => {
     rawData = data;
