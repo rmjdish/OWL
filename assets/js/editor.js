@@ -47,7 +47,7 @@ function duplicateSection(id) {
   renderAll();
 }
 
-function addBlock(type) {
+function addBlock(type, insertAtIndex) {
   const base = { id: newBlockId(), type };
   const defaults = {
     section: { title: '' },
@@ -58,7 +58,12 @@ function addBlock(type) {
     table: { rows: [['', ''], ['', '']] },
     image: { dataUrl: null, imageBytes: null, caption: '', width: 400, height: 300, imageType: 'png' },
   };
-  state.blocks.push(Object.assign(base, defaults[type]));
+  const newBlock = Object.assign(base, defaults[type]);
+  if (typeof insertAtIndex === 'number' && insertAtIndex >= 0 && insertAtIndex <= state.blocks.length) {
+    state.blocks.splice(insertAtIndex, 0, newBlock);
+  } else {
+    state.blocks.push(newBlock);
+  }
   renderAll();
 }
 
@@ -110,6 +115,20 @@ function groupBlocksForOrdering(blocks) {
     }
   });
   return groups;
+}
+
+function indexAfterGroup(group) {
+  const lastBlock = group.children.length ? group.children[group.children.length - 1] : group.sectionBlock;
+  if (!lastBlock) return 0;
+  const idx = state.blocks.findIndex(b => b.id === lastBlock.id);
+  return idx === -1 ? state.blocks.length : idx + 1;
+}
+
+function indexBeforeGroup(group) {
+  const firstBlock = group.sectionBlock || (group.children.length ? group.children[0] : null);
+  if (!firstBlock) return 0;
+  const idx = state.blocks.findIndex(b => b.id === firstBlock.id);
+  return idx === -1 ? 0 : idx;
 }
 
 function flattenGroups(groups) {
@@ -240,6 +259,28 @@ function computeBlockDisplayInfo(blocks) {
   return info;
 }
 
+function renderContentInsertRow(index) {
+  return `
+    <div class="db-insert-row" data-insert-index="${index}">
+      <span class="db-insert-label">Add to this section:</span>
+      <button type="button" class="db-insert-btn" data-insert-type="subheading">+ Subheading</button>
+      <button type="button" class="db-insert-btn" data-insert-type="paragraph">+ Paragraph</button>
+      <button type="button" class="db-insert-btn" data-insert-type="bulleted_list">+ Bulleted list</button>
+      <button type="button" class="db-insert-btn" data-insert-type="numbered_list">+ Numbered list</button>
+      <button type="button" class="db-insert-btn" data-insert-type="table">+ Table</button>
+      <button type="button" class="db-insert-btn" data-insert-type="image">+ Image</button>
+    </div>
+  `;
+}
+
+function renderSectionInsertRow(index, label) {
+  return `
+    <div class="db-insert-row db-insert-row-section" data-insert-index="${index}">
+      <button type="button" class="db-insert-btn db-insert-btn-section" data-insert-type="section">+ New section ${label}</button>
+    </div>
+  `;
+}
+
 function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
   const isSection = block.type === 'section';
   const collapseToggle = isSection
@@ -298,7 +339,7 @@ function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
         </div>
       `).join('');
       body = `<label class="db-block-label">Paragraph text</label>
-      <p class="db-hint">Built from one or more segments, in order. Tick B / I / U on a segment to format just that part — split a new segment off wherever the formatting needs to change.</p>
+      <p class="db-hint">Built from one or more segments, in order. Tick B / I / U on a segment to format just that part — split a new segment off wherever the formatting needs to change. Left empty, this becomes a blank line — a quick way to add extra space wherever it's needed.</p>
       ${runRows}
       <button type="button" class="db-btn-add-item" data-action="add-run" data-id="${block.id}">+ Add segment</button>`;
       break;
@@ -554,12 +595,33 @@ function renderAll(skipAutoSave) {
   });
 
   const visibleBlocks = state.blocks.filter(b => !displayInfo.get(b.id).hidden);
-  document.getElementById('db-block-list').innerHTML = visibleBlocks
-    .map(b => {
-      const flags = moveFlags.get(b.id) || { up: false, down: false };
-      return renderBlockEditor(b, flags.up, flags.down, displayInfo.get(b.id));
-    })
-    .join('') || '<p class="db-hint">No blocks yet — add your first section below.</p>';
+  const visibleIds = new Set(visibleBlocks.map(b => b.id));
+  const groups = groupBlocksForOrdering(state.blocks);
+
+  let listHtml = '';
+  if (groups.length) {
+    listHtml += renderSectionInsertRow(indexBeforeGroup(groups[0]), 'here');
+  }
+  groups.forEach((group, gi) => {
+    const groupBlocks = [group.sectionBlock, ...group.children].filter(b => b && visibleIds.has(b.id));
+    listHtml += groupBlocks
+      .map(b => {
+        const flags = moveFlags.get(b.id) || { up: false, down: false };
+        return renderBlockEditor(b, flags.up, flags.down, displayInfo.get(b.id));
+      })
+      .join('');
+    // Skip the trailing insert controls after the very last group — the
+    // existing "Content" toolbar below the whole list already covers
+    // adding to the end of the document, so this avoids showing the
+    // same options twice in a row.
+    if (gi < groups.length - 1) {
+      const isCollapsed = group.sectionBlock && group.sectionBlock.collapsed;
+      if (!isCollapsed) listHtml += renderContentInsertRow(indexAfterGroup(group));
+      listHtml += renderSectionInsertRow(indexAfterGroup(group), 'here');
+    }
+  });
+  document.getElementById('db-block-list').innerHTML = listHtml
+    || '<p class="db-hint">No blocks yet — add your first section below.</p>';
 
   document.getElementById('db-live-preview').innerHTML = renderLivePreview(state.topsheet, state.blocks);
   updatePreviewWindow();
@@ -897,6 +959,13 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('db-download-btn').addEventListener('click', handleDownload);
   document.querySelectorAll('[data-add-block]').forEach(btn => {
     btn.addEventListener('click', () => addBlock(btn.dataset.addBlock));
+  });
+  document.getElementById('db-block-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('.db-insert-btn');
+    if (!btn) return;
+    const row = btn.closest('.db-insert-row');
+    const index = parseInt(row.dataset.insertIndex, 10);
+    addBlock(btn.dataset.insertType, index);
   });
   const loadBtn = document.getElementById('db-load-example-btn');
   if (loadBtn) loadBtn.addEventListener('click', loadAtopyExample);
