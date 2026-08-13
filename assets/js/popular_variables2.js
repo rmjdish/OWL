@@ -8,11 +8,11 @@ document.addEventListener("DOMContentLoaded", () => {
     fetch("/OWL/assets/data/search_methods/data_dictionary/NSHD_Data_Dictionary_Public.json").then(r => r.json())
   ])
   .then(([popular, labels]) => {
- 
+
     // ⭐ HIDE LOADER + SHOW UI
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("popularUI").style.display = "block";
- 
+
     // Build label + Field ID lookups
     const labelMap   = {};
     const fieldIdMap = {};
@@ -21,18 +21,18 @@ document.addEventListener("DOMContentLoaded", () => {
       labelMap[vn]   = row["Variable Label"];
       fieldIdMap[vn] = row["Showcase Field ID"];   // numeric or undefined
     });
- 
+
     // ⭐ Build a fast lookup set of valid NSHD variable names
     const dictionaryNames = new Set(labels.map(r => r["NSHD Variable Name"]));
- 
+
     // ⭐ Work out which years actually exist in the data, instead of
     // hardcoding a fixed list. Each popular-vars record looks like:
     // { name, counts: {"2021": 12, "2022": 30, ...}, total }
     const availableYears = getAvailableYears(popular);
- 
+
     // Default selection: every year that's present
     const selectedYears = new Set(availableYears);
- 
+
     // Fill in the hero banner's year range text, e.g. "between 2021 and 2025"
     const heroYearRange = document.getElementById("heroYearRange");
     if (heroYearRange && availableYears.length > 0) {
@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ? ` in ${availableYears[0]}`
         : ` between ${availableYears[0]} and ${availableYears[availableYears.length - 1]}`;
     }
- 
+
     initUI(popular, labelMap, fieldIdMap, dictionaryNames, availableYears, selectedYears);
   })
   .catch(err => {
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
       container.innerHTML = "<p>Failed to load data.</p>";
     }
   });
- 
+
   // ⭐ Collect the union of year keys across every record's "counts" object,
   // sorted ascending. This is the single source of truth for which years
   // the year-pill bar offers — nothing is hardcoded.
@@ -61,14 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     return [...yearSet].sort();
   }
- 
+
   // ⭐ A variable qualifies if it was added more than this many times in
   // ANY single selected year — not a total scaled by how many years are
   // selected. This is deliberate: some variables were only ever
   // collected in one (often more recent) year, and scaling the
   // threshold by year-count would unfairly exclude them.
   const MIN_PER_YEAR = 3;
- 
+
   // ⭐ Build the flat, dictionary-filtered row list ONCE. Year selection
   // and search only ever slice/recompute from this — the source data
   // itself doesn't change.
@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
         counts:  row.counts || {}
       }));
   }
- 
+
   // ⭐ Turn allRows into the flat rows the table needs for a given year
   // selection. Displayed count = sum across whichever years are selected.
   // Qualification = count > MIN_PER_YEAR in at least one selected year.
@@ -104,7 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .filter(row => row.qualifies);
   }
- 
+
   // ⭐ Does this year have at least one row that (a) clears MIN_PER_YEAR
   // for that year and (b) matches the current search query? Drives the
   // dimmed/pill-no-match styling, same behaviour as the Search by Year page.
@@ -117,14 +117,14 @@ document.addEventListener("DOMContentLoaded", () => {
              String(row.fieldId || "").includes(query);
     });
   }
- 
+
   // ⭐ MAIN UI SETUP
   function initUI(popular, labelMap, fieldIdMap, dictionaryNames, availableYears, selectedYears) {
-    let sortColumn = null;
+    let sortColumn = "name";
     let sortAsc    = true;
     let pageSize   = 15;
     let currentPage = 1;
- 
+
     const tbody           = document.querySelector("#vars-table tbody");
     const resultsCount    = document.getElementById("resultsCount");
     const pageSizeControl = document.getElementById("pageSize");
@@ -132,23 +132,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const addAllBtn       = document.getElementById("addAllBtn");
     const yearPillBarEl   = document.getElementById("year-pill-bar");
     const countHeaderEl   = document.querySelector('#vars-table th[data-sort="count"] .header-label');
- 
+
     const allRows = buildAllRows(popular, labelMap, fieldIdMap, dictionaryNames);
- 
+
     let data         = buildRows(allRows, selectedYears);
     let filteredData = [...data];
- 
+
     // ⭐ YEAR PILL BAR — same markup/behaviour as the Search by Year page:
     // pills for each available year plus an "All" pill, active state via
     // the .active class, and pills with no matches for the current search
     // dimmed via .pill-no-match.
     function renderYearPillBar() {
       if (!yearPillBarEl) return;
- 
+
       const query = searchBox.value.toLowerCase();
       const allSelected = availableYears.length > 0 &&
         availableYears.every(y => selectedYears.has(y));
- 
+
       const allPillHtml = `
         <button type="button"
                 class="year-pill year-pill-all${allSelected ? " active" : ""}"
@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <span class="pill-line1">All</span>
         </button>
       `;
- 
+
       const yearPillsHtml = availableYears.map(y => {
         const active  = selectedYears.has(y);
         const noMatch = !yearHasMatch(allRows, y, query);
@@ -169,9 +169,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
         `;
       }).join("");
- 
+
       yearPillBarEl.innerHTML = allPillHtml + yearPillsHtml;
- 
+
       yearPillBarEl.querySelectorAll(".year-pill").forEach(btn => {
         btn.onclick = () => {
           const y = btn.dataset.year;
@@ -192,12 +192,12 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       });
     }
- 
+
     // ⭐ Threshold text is fixed now (any single year > MIN_PER_YEAR
     // qualifies), so it's set once rather than recomputed per selection.
     const heroThresholdEl = document.getElementById("heroThreshold");
     if (heroThresholdEl) heroThresholdEl.textContent = MIN_PER_YEAR;
- 
+
     // ⭐ Keep the "Count" column header reflecting the current selection
     function updateCountHeaderLabel() {
       if (!countHeaderEl) return;
@@ -212,7 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
         countHeaderEl.textContent = `Count (${sel[0]}–${sel[sel.length - 1]})`;
       }
     }
- 
+
     // ⭐ SEARCH — re-applies the current search box value against `data`
     function applySearch() {
       const q = searchBox.value.toLowerCase();
@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         String(row.fieldId || "").includes(q)
       );
     }
- 
+
     function onYearsChanged() {
       data = buildRows(allRows, selectedYears);
       applySearch();
@@ -231,21 +231,21 @@ document.addEventListener("DOMContentLoaded", () => {
       updateCountHeaderLabel();
       renderTable();
     }
- 
+
     searchBox.oninput = () => {
       applySearch();
       currentPage = 1;
       renderYearPillBar(); // re-dim pills against the new search term
       renderTable();
     };
- 
+
     // ⭐ PAGE SIZE
     pageSizeControl.onchange = () => {
       pageSize = parseInt(pageSizeControl.value);
       currentPage = 1;
       renderTable();
     };
- 
+
     // ⭐ CHECK IF ALL VISIBLE ARE SELECTED
     function allVisibleRowsSelected() {
       const start = (currentPage - 1) * pageSize;
@@ -254,22 +254,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (visibleRows.length === 0) return false;
       return visibleRows.every(row => isInBasket(row.name));
     }
- 
+
     // ⭐ UPDATE BUTTON LABEL
     function updateAddAllButtonLabel() {
       const start = (currentPage - 1) * pageSize;
       const end   = start + pageSize;
       const visibleRows = filteredData.slice(start, end);
- 
+
       if (visibleRows.length === 0) {
         addAllBtn.textContent = "No visible variables to add";
         addAllBtn.classList.remove("remove-mode");
         addAllBtn.disabled = true;
         return;
       }
- 
+
       addAllBtn.disabled = false;
- 
+
       if (allVisibleRowsSelected()) {
         addAllBtn.textContent = "Remove all visible variables";
         addAllBtn.classList.add("remove-mode");
@@ -278,13 +278,13 @@ document.addEventListener("DOMContentLoaded", () => {
         addAllBtn.classList.remove("remove-mode");
       }
     }
- 
+
     // ⭐ ADD / REMOVE ALL BUTTON
     addAllBtn.onclick = () => {
       const start = (currentPage - 1) * pageSize;
       const end   = start + pageSize;
       const visibleRows = filteredData.slice(start, end);
- 
+
       if (allVisibleRowsSelected()) {
         // Single localStorage read+write, and a single sibling-expansion
         // pass — avoids N separate async toast calls racing each other
@@ -297,15 +297,15 @@ document.addEventListener("DOMContentLoaded", () => {
           .map(row => ({ varName: row.name, label: row.label }));
         batchAddToBasket(items);
       }
- 
+
       updateBasketCountUI();
       renderTable();
     };
- 
+
     // ⭐ RENDER TABLE
     function renderTable() {
       let sorted = [...filteredData];
- 
+
       if (sortColumn) {
         sorted.sort((a, b) => {
           const av = a[sortColumn] ?? "";
@@ -315,25 +315,25 @@ document.addEventListener("DOMContentLoaded", () => {
           return 0;
         });
       }
- 
+
       const totalRows  = sorted.length;
       const totalPages = Math.ceil(totalRows / pageSize);
       const start      = (currentPage - 1) * pageSize;
       const pageRows   = sorted.slice(start, start + pageSize);
- 
+
       resultsCount.textContent = `Showing ${totalRows} results`;
- 
+
       // Build rows
       tbody.innerHTML = pageRows.map(row => {
         const checked = isInBasket(row.name);
- 
+
         // Field ID cell — link to Showcase if available, otherwise "Not available"
         const fieldIdCell = row.fieldId
           ? `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row.fieldId}"
                 target="_blank"
                 class="field-link">${row.fieldId}</a>`
           : `<span class="not-available">Not available</span>`;
- 
+
         return `
           <tr>
             <td class="check-col">
@@ -343,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
                      data-label="${row.label}"
                      ${checked ? "checked" : ""}>
             </td>
- 
+
             <td class="name-col">
               <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${row.name}"
                  target="_blank"
@@ -351,35 +351,35 @@ document.addEventListener("DOMContentLoaded", () => {
                  ${row.name}
               </a>
             </td>
- 
+
             <td class="fieldid-col">${fieldIdCell}</td>
- 
+
             <td class="label-col">${row.label}</td>
             <td class="count-col">${row.count}</td>
           </tr>
         `;
       }).join("");
- 
+
       updateSortIcons();
       renderPagination(totalPages);
       attachBasketEvents();
       updateAddAllButtonLabel();
     }
- 
+
     // ⭐ PAGINATION
     function renderPagination(totalPages) {
       const top    = document.getElementById("paginationTop");
       const bottom = document.getElementById("paginationBottom");
- 
+
       const html = `
         <button ${currentPage === 1         ? "disabled" : ""} data-dir="-1">Prev</button>
         <span>Page ${currentPage} of ${totalPages}</span>
         <button ${currentPage === totalPages ? "disabled" : ""} data-dir="1">Next</button>
       `;
- 
+
       top.innerHTML    = html;
       bottom.innerHTML = html;
- 
+
       document.querySelectorAll("#paginationTop button, #paginationBottom button")
         .forEach(btn => {
           btn.onclick = () => {
@@ -388,16 +388,16 @@ document.addEventListener("DOMContentLoaded", () => {
           };
         });
     }
- 
+
     // ⭐ SORTING EVENTS
     document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
       const label = th.textContent;
- 
+
       th.innerHTML = `
         <span class="header-label">${label}</span>
         <span class="sort-icon">⇅</span>
       `;
- 
+
       th.onclick = () => {
         const col = th.dataset.sort;
         if (sortColumn === col) {
@@ -410,7 +410,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderTable();
       };
     });
- 
+
     // ⭐ UPDATE SORT ICONS
     function updateSortIcons() {
       document.querySelectorAll("#vars-table th[data-sort]").forEach(th => {
@@ -425,7 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
         icon.textContent   = sortAsc ? "▲" : "▼";
       });
     }
- 
+
     // ⭐ BASKET EVENTS
     function attachBasketEvents() {
       document.querySelectorAll(".add-to-basket").forEach(cb => {
@@ -439,7 +439,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       });
     }
- 
+
     // ============================================================
     // Download filtered CSV
     // ============================================================
@@ -448,12 +448,12 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("No data to download");
         return;
       }
- 
+
       const headers = ["name", "fieldId", "label", "count"];
       const displayHeaders = ["NSHD Variable Name", "Showcase Field ID", "Variable Label", "Count"];
- 
+
       let csvContent = displayHeaders.join(",") + "\n";
- 
+
       filteredData.forEach(row => {
         const line = headers.map(h => {
           const value = row[h] ?? "Not available";
@@ -461,7 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }).join(",");
         csvContent += line + "\n";
       });
- 
+
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url  = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -470,10 +470,10 @@ document.addEventListener("DOMContentLoaded", () => {
       link.click();
       URL.revokeObjectURL(url);
     }
- 
+
     document.getElementById("downloadCsvBtn")
       .addEventListener("click", downloadFilteredCSV);
- 
+
     // ============================================================
     // Keep "Add all" button in sync with basket changes made
     // elsewhere — e.g. linked longitudinal sweeps auto-added/removed via
@@ -485,10 +485,10 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("nshd-basket-changed", () => {
       updateAddAllButtonLabel();
     });
- 
+
     renderYearPillBar();
     updateCountHeaderLabel();
     renderTable();
   } // end initUI
- 
+
 }); // end DOMContentLoaded
