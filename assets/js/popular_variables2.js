@@ -120,8 +120,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ⭐ MAIN UI SETUP
   function initUI(popular, labelMap, fieldIdMap, dictionaryNames, availableYears, selectedYears) {
-    let sortColumn = "name";
-    let sortAsc    = true;
+    let sortColumn = "count";
+    let sortAsc    = false;
     let pageSize   = 15;
     let currentPage = 1;
 
