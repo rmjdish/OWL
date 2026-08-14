@@ -9,11 +9,17 @@
  *      file names (case, whitespace, extension).
  *   4. Renders an expandable-row catalogue table with basket integration.
  *
- * Configure the two source paths on the page itself:
- *   window.UKLLC_XLSX_URL        -> File 2 Documentation Master.xlsx
- *   window.UKLLC_DICTIONARY_URL  -> data dictionary JSON export
+ * Configure the two source paths as data-attributes on the page's own
+ * wrapper element (deliberately NOT an inline <script> block — some CSP
+ * setups silently block inline scripts while still allowing external
+ * <script src>, which is why a previous version of this page failed with
+ * "UKLLC_XLSX_URL is not set"; plain HTML attributes sidestep that):
+ *   <div class="page-ukllc-catalogue"
+ *        data-xlsx-url="..."
+ *        data-dictionary-url="...">
  *
- * Preview pages with no web server can instead set:
+ * Preview pages with no web server can instead set these globals directly
+ * (see preview_standalone.html), which take priority over the attributes:
  *   window.UKLLC_XLSX_INLINE_BASE64  -> base64 of the .xlsx file
  *   window.UKLLC_DICTIONARY_INLINE   -> the dictionary JSON as a JS array
  */
@@ -97,19 +103,24 @@
       .toLowerCase();
   }
 
-  // ── URL resolution (fixes the ucl-consent-blocker.js crash) ────────────
-  function resolveUrl(name) {
-    const raw = window[name];
-    if (!raw || typeof raw !== "string" || !raw.trim()) {
+  // ── Config resolution ────────────────────────────────────────────────
+  // Reads data-xlsx-url / data-dictionary-url off .page-ukllc-catalogue.
+  // Throws a clear, specific error rather than letting a missing value
+  // reach fetch() as undefined (which is what produced the cryptic
+  // "e[0] is undefined" crash inside ucl-consent-blocker.js previously).
+  function resolveUrl(datasetKey, attrName) {
+    const container = document.querySelector(".page-ukllc-catalogue");
+    const raw = container && container.dataset[datasetKey];
+    if (!raw || !raw.trim()) {
       throw new Error(
-        name + " is not set (got " + JSON.stringify(raw) + "). " +
-        "Check the inline <script> block on the page sets window." + name + " before ukllc_catalogue.js loads."
+        attrName + ' is not set on <div class="page-ukllc-catalogue"> (got ' + JSON.stringify(raw) + "). " +
+        "Check the front-matter-rendered value in the page's HTML source."
       );
     }
     // Resolve to a fully-qualified absolute URL. A root-relative path like
-    // "/OWL/assets/..." is valid on its own, but ucl-consent-blocker.js
-    // wraps window.fetch and appears to mishandle it — passing an absolute
-    // URL sidesteps that entirely.
+    // "/OWL/assets/..." is valid on its own, but some fetch-wrapping
+    // scripts (cookie consent blockers etc.) handle relative paths poorly —
+    // passing an absolute URL sidesteps that.
     return new URL(raw, window.location.origin).href;
   }
 
@@ -233,11 +244,11 @@
     try {
       xlsxRowsPromise = window.UKLLC_XLSX_INLINE_BASE64
         ? Promise.resolve(base64ToWorkbookRows(window.UKLLC_XLSX_INLINE_BASE64))
-        : loadWorkbook(resolveUrl("UKLLC_XLSX_URL"));
+        : loadWorkbook(resolveUrl("xlsxUrl", "data-xlsx-url"));
 
       variablesPromise = window.UKLLC_DICTIONARY_INLINE
         ? Promise.resolve(window.UKLLC_DICTIONARY_INLINE)
-        : fetch(resolveUrl("UKLLC_DICTIONARY_URL")).then((r) => {
+        : fetch(resolveUrl("dictionaryUrl", "data-dictionary-url")).then((r) => {
             if (!r.ok) throw new Error("Could not fetch dictionary JSON (HTTP " + r.status + ")");
             return r.json();
           });
@@ -265,7 +276,7 @@
         el("loadingScreen").innerHTML =
           "<div>Could not build the catalogue (" +
           err.message +
-          "). Check window.UKLLC_XLSX_URL and window.UKLLC_DICTIONARY_URL on the page, and open the console for details.</div>";
+          "). Check the data-xlsx-url / data-dictionary-url attributes on .page-ukllc-catalogue, and open the console for details.</div>";
         console.error(err);
       });
   }
