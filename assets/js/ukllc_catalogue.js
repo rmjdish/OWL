@@ -1,17 +1,21 @@
 /* ukllc_catalogue.js
- * Fully client-side version: no Python build step, no pre-generated
- * datasets.json. On page load this:
+ * Fully client-side: no Python build step, no pre-generated datasets.json.
+ * On page load this:
  *   1. Fetches the File 2 Documentation Master spreadsheet (.xlsx) and
  *      parses it with SheetJS (https://sheetjs.com).
  *   2. Fetches the Data Dictionary JSON export (the same one
  *      data_dictionary.js uses on the Search page).
  *   3. Links each dataset to the variables that list it, by normalising
  *      file names (case, whitespace, extension).
- *   4. Renders the same expandable-row catalogue table as before.
+ *   4. Renders an expandable-row catalogue table with basket integration.
  *
  * Configure the two source paths on the page itself:
  *   window.UKLLC_XLSX_URL        -> File 2 Documentation Master.xlsx
  *   window.UKLLC_DICTIONARY_URL  -> data dictionary JSON export
+ *
+ * Preview pages with no web server can instead set:
+ *   window.UKLLC_XLSX_INLINE_BASE64  -> base64 of the .xlsx file
+ *   window.UKLLC_DICTIONARY_INLINE   -> the dictionary JSON as a JS array
  */
 (function () {
   "use strict";
@@ -51,6 +55,10 @@
     return _basketCache.has(varName);
   }
 
+  function el(id) {
+    return document.getElementById(id);
+  }
+
   // ── Link targets ──────────────────────────────────────────────────────
   // Variable metadata page: matches the convention data_dictionary.js and
   // basket_header.js both use (no ".html"). Note: baskets.js's basket table
@@ -81,10 +89,6 @@
     return chain.find((x) => x && String(x).trim()) || "";
   }
 
-  function el(id) {
-    return document.getElementById(id);
-  }
-
   function normalise(name) {
     if (!name) return "";
     return String(name)
@@ -93,7 +97,32 @@
       .toLowerCase();
   }
 
-  // ---------- Loading & linking (replaces build_catalogue.py) ----------
+  // ── URL resolution (fixes the ucl-consent-blocker.js crash) ────────────
+  function resolveUrl(name) {
+    const raw = window[name];
+    if (!raw || typeof raw !== "string" || !raw.trim()) {
+      throw new Error(
+        name + " is not set (got " + JSON.stringify(raw) + "). " +
+        "Check the inline <script> block on the page sets window." + name + " before ukllc_catalogue.js loads."
+      );
+    }
+    // Resolve to a fully-qualified absolute URL. A root-relative path like
+    // "/OWL/assets/..." is valid on its own, but ucl-consent-blocker.js
+    // wraps window.fetch and appears to mishandle it — passing an absolute
+    // URL sidesteps that entirely.
+    return new URL(raw, window.location.origin).href;
+  }
+
+  // ---------- Loading & linking ----------
+
+  function base64ToWorkbookRows(b64) {
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const wb = XLSX.read(bytes, { type: "array", cellDates: false });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+  }
 
   function loadWorkbook(url) {
     return fetch(url)
@@ -104,7 +133,6 @@
       .then((buf) => {
         const wb = XLSX.read(buf, { type: "array", cellDates: false });
         const ws = wb.Sheets[wb.SheetNames[0]];
-        // header:1 -> array-of-arrays, same shape as the openpyxl reading did
         return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
       });
   }
@@ -200,30 +228,24 @@
 
   // ---------- Boot ----------
 
-  function base64ToWorkbookRows(b64) {
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    const wb = XLSX.read(bytes, { type: "array", cellDates: false });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
-  }
-
   function init() {
-    // Preview pages with no web server can embed the raw spreadsheet (base64)
-    // and dictionary JSON directly, skipping fetch() entirely — see
-    // preview.html. Production pages fetch both from UKLLC_XLSX_URL /
-    // UKLLC_DICTIONARY_URL instead.
-    const xlsxRowsPromise = window.UKLLC_XLSX_INLINE_BASE64
-      ? Promise.resolve(base64ToWorkbookRows(window.UKLLC_XLSX_INLINE_BASE64))
-      : loadWorkbook(window.UKLLC_XLSX_URL);
+    let xlsxRowsPromise, variablesPromise;
+    try {
+      xlsxRowsPromise = window.UKLLC_XLSX_INLINE_BASE64
+        ? Promise.resolve(base64ToWorkbookRows(window.UKLLC_XLSX_INLINE_BASE64))
+        : loadWorkbook(resolveUrl("UKLLC_XLSX_URL"));
 
-    const variablesPromise = window.UKLLC_DICTIONARY_INLINE
-      ? Promise.resolve(window.UKLLC_DICTIONARY_INLINE)
-      : fetch(window.UKLLC_DICTIONARY_URL).then((r) => {
-          if (!r.ok) throw new Error("Could not fetch dictionary JSON (HTTP " + r.status + ")");
-          return r.json();
-        });
+      variablesPromise = window.UKLLC_DICTIONARY_INLINE
+        ? Promise.resolve(window.UKLLC_DICTIONARY_INLINE)
+        : fetch(resolveUrl("UKLLC_DICTIONARY_URL")).then((r) => {
+            if (!r.ok) throw new Error("Could not fetch dictionary JSON (HTTP " + r.status + ")");
+            return r.json();
+          });
+    } catch (err) {
+      el("loadingScreen").innerHTML = "<div>" + err.message + "</div>";
+      console.error(err);
+      return;
+    }
 
     Promise.all([xlsxRowsPromise, variablesPromise])
       .then(([xlsxRows, variables]) => {
@@ -248,7 +270,7 @@
       });
   }
 
-  // ---------- Rendering (unchanged from the pre-linked version) ----------
+  // ---------- Rendering ----------
 
   function bindControls() {
     el("globalSearch").addEventListener("input", (e) => applySearch(e.target.value));
@@ -546,9 +568,6 @@
   document.addEventListener("DOMContentLoaded", init);
 
   // ── Keep in sync with basket changes made elsewhere ─────────────────────
-  // e.g. a variable removed on the Data Dictionary page, or a linked
-  // longitudinal sweep auto-added by basket_header.js after this page's own
-  // handlers finished. Mirrors the listener at the bottom of data_dictionary.js.
   window.addEventListener("nshd-basket-changed", () => {
     if (!allDatasets.length) return; // catalogue hasn't finished loading yet
     refreshBasketCache();
