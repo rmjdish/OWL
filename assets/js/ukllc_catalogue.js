@@ -76,16 +76,14 @@
 
   // Category / "Browse by Category" pages, e.g.:
   //   https://rmjdish.github.io/OWL/docs/search_methods/browse_by_category/cat_pages/Blood_biochemistry_2011.html
-  // Reverse-engineered from that one confirmed example as:
-  //   <slug>_<CAT code>.html
-  // where <slug> is the dataset's documentation name with only the first
-  // word capitalised (rest lowercase, spaces -> underscores), and <CAT code>
-  // is the numeric code embedded in the dataset file name (…_CAT-2011_…).
-  // This is inferred from a single example, not confirmed for every
-  // category — if a link 404s for a dataset whose file name has no CAT-code
-  // segment, or whose real page uses different capitalisation, that's this
-  // heuristic breaking down; a full slug list from the site would let this
-  // be a direct lookup instead of a guess.
+  // The dataset's own "Dataset Name for Documentation" field turns out to
+  // contain the raw material for this, but wrapped in boilerplate — e.g.
+  // "Topic - Blood Biochemistry (category 2011)" rather than a clean
+  // "Blood Biochemistry". Naively slugifying that whole string was the bug
+  // that produced the broken .../Topic_-_blood_biochemistry_(category_2011)_2011.html
+  // (and double-counted the number, since it appears both inside the
+  // "(category NNNN)" part AND in the dataset's own CAT-NNNN file name).
+  // cleanDatasetLabel() below strips that boilerplate first.
   const CATEGORY_PAGE_BASE_URL = "/OWL/docs/search_methods/browse_by_category/cat_pages";
 
   function variableMetadataUrl(varName) {
@@ -99,12 +97,36 @@
       .join("_");
   }
 
-  function categoryPageUrl(v, dataset) {
-    const label = (dataset && dataset.doc_name) || lastSubtopic(v) || v.topic || "";
-    const slug = toCategorySlug(label);
-    const catMatch = dataset && dataset.file_name ? String(dataset.file_name).match(/CAT-(\d+)/i) : null;
-    const suffix = catMatch ? "_" + catMatch[1] : "";
-    return CATEGORY_PAGE_BASE_URL + "/" + slug + suffix + ".html";
+  // Strips a leading "Topic - " and/or trailing " (category NNNN)" from a
+  // documentation name, returning the clean name plus the category number
+  // if one was found in the "(category NNNN)" part.
+  function cleanDatasetLabel(raw) {
+    let name = String(raw || "").trim();
+    name = name.replace(/^topic\s*-\s*/i, "");
+    let code = null;
+    name = name.replace(/\s*\(category\s*(\d+)\)\s*$/i, (_, num) => {
+      code = num;
+      return "";
+    });
+    return { name: name.trim(), code };
+  }
+
+  // Built from the dataset's own doc_name (not the individual variable's
+  // topic/subtopic) — every variable inside one dataset's panel currently
+  // links to that dataset's single category page. Known limitation: a
+  // variable whose own Topic differs from its dataset's overall category
+  // (e.g. a generic "sex"/"inf" baseline variable that happens to be
+  // included in the Blood Biochemistry file) will still link to Blood
+  // Biochemistry's category page rather than its own — there's no confirmed
+  // per-variable category URL pattern to fall back on instead.
+  function categoryPageUrl(dataset) {
+    if (!dataset || !dataset.doc_name) return null;
+    const { name, code } = cleanDatasetLabel(dataset.doc_name);
+    if (!name) return null;
+    const slug = toCategorySlug(name);
+    const catMatch = dataset.file_name ? String(dataset.file_name).match(/CAT-(\d+)/i) : null;
+    const suffix = code || (catMatch ? catMatch[1] : "");
+    return CATEGORY_PAGE_BASE_URL + "/" + slug + (suffix ? "_" + suffix : "") + ".html";
   }
 
   // Deepest non-empty subtopic (falls back up the chain to Topic itself if
@@ -425,14 +447,19 @@
     vars = sortVars(vars, sortState);
 
     const allInBasket = vars.length > 0 && vars.every((v) => inBasketFast(v.variable_name));
+    // Same category page for every variable in this panel — computed once,
+    // not per-row, since it only depends on the dataset, not the variable.
+    const catUrl = categoryPageUrl(d);
 
     const rowsHtml = vars
       .map((v) => {
         const checked = v.variable_name && inBasketFast(v.variable_name);
         const varUrl = variableMetadataUrl(v.variable_name || "");
-        const catUrl = categoryPageUrl(v, d);
         const lastTopic = lastSubtopic(v);
         const fullPath = topicPath(v);
+        const topicCell = catUrl
+          ? '<a class="topic-link" href="' + escapeAttr(catUrl) + '" target="_blank" rel="noopener">' + escapeHtml(lastTopic) + "</a>"
+          : escapeHtml(lastTopic);
         return (
           "<tr>" +
           '<td class="col-check"><input type="checkbox" class="row-select" ' +
@@ -443,9 +470,7 @@
           "<td><a class=\"var-link\" href=\"" + escapeAttr(varUrl) + "\" target=\"_blank\" rel=\"noopener\"><code>" +
           escapeHtml(v.variable_name || "") + "</code></a></td>" +
           "<td>" + escapeHtml(v.variable_label || "") + "</td>" +
-          '<td class="var-topic" title="' + escapeAttr(fullPath) + '">' +
-          '<a class="topic-link" href="' + escapeAttr(catUrl) + '" target="_blank" rel="noopener">' +
-          escapeHtml(lastTopic) + "</a></td>" +
+          '<td class="var-topic" title="' + escapeAttr(fullPath) + '">' + topicCell + "</td>" +
           "<td>" + escapeHtml(v.year_of_collection || "") + "</td>" +
           "</tr>"
         );
@@ -457,8 +482,10 @@
       const arrow = active ? (sortState.dir === 1 ? "&#9650;" : "&#9660;") : "&#8645;";
       return (
         '<th class="sortable-header" data-sort-key="' + key + '">' +
+        '<span class="th-inner">' +
         '<span class="header-label">' + label + "</span>" +
         '<span class="sort-icon' + (active ? " is-active" : "") + '">' + arrow + "</span>" +
+        "</span>" +
         "</th>"
       );
     }
