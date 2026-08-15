@@ -515,8 +515,11 @@
  count + (count === 1 ? " variable" : " variables") +
  "</button></td>";
 
- tr.querySelector(".expand-btn").addEventListener("click", () => toggleRow(d.file_name));
- tr.querySelector(".var-count-badge").addEventListener("click", () => toggleRow(d.file_name));
+ // Whole row is clickable - the arrow button and "N variables" badge are
+ // still visually present but no longer have their own listeners, so a
+ // click on either doesn't double-toggle by both firing its own handler
+ // AND bubbling up to this one.
+ tr.addEventListener("click", () => toggleRow(d.file_name));
 
  return tr;
  }
