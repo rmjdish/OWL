@@ -408,11 +408,11 @@
  function renderCatalogueHeader() {
  const thead = el("catalogueThead");
 
- function mainSortHeader(label, key, extraHtml) {
+ function mainSortHeader(label, key, colClass, extraHtml) {
  const active = catalogueSortState && catalogueSortState.key === key;
  const arrow = active ? (catalogueSortState.dir === 1 ? "&#9650;" : "&#9660;") : "&#8645;";
  return (
- '<th class="sortable-header" data-sort-key="' + key + '">' +
+ '<th class="sortable-header ' + colClass + '" data-sort-key="' + key + '">' +
  '<span class="th-inner">' +
  '<span class="header-label">' + label + "</span>" +
  '<span class="sort-icon' + (active ? " is-active" : "") + '">' + arrow + "</span>" +
@@ -442,9 +442,9 @@
  thead.innerHTML =
  "<tr>" +
  '<th class="col-expand" title="Click to expand"></th>' +
- mainSortHeader("Dataset Name", "doc_name", datasetSelectHtml) +
- mainSortHeader("Dataset Description", "long_description") +
- mainSortHeader("Variables", "variable_count") +
+ mainSortHeader("Dataset Name", "doc_name", "col-docname", datasetSelectHtml) +
+ mainSortHeader("Dataset Description", "long_description", "col-desc") +
+ mainSortHeader("Variables", "variable_count", "col-vars") +
  "</tr>";
 
  // Bound to .th-inner specifically (not the whole <th>) so clicking the
