@@ -576,8 +576,8 @@
  'data-label="' + escapeAttr(v.variable_label || "") + '" ' +
  'aria-label="Add variable" ' +
  (checked ? "checked" : "") + "></td>" +
- "<td><a class=\"var-link\" href=\"" + escapeAttr(varUrl) + "\" target=\"_blank\" rel=\"noopener\"><code>" +
- escapeHtml(v.variable_name || "") + "</code></a></td>" +
+ "<td><a class=\"var-link\" href=\"" + escapeAttr(varUrl) + "\" target=\"_blank\" rel=\"noopener\">" +
+ escapeHtml(v.variable_name || "") + "</a></td>" +
  "<td>" + escapeHtml(v.variable_label || "") + "</td>" +
  '<td class="var-topic" title="' + escapeAttr(fullPath) + '">' + topicCell + "</td>" +
  "<td>" + escapeHtml(v.year_of_collection || "") + "</td>" +
@@ -775,6 +775,9 @@
  }
 
  function downloadCatalogueExcel() {
+ // Always the full catalogue, not just whatever's currently filtered/
+ // searched/dataset-selected on screen - "download catalogue" means all of
+ // it, regardless of what's being browsed at the moment.
  const workbook = new ExcelJS.Workbook();
  buildStyledWorksheet(
  workbook,
@@ -785,7 +788,7 @@
  { header: "Dataset Description", key: "long_description", width: 60 },
  { header: "Variable Count", key: "variable_count", width: 14 },
  ],
- filtered.map((d) => ({
+ allDatasets.map((d) => ({
  file_name: d.file_name || "",
  doc_name: d.doc_name || "",
  long_description: d.long_description || "",
