@@ -76,14 +76,17 @@
 
   // Category / "Browse by Category" pages, e.g.:
   //   https://rmjdish.github.io/OWL/docs/search_methods/browse_by_category/cat_pages/Blood_biochemistry_2011.html
-  // The dataset's own "Dataset Name for Documentation" field turns out to
-  // contain the raw material for this, but wrapped in boilerplate — e.g.
-  // "Topic - Blood Biochemistry (category 2011)" rather than a clean
-  // "Blood Biochemistry". Naively slugifying that whole string was the bug
-  // that produced the broken .../Topic_-_blood_biochemistry_(category_2011)_2011.html
-  // (and double-counted the number, since it appears both inside the
-  // "(category NNNN)" part AND in the dataset's own CAT-NNNN file name).
-  // cleanDatasetLabel() below strips that boilerplate first.
+  // Built from the Topic column text shown for each variable (per your
+  // instruction — NOT the dataset name, which was giving wrong/inconsistent
+  // links since a dataset can contain variables from several different
+  // topics). cleanCategoryLabel() strips the same "Topic - " / "(category
+  // NNNN)" boilerplate the dataset name field also used, in case the Topic
+  // field carries the same formatting.
+  // CAVEAT: I only have one confirmed example, and it was dataset-name-based
+  // (now known misleading — see below). I don't have a confirmed example of
+  // a Topic-only link, so this needs a real check once deployed. If a link
+  // still 404s, send me the exact Topic text shown in that row plus the
+  // correct URL and I'll fix the pattern for real rather than guess again.
   const CATEGORY_PAGE_BASE_URL = "/OWL/docs/search_methods/browse_by_category/cat_pages";
 
   function variableMetadataUrl(varName) {
@@ -98,9 +101,9 @@
   }
 
   // Strips a leading "Topic - " and/or trailing " (category NNNN)" from a
-  // documentation name, returning the clean name plus the category number
-  // if one was found in the "(category NNNN)" part.
-  function cleanDatasetLabel(raw) {
+  // label, returning the clean name plus the category number if one was
+  // found in the "(category NNNN)" part.
+  function cleanCategoryLabel(raw) {
     let name = String(raw || "").trim();
     name = name.replace(/^topic\s*-\s*/i, "");
     let code = null;
@@ -111,22 +114,17 @@
     return { name: name.trim(), code };
   }
 
-  // Built from the dataset's own doc_name (not the individual variable's
-  // topic/subtopic) — every variable inside one dataset's panel currently
-  // links to that dataset's single category page. Known limitation: a
-  // variable whose own Topic differs from its dataset's overall category
-  // (e.g. a generic "sex"/"inf" baseline variable that happens to be
-  // included in the Blood Biochemistry file) will still link to Blood
-  // Biochemistry's category page rather than its own — there's no confirmed
-  // per-variable category URL pattern to fall back on instead.
-  function categoryPageUrl(dataset) {
-    if (!dataset || !dataset.doc_name) return null;
-    const { name, code } = cleanDatasetLabel(dataset.doc_name);
+  // Built from the variable's own Topic column (the deepest non-empty
+  // subtopic, same text shown in the table) rather than the dataset name —
+  // each variable can link to its own category page even when several
+  // variables with different topics sit inside the same dataset file.
+  function categoryPageUrl(v) {
+    const raw = lastSubtopic(v) || v.topic || "";
+    if (!raw) return null;
+    const { name, code } = cleanCategoryLabel(raw);
     if (!name) return null;
     const slug = toCategorySlug(name);
-    const catMatch = dataset.file_name ? String(dataset.file_name).match(/CAT-(\d+)/i) : null;
-    const suffix = code || (catMatch ? catMatch[1] : "");
-    return CATEGORY_PAGE_BASE_URL + "/" + slug + (suffix ? "_" + suffix : "") + ".html";
+    return CATEGORY_PAGE_BASE_URL + "/" + slug + (code ? "_" + code : "") + ".html";
   }
 
   // Deepest non-empty subtopic (falls back up the chain to Topic itself if
@@ -338,6 +336,7 @@
       render();
     });
     el("downloadCsvBtn").addEventListener("click", downloadCsv);
+    el("downloadExcelBtn").addEventListener("click", downloadCatalogueExcel);
   }
 
   function applySearch(term) {
@@ -447,16 +446,13 @@
     vars = sortVars(vars, sortState);
 
     const allInBasket = vars.length > 0 && vars.every((v) => inBasketFast(v.variable_name));
-    // Same category page for every variable in this panel — computed once,
-    // not per-row, since it only depends on the dataset, not the variable.
-    const catUrl = categoryPageUrl(d);
-
     const rowsHtml = vars
       .map((v) => {
         const checked = v.variable_name && inBasketFast(v.variable_name);
         const varUrl = variableMetadataUrl(v.variable_name || "");
         const lastTopic = lastSubtopic(v);
         const fullPath = topicPath(v);
+        const catUrl = categoryPageUrl(v);
         const topicCell = catUrl
           ? '<a class="topic-link" href="' + escapeAttr(catUrl) + '" target="_blank" rel="noopener">' + escapeHtml(lastTopic) + "</a>"
           : escapeHtml(lastTopic);
@@ -501,6 +497,7 @@
       (allInBasket ? "Remove all from basket" : "Add all to basket") +
       "</button>" +
       '<button class="var-download-btn" type="button">Download variable list (CSV)</button>' +
+      '<button class="var-download-btn var-download-excel-btn" type="button">Download variable list (Excel)</button>' +
       "</div>" +
       '<table class="variable-table"><thead><tr><th>Add variable</th>' +
       sortHeader("Variable Name", "variable_name") +
@@ -571,9 +568,14 @@
       }
     });
 
-    td.querySelector(".var-download-btn").addEventListener("click", (e) => {
+    td.querySelector(".var-download-btn:not(.var-download-excel-btn)").addEventListener("click", (e) => {
       e.preventDefault();
       downloadVariablesCsv(d);
+    });
+
+    td.querySelector(".var-download-excel-btn").addEventListener("click", (e) => {
+      e.preventDefault();
+      downloadVariablesExcel(d);
     });
 
     return tr;
@@ -617,6 +619,94 @@
         render();
       })
     );
+  }
+
+  // ── Excel export (bold headers, fills, column widths — CSV can't do any
+  // of that, so this uses ExcelJS, loaded via <script> on the page) ───────
+  const HEADER_FILL = "FF4B067A"; // matches the site's purple accent
+  const ROW_FILL_A = "FFF7F7F7";
+  const ROW_FILL_B = "FFFFFFFF";
+  const BORDER = { style: "thin", color: { argb: "FFE0E0E0" } };
+
+  function buildStyledWorksheet(workbook, sheetName, columns, rows) {
+    const sheet = workbook.addWorksheet(sheetName);
+    sheet.columns = columns;
+
+    const headerRow = sheet.getRow(1);
+    headerRow.height = 20;
+    headerRow.eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_FILL } };
+      cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+      cell.border = { bottom: { style: "medium", color: { argb: HEADER_FILL } } };
+    });
+
+    rows.forEach((r, i) => {
+      const row = sheet.addRow(r);
+      const fill = i % 2 === 0 ? ROW_FILL_A : ROW_FILL_B;
+      row.eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
+        cell.border = { bottom: BORDER };
+        cell.alignment = { vertical: "top", wrapText: true };
+      });
+    });
+
+    sheet.views = [{ state: "frozen", ySplit: 1 }]; // keep the header visible when scrolling
+    return sheet;
+  }
+
+  function triggerExcelDownload(workbook, filename) {
+    workbook.xlsx.writeBuffer().then((buf) => {
+      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
+
+  function downloadCatalogueExcel() {
+    const workbook = new ExcelJS.Workbook();
+    buildStyledWorksheet(
+      workbook,
+      "UKLLC Catalogue",
+      [
+        { header: "Dataset File Name", key: "file_name", width: 42 },
+        { header: "Dataset Name", key: "doc_name", width: 30 },
+        { header: "Dataset Description", key: "long_description", width: 60 },
+        { header: "Variable Count", key: "variable_count", width: 14 },
+      ],
+      filtered.map((d) => ({
+        file_name: d.file_name || "",
+        doc_name: d.doc_name || "",
+        long_description: d.long_description || "",
+        variable_count: d.variable_count || 0,
+      }))
+    );
+    triggerExcelDownload(workbook, "ukllc_catalogue.xlsx");
+  }
+
+  function downloadVariablesExcel(d) {
+    const workbook = new ExcelJS.Workbook();
+    buildStyledWorksheet(
+      workbook,
+      (d.doc_name || "Variables").slice(0, 31), // sheet names have a 31-char limit
+      [
+        { header: "Variable Name", key: "variable_name", width: 25 },
+        { header: "Variable Label", key: "variable_label", width: 50 },
+        { header: "Topic", key: "topic", width: 32 },
+        { header: "Year of Collection", key: "year", width: 14 },
+      ],
+      (d.variables || []).map((v) => ({
+        variable_name: v.variable_name || "",
+        variable_label: v.variable_label || "",
+        topic: topicPath(v),
+        year: v.year_of_collection || "",
+      }))
+    );
+    triggerExcelDownload(workbook, d.file_name.replace(/\.[^.]+$/, "") + "_variables.xlsx");
   }
 
   function downloadCsv() {
