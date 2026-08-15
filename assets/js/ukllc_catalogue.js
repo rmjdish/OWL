@@ -196,19 +196,38 @@
  });
  }
 
+ function normaliseHeader(s) {
+ // Collapses any run of whitespace to a single space before comparing, so
+ // this can't silently break again if a header has one space vs two (the
+ // exact bug that broke Dataset Description: an earlier cleanup pass
+ // accidentally collapsed the FIELD_MAP target's intentional double space,
+ // and an exact-spacing match failed silently rather than erroring).
+ return String(s || "").trim().replace(/\s+/g, " ").toLowerCase();
+ }
+
  function parseDatasets(rows) {
  const headerRowIdx = rows.findIndex(
- (row) => row && row.some((c) => c && String(c).trim().startsWith(FIELD_MAP.file_name))
+ (row) => row && row.some((c) => c && normaliseHeader(c).startsWith(normaliseHeader(FIELD_MAP.file_name)))
  );
  if (headerRowIdx === -1) {
  throw new Error('Could not find the header row ("2. Dataset File Name") in the spreadsheet.');
  }
  const headers = rows[headerRowIdx].map((c) => (c ? String(c).trim() : ""));
  const colIdx = {};
+ const unmatched = [];
  Object.keys(FIELD_MAP).forEach((key) => {
  const target = FIELD_MAP[key];
- colIdx[key] = headers.findIndex((h) => h.startsWith(target));
+ colIdx[key] = headers.findIndex((h) => normaliseHeader(h).startsWith(normaliseHeader(target)));
+ if (colIdx[key] === -1) unmatched.push(target);
  });
+ if (unmatched.length) {
+ console.warn(
+ "[UKLLC Catalogue] Could not find these spreadsheet columns (check the header text still matches):",
+ unmatched,
+ "Actual headers found:",
+ headers.filter(Boolean)
+ );
+ }
 
  const datasets = [];
  // +2 to skip the header row itself and the instructions row beneath it
