@@ -599,6 +599,8 @@
  );
  }
 
+ const noResults = vars.length === 0;
+
  td.innerHTML =
  '<div class="variable-panel">' +
  '<div class="variable-panel-toolbar">' +
@@ -606,8 +608,9 @@
  '<input class="variable-search" type="text" placeholder="Filter these variables..." value="' +
  escapeHtml(searchVal) +
  '" />' +
- '<button class="add-all-variables-btn' + (allInBasket ? " remove-mode" : "") + '">' +
- (allInBasket ? "Remove all from basket" : "Add all to basket") +
+ '<button class="add-all-variables-btn' + (noResults ? " is-empty" : allInBasket ? " remove-mode" : "") + '"' +
+ (noResults ? " disabled" : "") + ">" +
+ (noResults ? "No variables to add" : allInBasket ? "Remove all from basket" : "Add all to basket") +
  "</button>" +
  '<button class="var-download-btn" type="button">Download variable list</button>' +
  "</div>" +
@@ -654,6 +657,7 @@
 
  // -- Per-dataset "add all / remove all" ------------------------------
  td.querySelector(".add-all-variables-btn").addEventListener("click", () => {
+ if (noResults) return; // nothing to add when the filter matched zero rows
  const varNames = vars.map((v) => v.variable_name).filter(Boolean);
  if (allInBasket) {
  batchRemoveFromBasket(varNames);
