@@ -48,6 +48,7 @@
   let pageSize = 30;
   let expandedKeys = new Set();
   let openVariableSearch = {};
+  let variableSortState = {}; // file_name -> { key: 'variable_name'|'variable_label'|'topic'|'year_of_collection', dir: 1|-1 }
 
   // ── Basket cache ───────────────────────────────────────────────────────
   // Same pattern as data_dictionary.js: one localStorage read per render via
@@ -73,19 +74,37 @@
   // actually resolves before relying on it.
   const VARIABLE_METADATA_BASE_URL = "https://rmjdish.github.io/OWL/assets/variable_metadata/";
 
-  // Category / "Browse by Category" page: no URL pattern for this existed in
-  // any of the uploaded files, so this is a placeholder — update it to the
-  // real path (and query param name, if it supports deep-linking to a
-  // specific topic) once you confirm it.
-  const CATEGORY_PAGE_BASE_URL = "/OWL/docs/search_methods/browse_by_category/index.html";
+  // Category / "Browse by Category" pages, e.g.:
+  //   https://rmjdish.github.io/OWL/docs/search_methods/browse_by_category/cat_pages/Blood_biochemistry_2011.html
+  // Reverse-engineered from that one confirmed example as:
+  //   <slug>_<CAT code>.html
+  // where <slug> is the dataset's documentation name with only the first
+  // word capitalised (rest lowercase, spaces -> underscores), and <CAT code>
+  // is the numeric code embedded in the dataset file name (…_CAT-2011_…).
+  // This is inferred from a single example, not confirmed for every
+  // category — if a link 404s for a dataset whose file name has no CAT-code
+  // segment, or whose real page uses different capitalisation, that's this
+  // heuristic breaking down; a full slug list from the site would let this
+  // be a direct lookup instead of a guess.
+  const CATEGORY_PAGE_BASE_URL = "/OWL/docs/search_methods/browse_by_category/cat_pages";
 
   function variableMetadataUrl(varName) {
     return VARIABLE_METADATA_BASE_URL + encodeURIComponent(varName);
   }
 
-  function categoryPageUrl(v) {
-    const topic = lastSubtopic(v) || v.topic || "";
-    return CATEGORY_PAGE_BASE_URL + "?topic=" + encodeURIComponent(topic);
+  function toCategorySlug(label) {
+    const words = String(label || "").trim().split(/\s+/).filter(Boolean);
+    return words
+      .map((w, i) => (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()))
+      .join("_");
+  }
+
+  function categoryPageUrl(v, dataset) {
+    const label = (dataset && dataset.doc_name) || lastSubtopic(v) || v.topic || "";
+    const slug = toCategorySlug(label);
+    const catMatch = dataset && dataset.file_name ? String(dataset.file_name).match(/CAT-(\d+)/i) : null;
+    const suffix = catMatch ? "_" + catMatch[1] : "";
+    return CATEGORY_PAGE_BASE_URL + "/" + slug + suffix + ".html";
   }
 
   // Deepest non-empty subtopic (falls back up the chain to Topic itself if
@@ -358,8 +377,7 @@
       '" aria-label="Toggle variable list">' +
       (isOpen ? "&#9662;" : "&#9656;") +
       "</button></td>" +
-      '<td class="col-filename"><code>' + escapeHtml(d.file_name) + "</code></td>" +
-      '<td class="col-docname">' + escapeHtml(d.doc_name || "") + "</td>" +
+      '<td class="col-docname" title="' + escapeAttr(d.file_name) + '">' + escapeHtml(d.doc_name || "") + "</td>" +
       '<td class="col-desc">' + escapeHtml(d.long_description || "") + "</td>" +
       '<td class="col-vars">' +
       '<button class="var-count-badge' + (count === 0 ? " is-empty" : "") + '">' +
@@ -382,7 +400,7 @@
     const tr = document.createElement("tr");
     tr.className = "variable-panel-row";
     const td = document.createElement("td");
-    td.colSpan = 5;
+    td.colSpan = 4; // matches the outer table's 4 columns (expand, name, description, variables)
 
     if (!d.variables || d.variables.length === 0) {
       td.innerHTML =
@@ -403,6 +421,8 @@
           (v.topic || "").toLowerCase().includes(t)
       );
     }
+    const sortState = variableSortState[d.file_name];
+    vars = sortVars(vars, sortState);
 
     const allInBasket = vars.length > 0 && vars.every((v) => inBasketFast(v.variable_name));
 
@@ -410,7 +430,7 @@
       .map((v) => {
         const checked = v.variable_name && inBasketFast(v.variable_name);
         const varUrl = variableMetadataUrl(v.variable_name || "");
-        const catUrl = categoryPageUrl(v);
+        const catUrl = categoryPageUrl(v, d);
         const lastTopic = lastSubtopic(v);
         const fullPath = topicPath(v);
         return (
@@ -432,6 +452,17 @@
       })
       .join("");
 
+    function sortHeader(label, key) {
+      const active = sortState && sortState.key === key;
+      const arrow = active ? (sortState.dir === 1 ? "&#9650;" : "&#9660;") : "&#8645;";
+      return (
+        '<th class="sortable-header" data-sort-key="' + key + '">' +
+        '<span class="header-label">' + label + "</span>" +
+        '<span class="sort-icon' + (active ? " is-active" : "") + '">' + arrow + "</span>" +
+        "</th>"
+      );
+    }
+
     td.innerHTML =
       '<div class="variable-panel">' +
       '<div class="variable-panel-toolbar">' +
@@ -444,11 +475,27 @@
       "</button>" +
       '<button class="var-download-btn" type="button">Download variable list (CSV)</button>' +
       "</div>" +
-      '<table class="variable-table"><thead><tr><th>Add variable</th><th>Variable Name</th><th>Variable Label</th><th>Topic</th><th>Year</th></tr></thead>' +
+      '<table class="variable-table"><thead><tr><th>Add variable</th>' +
+      sortHeader("Variable Name", "variable_name") +
+      sortHeader("Variable Label", "variable_label") +
+      sortHeader("Topic", "topic") +
+      sortHeader("Year", "year_of_collection") +
+      "</tr></thead>" +
       "<tbody>" + (rowsHtml || '<tr><td colspan="5" class="empty-state">No variables match that filter.</td></tr>') + "</tbody></table>" +
       "</div>";
 
     tr.appendChild(td);
+
+    // ── Column sorting ───────────────────────────────────────────────────
+    td.querySelectorAll(".sortable-header").forEach((th) => {
+      th.addEventListener("click", () => {
+        const key = th.dataset.sortKey;
+        const current = variableSortState[d.file_name];
+        const dir = current && current.key === key ? current.dir * -1 : 1;
+        variableSortState[d.file_name] = { key, dir };
+        render();
+      });
+    });
 
     // ── Individual basket checkboxes ────────────────────────────────────
     // data-var-name + data-label match the convention refreshBasketCheckboxesUI()
@@ -509,6 +556,19 @@
     return [v.topic, v.subtopic_1, v.subtopic_2, v.subtopic_3, v.subtopic_4].filter(Boolean).join(" > ");
   }
 
+  function sortVars(vars, sortState) {
+    if (!sortState || !sortState.key) return vars;
+    const { key, dir } = sortState;
+    const valueOf = (v) => (key === "topic" ? lastSubtopic(v) : v[key]) || "";
+    return vars.slice().sort((a, b) => {
+      const av = String(valueOf(a)).toLowerCase();
+      const bv = String(valueOf(b)).toLowerCase();
+      if (av < bv) return -1 * dir;
+      if (av > bv) return 1 * dir;
+      return 0;
+    });
+  }
+
   function renderPagination() {
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     const html =
@@ -533,7 +593,9 @@
   }
 
   function downloadCsv() {
-    const header = ["Dataset File Name", "Dataset Name for Documentation", "Long Description", "Variable Count"];
+    // Keeps Dataset File Name in the export even though it's now only shown
+    // as a hover tooltip in the table itself — still useful metadata once downloaded.
+    const header = ["Dataset File Name", "Dataset Name", "Dataset Description", "Variable Count"];
     const lines = [header.join(",")].concat(
       filtered.map((d) => [d.file_name, d.doc_name, d.long_description, d.variable_count].map(csvCell).join(","))
     );
