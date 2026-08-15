@@ -441,7 +441,7 @@
 
  thead.innerHTML =
  "<tr>" +
- '<th class="col-expand" title="Click to expand"></th>' +
+ '<th class="col-expand" title="Click to expand">Click to expand</th>' +
  mainSortHeader("Dataset Name", "doc_name", "col-docname", datasetSelectHtml) +
  mainSortHeader("Dataset Description", "long_description", "col-desc") +
  mainSortHeader("Variables", "variable_count", "col-vars") +
