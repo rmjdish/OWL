@@ -51,6 +51,7 @@
  let variableSortState = {}; // file_name -> { key: 'variable_name'|'variable_label'|'topic'|'year_of_collection', dir: 1|-1 }
  let searchTerm = "";
  let selectedDatasetFile = ""; // "" means "All datasets"
+ let catalogueSortState = { key: null, dir: 1 }; // key: 'doc_name'|'long_description'|'variable_count'
 
  // -- Basket cache -------------------------------------------------------
  // Same pattern as data_dictionary.js: one localStorage read per render via
@@ -351,14 +352,8 @@
  // ---------- Rendering ----------
 
  function bindControls() {
- populateDatasetFilter();
-
  el("globalSearch").addEventListener("input", (e) => {
  searchTerm = e.target.value;
- applyFilters();
- });
- el("datasetFilter").addEventListener("change", (e) => {
- selectedDatasetFile = e.target.value;
  applyFilters();
  });
  el("pageSize").addEventListener("change", (e) => {
@@ -368,24 +363,11 @@
  });
  el("resetFiltersBtn").addEventListener("click", () => {
  el("globalSearch").value = "";
- el("datasetFilter").value = "";
  searchTerm = "";
  selectedDatasetFile = "";
  applyFilters();
  });
  el("downloadExcelBtn").addEventListener("click", downloadCatalogueExcel);
- }
-
- function populateDatasetFilter() {
- const bar = el("filter-bar");
- bar.innerHTML =
- '<select id="datasetFilter"><option value="">All datasets</option>' +
- allDatasets
- .slice()
- .sort((a, b) => (a.doc_name || "").localeCompare(b.doc_name || ""))
- .map((d) => '<option value="' + escapeAttr(d.file_name) + '">' + escapeHtml(d.doc_name || d.file_name) + "</option>")
- .join("") +
- "</select>";
  }
 
  function applyFilters() {
@@ -408,12 +390,93 @@
  render();
  }
 
+ function sortDatasets(list, sortState) {
+ if (!sortState || !sortState.key) return list;
+ const { key, dir } = sortState;
+ return list.slice().sort((a, b) => {
+ if (key === "variable_count") {
+ return ((a.variable_count || 0) - (b.variable_count || 0)) * dir;
+ }
+ const av = String(a[key] || "").toLowerCase();
+ const bv = String(b[key] || "").toLowerCase();
+ if (av < bv) return -1 * dir;
+ if (av > bv) return 1 * dir;
+ return 0;
+ });
+ }
+
+ function renderCatalogueHeader() {
+ const thead = el("catalogueThead");
+
+ function mainSortHeader(label, key, extraHtml) {
+ const active = catalogueSortState && catalogueSortState.key === key;
+ const arrow = active ? (catalogueSortState.dir === 1 ? "&#9650;" : "&#9660;") : "&#8645;";
+ return (
+ '<th class="sortable-header" data-sort-key="' + key + '">' +
+ '<span class="th-inner">' +
+ '<span class="header-label">' + label + "</span>" +
+ '<span class="sort-icon' + (active ? " is-active" : "") + '">' + arrow + "</span>" +
+ "</span>" +
+ (extraHtml || "") +
+ "</th>"
+ );
+ }
+
+ const datasetOptions = allDatasets
+ .slice()
+ .sort((a, b) => (a.doc_name || "").localeCompare(b.doc_name || ""))
+ .map(
+ (d) =>
+ '<option value="' + escapeAttr(d.file_name) + '"' +
+ (d.file_name === selectedDatasetFile ? " selected" : "") +
+ ">" + escapeHtml(d.doc_name || d.file_name) + "</option>"
+ )
+ .join("");
+
+ const datasetSelectHtml =
+ '<select class="col-header-filter-select" id="datasetFilter" title="Filter to one dataset">' +
+ '<option value="">All datasets</option>' +
+ datasetOptions +
+ "</select>";
+
+ thead.innerHTML =
+ "<tr>" +
+ '<th class="col-expand" title="Click to expand"></th>' +
+ mainSortHeader("Dataset Name", "doc_name", datasetSelectHtml) +
+ mainSortHeader("Dataset Description", "long_description") +
+ mainSortHeader("Variables", "variable_count") +
+ "</tr>";
+
+ // Bound to .th-inner specifically (not the whole <th>) so clicking the
+ // dropdown inside the Dataset Name header filters instead of sorting.
+ thead.querySelectorAll(".sortable-header .th-inner").forEach((inner) => {
+ inner.addEventListener("click", () => {
+ const key = inner.closest(".sortable-header").dataset.sortKey;
+ const dir = catalogueSortState && catalogueSortState.key === key ? catalogueSortState.dir * -1 : 1;
+ catalogueSortState = { key, dir };
+ render();
+ });
+ });
+
+ const select = thead.querySelector("#datasetFilter");
+ if (select) {
+ select.addEventListener("click", (e) => e.stopPropagation());
+ select.addEventListener("change", (e) => {
+ selectedDatasetFile = e.target.value;
+ applyFilters();
+ });
+ }
+ }
+
  function render() {
  // Load basket ONCE per render, same as renderTable() in data_dictionary.js
  refreshBasketCache();
 
+ renderCatalogueHeader();
+
+ const sorted = sortDatasets(filtered, catalogueSortState);
  const start = (currentPage - 1) * pageSize;
- const pageRows = filtered.slice(start, start + pageSize);
+ const pageRows = sorted.slice(start, start + pageSize);
 
  el("resultsCount").textContent =
  filtered.length + " dataset" + (filtered.length === 1 ? "" : "s") + " (of " + allDatasets.length + ")";
