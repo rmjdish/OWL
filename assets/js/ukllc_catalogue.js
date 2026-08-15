@@ -1,544 +1,754 @@
-/* ukllc_catalogue.css
- * Colour scheme matched to nshd_data_dictionary.css so the UKLLC Catalogue
- * reads as the same product as the Search Data Dictionary page, not a
- * bolt-on. Same tokens, just re-scoped under .page-ukllc-catalogue since
- * that page's rules are scoped under .page-search-data-dictionary.
+/* ukllc_catalogue.js
+ * Fully client-side: no Python build step, no pre-generated datasets.json.
+ * On page load this:
+ * 1. Fetches the File 2 Documentation Master spreadsheet (.xlsx) and
+ * parses it with SheetJS (https://sheetjs.com).
+ * 2. Fetches the Data Dictionary JSON export (the same one
+ * data_dictionary.js uses on the Search page).
+ * 3. Links each dataset to the variables that list it, by normalising
+ * file names (case, whitespace, extension).
+ * 4. Renders an expandable-row catalogue table with basket integration.
  *
- * Tokens taken from nshd_data_dictionary.css:
- *   Accent purple   #4b067a  (headers, sticky border, reset button)
- *   Accent purple-d #36045a  (hover)
- *   Heading maroon  #800020  (hero h1)
- *   Body grey       #555
- *   Add/teal        #009688  (add-all, "add" state)
- *   Remove/red      #D32F2F  (add-all, "remove" state) / hover #B71C1C
- *   Download green  #4CAF50  (hover #45a049)
- *   Excel blue      #1976D2  (hover #0F5BA5)
- *   Row shading     odd #f7f7f7 / even #ececec
- *   Pastel columns  #F3E5F5 (purple) #E8F5E9 (green) #E3F2FD (blue)
- *                   #FFF3E0 (orange) #FCE4EC (pink) #EDE7F6 (lavender)
+ * Configure the two source paths as data-attributes on the page's own
+ * wrapper element (deliberately NOT an inline <script> block - some CSP
+ * setups silently block inline scripts while still allowing external
+ * <script src>, which is why a previous version of this page failed with
+ * "UKLLC_XLSX_URL is not set"; plain HTML attributes sidestep that):
+ * <div class="page-ukllc-catalogue"
+ * data-xlsx-url="..."
+ * data-dictionary-url="...">
+ *
+ * Preview pages with no web server can instead set these globals directly
+ * (see preview_standalone.html), which take priority over the attributes:
+ * window.UKLLC_XLSX_INLINE_BASE64 -> base64 of the .xlsx file
+ * window.UKLLC_DICTIONARY_INLINE -> the dictionary JSON as a JS array
  */
-
-.page-ukllc-catalogue {
-  position: relative;
-  width: 100%;
-  max-width: 100%;
-  overflow-x: hidden;
-  font-family: Arial, sans-serif;
-}
-
-.page-ukllc-catalogue * {
-  box-sizing: border-box;
-}
-
-/* ── Loading screen ────────────────────────────────────────────────── */
-
-.page-ukllc-catalogue .loading-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  font-size: 18px;
-  color: #4b067a;
-}
-
-.page-ukllc-catalogue .spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #ddd;
-  border-top-color: #4b067a;
-  border-radius: 50%;
-  animation: ukllc-spin 0.8s linear infinite;
-  margin-bottom: 10px;
-}
-
-@keyframes ukllc-spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ── Hero banner (identical gradient/copy treatment to the Dictionary page) */
-
-.page-ukllc-catalogue .hero-banner {
-  background: linear-gradient(135deg, #E8F5E9, #F3E5F5, #FFF3E0, #E0F7FA);
-  border-radius: 12px;
-  padding: 26px 30px;
-  margin-bottom: 28px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  max-width: 100%;
-}
-
-.page-ukllc-catalogue .hero-banner h1 {
-  margin: 0 0 8px 0;
-  font-size: 20px;
-  font-weight: bold;
-  color: #800020;
-}
-
-.page-ukllc-catalogue .hero-banner p {
-  margin: 0 0 16px 0;
-  font-size: 15px;
-  color: #555;
-}
-
-.page-ukllc-catalogue .hero-banner .filter-bar {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 8px;
-  align-items: center;
-  margin-top: 12px;
-}
-
-.page-ukllc-catalogue .hero-banner .filter-bar select {
-  padding: 6px 10px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  font-size: 14px;
-  background: #fff;
-  min-width: 220px;
-}
-
-/* ── Search / pagination / buttons row ────────────────────────────── */
-
-.page-ukllc-catalogue .search-pagination-top {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 14px 0;
-  flex-wrap: wrap;
-}
-
-.page-ukllc-catalogue #globalSearch {
-  flex: 1;
-  min-width: 220px;
-  padding: 6px 10px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.page-ukllc-catalogue #pageSize {
-  padding: 6px 10px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  background: #fff;
-  font-size: 14px;
-}
-
-.page-ukllc-catalogue #resultsCount {
-  font-size: 13px;
-  color: #555;
-}
-
-.page-ukllc-catalogue #resetFiltersBtn {
-  padding: 6px 12px;
-  font-size: 14px;
-  background: #4b067a;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.page-ukllc-catalogue #resetFiltersBtn:hover {
-  background: #36045a;
-}
-
-.page-ukllc-catalogue .download-btn {
-  padding: 6px 14px;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.page-ukllc-catalogue .download-btn:hover {
-  background: #45a049;
-}
-
-/* Excel variant — same blue as the site's other Excel-branded buttons
-   (.download-excel-btn on the Dictionary page), re-declared here since
-   that rule is scoped to .page-search-data-dictionary and won't reach us. */
-.page-ukllc-catalogue .download-btn.download-excel-btn {
-  background: #1976D2;
-}
-
-.page-ukllc-catalogue .download-btn.download-excel-btn:hover {
-  background: #0F5BA5;
-}
-
-.page-ukllc-catalogue #paginationTop,
-.page-ukllc-catalogue #paginationBottom {
-  font-size: 13px;
-  margin: 8px 0;
-}
-
-.page-ukllc-catalogue #paginationTop button,
-.page-ukllc-catalogue #paginationBottom button {
-  padding: 4px 10px;
-  margin: 0 4px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  background: #fff;
-  cursor: pointer;
-}
-
-.page-ukllc-catalogue #paginationTop button:disabled,
-.page-ukllc-catalogue #paginationBottom button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── Table wrapper + sticky header ─────────────────────────────────── */
-
-.page-ukllc-catalogue #table-wrapper {
-  max-height: 70vh;
-  overflow-y: auto;
-  overflow-x: auto;
-  position: relative;
-}
-
-.page-ukllc-catalogue table#catalogueTable {
-  width: 100%;
-  border: 1px solid #d0d0d0;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 14px;
-}
-
-.page-ukllc-catalogue #catalogueTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  padding: 8px 10px;
-  border-bottom: 2px solid #4b067a;
-  text-align: left;
-  color: black;
-}
-
-.page-ukllc-catalogue #catalogueTable td {
-  padding: 6px 10px;
-  vertical-align: top;
-  overflow-wrap: break-word;
-  word-break: break-word;
-}
-
-.page-ukllc-catalogue .col-expand {
-  width: 32px;
-  padding: 4px 2px;
-  font-size: 15px;
-  text-align: center;
-  white-space: nowrap;
-}
-.page-ukllc-catalogue .col-docname { width: 22%; }
-.page-ukllc-catalogue .col-desc { width: 48%; }
-.page-ukllc-catalogue .col-vars { width: 130px; }
-
-/* Pastel column tints — same motif as the Dictionary page's column colours.
-   4 columns now (expand, name, description, variables), one fewer than
-   before since Dataset File Name moved into a hover tooltip. */
-.page-ukllc-catalogue #catalogueTable th:nth-child(1),
-.page-ukllc-catalogue #catalogueTable tbody tr.dataset-row td:nth-child(1) { background: #ffffff; }
-.page-ukllc-catalogue #catalogueTable th:nth-child(2),
-.page-ukllc-catalogue #catalogueTable tbody tr.dataset-row td:nth-child(2) { background: #F3E5F5; }
-.page-ukllc-catalogue #catalogueTable th:nth-child(3),
-.page-ukllc-catalogue #catalogueTable tbody tr.dataset-row td:nth-child(3) { background: #E8F5E9; }
-.page-ukllc-catalogue #catalogueTable th:nth-child(4),
-.page-ukllc-catalogue #catalogueTable tbody tr.dataset-row td:nth-child(4) { background: #E3F2FD; }
-
-/* Row shading (only the plain, unexpanded rows — an open row gets its own
-   lavender highlight below instead, so the two states stay distinguishable) */
-.page-ukllc-catalogue tr.dataset-row:not(.is-open):nth-of-type(odd) td { background-color: #f7f7f7; }
-.page-ukllc-catalogue tr.dataset-row:not(.is-open):nth-of-type(even) td { background-color: #ececec; }
-
-/* Faint separator between each dataset row */
-.page-ukllc-catalogue tr.dataset-row td {
-  border-bottom: 1px solid #e5e5e5;
-}
-
-/* ── Expandable dataset rows ───────────────────────────────────────── */
-
-.page-ukllc-catalogue tr.dataset-row {
-  cursor: pointer;
-}
-
-.page-ukllc-catalogue #catalogueTable td.col-docname {
-  cursor: help; /* signals the dataset file name is available on hover */
-}
-
-/* Hover darkens each column's OWN tint by one shade, rather than flattening
-   every column to the same purple — keeps the colour-coding legible while
-   still signalling "this row is interactive". */
-.page-ukllc-catalogue tr.dataset-row:hover td:nth-child(1) { background-color: #f0f0f0 !important; }
-.page-ukllc-catalogue tr.dataset-row:hover td:nth-child(2) { background-color: #E1BEE7 !important; }
-.page-ukllc-catalogue tr.dataset-row:hover td:nth-child(3) { background-color: #C8E6C9 !important; }
-.page-ukllc-catalogue tr.dataset-row:hover td:nth-child(4) { background-color: #BBDEFB !important; }
-
-.page-ukllc-catalogue tr.dataset-row.is-open td {
-  background-color: #EDE7F6 !important; /* lavender, same family as the Dictionary page's col-7 tint */
-}
-
-.page-ukllc-catalogue .expand-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 22px;
-  line-height: 1;
-  color: #4b067a;
-}
-
-.page-ukllc-catalogue .var-count-badge {
-  border: 1px solid #009688;
-  background: #fff;
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  color: #00695C;
-}
-
-.page-ukllc-catalogue .var-count-badge:hover {
-  background: #009688;
-  color: #fff;
-}
-
-.page-ukllc-catalogue .var-count-badge.is-empty {
-  color: #8c959f;
-  border-color: #d0d0d0;
-  border-style: dashed;
-}
-
-/* ── Variable panel (accordion detail) ─────────────────────────────── */
-
-.page-ukllc-catalogue tr.variable-panel-row > td {
-  background: #fafafa;
-  padding: 0;
-}
-
-.page-ukllc-catalogue .variable-panel {
-  padding: 14px 18px 18px 46px;
-  border-left: 3px solid #4b067a;
-}
-
-.page-ukllc-catalogue .variable-panel.empty-state {
-  color: #555;
-  font-style: italic;
-  border-left-color: #d0d0d0;
-}
-
-.page-ukllc-catalogue .variable-panel-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.page-ukllc-catalogue .variable-search {
-  padding: 4px 8px;
-  border: 1px solid #d0d0d0;
-  border-radius: 4px;
-  min-width: 220px;
-  font-size: 14px;
-}
-
-/* "Add all / remove all" toggle — same colour convention as .add-all-btn
-   on the Dictionary page: teal to add, red once everything's already in. */
-.page-ukllc-catalogue .add-all-variables-btn {
-  padding: 6px 14px;
-  background: #009688;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.page-ukllc-catalogue .add-all-variables-btn:hover {
-  background: #00796B;
-}
-
-.page-ukllc-catalogue .add-all-variables-btn.remove-mode {
-  background: #D32F2F;
-}
-
-.page-ukllc-catalogue .add-all-variables-btn.remove-mode:hover {
-  background: #B71C1C;
-}
-
-.page-ukllc-catalogue .var-download-link {
-  font-size: 13px;
-  color: #1976D2;
-  text-decoration: none;
-}
-
-.page-ukllc-catalogue .var-download-link:hover {
-  color: #0F5BA5;
-  text-decoration: underline;
-}
-
-/* ── Variable table inside the panel ───────────────────────────────── */
-
-.page-ukllc-catalogue table.variable-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: #fff;
-  border: 1px solid #d0d0d0;
-  font-size: 14px;
-}
-
-.page-ukllc-catalogue table.variable-table thead th {
-  text-align: left;
-  border-bottom: 2px solid #4b067a;
-  padding: 6px 8px;
-  color: black;
-}
-
-.page-ukllc-catalogue table.variable-table thead th.sortable-header {
-  cursor: pointer;
-  user-select: none;
-}
-
-/* The flex layout lives on this inner wrapper, NOT the <th> itself — a <th>
-   with display:flex stops behaving as a table-cell and breaks out of the
-   row entirely (headers stack vertically instead of sitting side by side).
-   Same fix pattern as nshd_data_dictionary.css's own .th-inner. */
-.page-ukllc-catalogue table.variable-table .th-inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.page-ukllc-catalogue table.variable-table thead th.sortable-header:hover {
-  background-color: rgba(75, 6, 122, 0.08);
-}
-
-.page-ukllc-catalogue table.variable-table .sort-icon {
-  font-size: 11px;
-  opacity: 0.4;
-  transition: opacity 0.2s ease;
-}
-
-.page-ukllc-catalogue table.variable-table .sortable-header:hover .sort-icon {
-  opacity: 0.9;
-}
-
-.page-ukllc-catalogue table.variable-table .sort-icon.is-active {
-  opacity: 1;
-  color: #4b067a;
-}
-
-.page-ukllc-catalogue table.variable-table td {
-  border-bottom: 1px solid #eaeaea;
-  padding: 6px 8px;
-  font-size: 13px;
-}
-
-.page-ukllc-catalogue table.variable-table tbody tr:nth-child(odd) td { background-color: #f7f7f7; }
-.page-ukllc-catalogue table.variable-table tbody tr:nth-child(even) td { background-color: #ececec; }
-
-/* Pastel tint per column, same motif as the main catalogue table */
-.page-ukllc-catalogue table.variable-table th:nth-child(2), .page-ukllc-catalogue table.variable-table td:nth-child(2) { background: #F3E5F5 !important; }
-.page-ukllc-catalogue table.variable-table th:nth-child(3), .page-ukllc-catalogue table.variable-table td:nth-child(3) { background: #E8F5E9 !important; }
-.page-ukllc-catalogue table.variable-table th:nth-child(4), .page-ukllc-catalogue table.variable-table td:nth-child(4) { background: #E3F2FD !important; }
-.page-ukllc-catalogue table.variable-table th:nth-child(5), .page-ukllc-catalogue table.variable-table td:nth-child(5) { background: #FFF3E0 !important; }
-
-/* Widen Variable Name so its header ("Variable Name" + sort icon) fits on
-   one line rather than wrapping. */
-.page-ukllc-catalogue table.variable-table th:nth-child(2),
-.page-ukllc-catalogue table.variable-table td:nth-child(2) {
-  min-width: 170px;
-}
-.page-ukllc-catalogue table.variable-table .th-inner .header-label {
-  white-space: nowrap;
-}
-
-/* Row hover darkens each column's own tint by one shade, same pattern as
-   the outer dataset table. */
-.page-ukllc-catalogue table.variable-table tbody tr:hover td:nth-child(1) { background-color: #f0f0f0 !important; }
-.page-ukllc-catalogue table.variable-table tbody tr:hover td:nth-child(2) { background-color: #E1BEE7 !important; }
-.page-ukllc-catalogue table.variable-table tbody tr:hover td:nth-child(3) { background-color: #C8E6C9 !important; }
-.page-ukllc-catalogue table.variable-table tbody tr:hover td:nth-child(4) { background-color: #BBDEFB !important; }
-.page-ukllc-catalogue table.variable-table tbody tr:hover td:nth-child(5) { background-color: #FFE0B2 !important; }
-
-.page-ukllc-catalogue table.variable-table .col-check {
-  width: 90px;
-  min-width: 90px;
-  max-width: 90px;
-  text-align: center;
-  background: #ffffff !important;
-}
-
-.page-ukllc-catalogue table.variable-table thead th.col-check,
-.page-ukllc-catalogue table.variable-table th:first-child {
-  background: #ffffff !important;
-  font-size: 11px;
-  text-transform: none;
-}
-
-.page-ukllc-catalogue table.variable-table .col-check input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-}
-
-.page-ukllc-catalogue .var-link {
-  color: #1976D2;
-  text-decoration: none;
-}
-
-.page-ukllc-catalogue .var-link:hover {
-  text-decoration: underline;
-}
-
-.page-ukllc-catalogue .var-link code {
-  color: inherit;
-  /* Just the Docs styles inline <code> with its own light background box by
-     default, which was sitting on top of (and hiding) this column's purple
-     tint — this is what looked like "the variable name still has a white
-     background" even though the <td> itself was correctly coloured. */
-  background: transparent;
-  padding: 0;
-  border: none;
-  /* Just the Docs' default <code> font-size also runs smaller than normal
-     text — force it back to match the Variable Label column exactly. */
-  font-size: 13px;
-}
-
-.page-ukllc-catalogue .topic-link {
-  color: #4b067a;
-  text-decoration: none;
-  cursor: help; /* signals the hover tooltip as well as the click-through */
-}
-
-.page-ukllc-catalogue .topic-link:hover {
-  text-decoration: underline;
-}
-
-.page-ukllc-catalogue .var-download-btn {
-  padding: 6px 14px;
-  background: #1976D2;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.page-ukllc-catalogue .var-download-btn:hover {
-  background: #0F5BA5;
-}
-
-.page-ukllc-catalogue .var-topic {
-  color: #555;
-  font-size: 12px;
-}
-
-.page-ukllc-catalogue table.variable-table .empty-state {
-  text-align: center;
-  color: #8c959f;
-  padding: 14px;
-  background: #fff !important;
-}
+(function () {
+ "use strict";
+
+ // Columns we pull from the spreadsheet. Keys are our output field names;
+ // values are how the header text starts in row 5 of the sheet (matched
+ // with startsWith so trailing spaces/typos in the header don't break it).
+ const FIELD_MAP = {
+ file_name: "2. Dataset File Name",
+ doc_name: "3. Dataset Name for Documentation",
+ long_description: "4. Long Description",
+ short_description: "5. Short Description",
+ collection_start: "10a. Timepoint: Collection Start",
+ collection_end: "10b. Timepoint: Collection End",
+ n_included: "12. Number of Participants Included",
+ keywords: "14. Keywords",
+ sensitivity: "15. Sensitivity",
+ documentation_link: "16. Link To Key Dataset Documentation",
+ };
+
+ let allDatasets = [];
+ let filtered = [];
+ let currentPage = 1;
+ let pageSize = 30;
+ let expandedKeys = new Set();
+ let openVariableSearch = {};
+ let variableSortState = {}; // file_name -> { key: 'variable_name'|'variable_label'|'topic'|'year_of_collection', dir: 1|-1 }
+ let searchTerm = "";
+ let selectedDatasetFile = ""; // "" means "All datasets"
+
+ // -- Basket cache -------------------------------------------------------
+ // Same pattern as data_dictionary.js: one localStorage read per render via
+ // the shared loadBasket() (from basket_header.js, already loaded site-wide
+ // by the layout), O(1) lookups per row after that.
+ let _basketCache = new Set();
+ function refreshBasketCache() {
+ _basketCache = new Set(loadBasket().map((item) => item.varName));
+ }
+ function inBasketFast(varName) {
+ return _basketCache.has(varName);
+ }
+
+ function el(id) {
+ return document.getElementById(id);
+ }
+
+ // -- Link targets ------------------------------------------------------
+ // Variable metadata page: matches the convention data_dictionary.js and
+ // basket_header.js both use (no ".html"). Note: baskets.js's basket table
+ // appends ".html" to the same base URL - that's an inconsistency in the
+ // existing site, not something introduced here; worth checking which one
+ // actually resolves before relying on it.
+ const VARIABLE_METADATA_BASE_URL = "https://rmjdish.github.io/OWL/assets/variable_metadata/";
+
+ // Category / "Browse by Category" pages, e.g.:
+ // https://rmjdish.github.io/OWL/docs/search_methods/browse_by_category/cat_pages/Blood_biochemistry_2011.html
+ // Built from the Topic column text shown for each variable (per your
+ // instruction - NOT the dataset name, which was giving wrong/inconsistent
+ // links since a dataset can contain variables from several different
+ // topics). cleanCategoryLabel() strips the same "Topic - " / "(category
+ // NNNN)" boilerplate the dataset name field also used, in case the Topic
+ // field carries the same formatting.
+ // CAVEAT: I only have one confirmed example, and it was dataset-name-based
+ // (now known misleading - see below). I don't have a confirmed example of
+ // a Topic-only link, so this needs a real check once deployed. If a link
+ // still 404s, send me the exact Topic text shown in that row plus the
+ // correct URL and I'll fix the pattern for real rather than guess again.
+ const CATEGORY_PAGE_BASE_URL = "/OWL/docs/search_methods/browse_by_category/cat_pages";
+
+ function variableMetadataUrl(varName) {
+ return VARIABLE_METADATA_BASE_URL + encodeURIComponent(varName);
+ }
+
+ function toCategorySlug(label) {
+ const words = String(label || "").trim().split(/\s+/).filter(Boolean);
+ return words
+ .map((w, i) => (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w.toLowerCase()))
+ .join("_");
+ }
+
+ // Strips a leading "Topic - " and/or trailing " (category NNNN)" from a
+ // label, returning the clean name plus the category number if one was
+ // found in the "(category NNNN)" part.
+ // Strips the trailing "[NNN]" bracket-number the dictionary's own
+ // Topic/Subtopic fields use - confirmed straight from your original
+ // sample data, e.g. "Population characteristics [54]" - returning the
+ // clean name plus that number as the category code. A previous version
+ // of this guessed at a "(category NNNN)" round-parenthesis format instead
+ // (borrowed from the dataset-name field's different convention), which
+ // left literal square brackets in the URL when the real format didn't
+ // match - that's the bug being fixed here.
+ function cleanCategoryLabel(raw) {
+ let name = String(raw || "").trim();
+ let code = null;
+ name = name.replace(/\s*\[(\d+)\]\s*$/, (_, num) => {
+ code = num;
+ return "";
+ });
+ return { name: name.trim(), code };
+ }
+
+ // Built from the variable's own Topic column (the deepest non-empty
+ // subtopic, same text shown in the table) rather than the dataset name - 
+ // each variable can link to its own category page even when several
+ // variables with different topics sit inside the same dataset file.
+ function categoryPageUrl(v) {
+ const raw = lastSubtopic(v) || v.topic || "";
+ if (!raw) return null;
+ const { name, code } = cleanCategoryLabel(raw);
+ if (!name) return null;
+ const slug = toCategorySlug(name);
+ return CATEGORY_PAGE_BASE_URL + "/" + slug + (code ? "_" + code : "") + ".html";
+ }
+
+ // Deepest non-empty subtopic (falls back up the chain to Topic itself if
+ // every subtopic level is blank), for the compact column display.
+ function lastSubtopic(v) {
+ const chain = [v.subtopic_4, v.subtopic_3, v.subtopic_2, v.subtopic_1, v.topic];
+ return chain.find((x) => x && String(x).trim()) || "";
+ }
+
+ function normalise(name) {
+ if (!name) return "";
+ return String(name)
+ .trim()
+ .replace(/\.(csv|sav|dta|tsv|xlsx?)$/i, "")
+ .toLowerCase();
+ }
+
+ // -- Config resolution ------------------------------------------------
+ // Reads data-xlsx-url / data-dictionary-url off .page-ukllc-catalogue.
+ // Throws a clear, specific error rather than letting a missing value
+ // reach fetch() as undefined (which is what produced the cryptic
+ // "e[0] is undefined" crash inside ucl-consent-blocker.js previously).
+ function resolveUrl(datasetKey, attrName) {
+ const container = document.querySelector(".page-ukllc-catalogue");
+ const raw = container && container.dataset[datasetKey];
+ if (!raw || !raw.trim()) {
+ throw new Error(
+ attrName + ' is not set on <div class="page-ukllc-catalogue"> (got ' + JSON.stringify(raw) + "). " +
+ "Check the front-matter-rendered value in the page's HTML source."
+ );
+ }
+ // Resolve to a fully-qualified absolute URL. A root-relative path like
+ // "/OWL/assets/..." is valid on its own, but some fetch-wrapping
+ // scripts (cookie consent blockers etc.) handle relative paths poorly - 
+ // passing an absolute URL sidesteps that.
+ return new URL(raw, window.location.origin).href;
+ }
+
+ // ---------- Loading & linking ----------
+
+ function base64ToWorkbookRows(b64) {
+ const binary = atob(b64);
+ const bytes = new Uint8Array(binary.length);
+ for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+ const wb = XLSX.read(bytes, { type: "array", cellDates: false });
+ const ws = wb.Sheets[wb.SheetNames[0]];
+ return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+ }
+
+ function loadWorkbook(url) {
+ return fetch(url)
+ .then((r) => {
+ if (!r.ok) throw new Error("Could not fetch spreadsheet (HTTP " + r.status + ")");
+ return r.arrayBuffer();
+ })
+ .then((buf) => {
+ const wb = XLSX.read(buf, { type: "array", cellDates: false });
+ const ws = wb.Sheets[wb.SheetNames[0]];
+ return XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false });
+ });
+ }
+
+ function parseDatasets(rows) {
+ const headerRowIdx = rows.findIndex(
+ (row) => row && row.some((c) => c && String(c).trim().startsWith(FIELD_MAP.file_name))
+ );
+ if (headerRowIdx === -1) {
+ throw new Error('Could not find the header row ("2. Dataset File Name") in the spreadsheet.');
+ }
+ const headers = rows[headerRowIdx].map((c) => (c ? String(c).trim() : ""));
+ const colIdx = {};
+ Object.keys(FIELD_MAP).forEach((key) => {
+ const target = FIELD_MAP[key];
+ colIdx[key] = headers.findIndex((h) => h.startsWith(target));
+ });
+
+ const datasets = [];
+ // +2 to skip the header row itself and the instructions row beneath it
+ for (let i = headerRowIdx + 2; i < rows.length; i++) {
+ const row = rows[i];
+ if (!row) continue;
+ const fileName = colIdx.file_name >= 0 ? row[colIdx.file_name] : null;
+ if (!fileName || !String(fileName).trim()) continue;
+
+ const entry = { variables: [] };
+ Object.keys(FIELD_MAP).forEach((key) => {
+ const idx = colIdx[key];
+ entry[key] = idx >= 0 ? row[idx] : null;
+ });
+ entry._key = normalise(entry.file_name);
+ datasets.push(entry);
+ }
+ return datasets;
+ }
+
+ function linkVariables(datasets, variables) {
+ const byKey = new Map(datasets.map((d) => [d._key, d]));
+ const unmatched = new Map(); // dataset name referenced by a variable but absent from the spreadsheet
+
+ variables.forEach((v) => {
+ const raw = (v["UKLLC Dataset Name(s)"] || "").trim();
+ if (!raw) return;
+ raw.split(",").forEach((rawName) => {
+ const name = rawName.trim();
+ if (!name) return;
+ const key = normalise(name);
+ const target = byKey.get(key);
+ const record = {
+ variable_name: v["NSHD Variable Name"],
+ variable_label: v["Variable Label"],
+ showcase_field_id: v["Showcase Field ID"],
+ topic: v["Topic"],
+ subtopic_1: v["Subtopic 1"],
+ subtopic_2: v["Subtopic 2"],
+ subtopic_3: v["Subtopic 3"],
+ subtopic_4: v["Subtopic 4"],
+ form: v["Form"],
+ year_of_collection: v["Year of collection"],
+ };
+ if (target) {
+ target.variables.push(record);
+ } else {
+ if (!unmatched.has(name)) unmatched.set(name, new Set());
+ unmatched.get(name).add(v["NSHD Variable Name"]);
+ }
+ });
+ });
+
+ datasets.forEach((d) => {
+ d.variable_count = d.variables.length;
+ });
+
+ return unmatched;
+ }
+
+ function logQaReport(datasets, unmatched) {
+ const zeroVar = datasets.filter((d) => d.variable_count === 0).map((d) => d.file_name);
+ if (zeroVar.length) {
+ console.warn("[UKLLC Catalogue] Datasets with no variables linked:", zeroVar);
+ }
+ if (unmatched.size) {
+ const detail = {};
+ unmatched.forEach((vars, name) => (detail[name] = Array.from(vars).slice(0, 3)));
+ console.warn(
+ "[UKLLC Catalogue] Dataset names referenced in the dictionary but not found in the spreadsheet " +
+ "(check for typos or mismatched version/date suffixes):",
+ detail
+ );
+ }
+ }
+
+ // ---------- Boot ----------
+
+ function init() {
+ let xlsxRowsPromise, variablesPromise;
+ try {
+ xlsxRowsPromise = window.UKLLC_XLSX_INLINE_BASE64
+ ? Promise.resolve(base64ToWorkbookRows(window.UKLLC_XLSX_INLINE_BASE64))
+ : loadWorkbook(resolveUrl("xlsxUrl", "data-xlsx-url"));
+
+ variablesPromise = window.UKLLC_DICTIONARY_INLINE
+ ? Promise.resolve(window.UKLLC_DICTIONARY_INLINE)
+ : fetch(resolveUrl("dictionaryUrl", "data-dictionary-url")).then((r) => {
+ if (!r.ok) throw new Error("Could not fetch dictionary JSON (HTTP " + r.status + ")");
+ return r.json();
+ });
+ } catch (err) {
+ el("loadingScreen").innerHTML = "<div>" + err.message + "</div>";
+ console.error(err);
+ return;
+ }
+
+ Promise.all([xlsxRowsPromise, variablesPromise])
+ .then(([xlsxRows, variables]) => {
+ const datasets = parseDatasets(xlsxRows);
+ const unmatched = linkVariables(datasets, variables);
+ logQaReport(datasets, unmatched);
+ datasets.forEach((d) => delete d._key);
+
+ allDatasets = datasets;
+ filtered = datasets;
+ el("loadingScreen").style.display = "none";
+ el("dataUI").style.display = "block";
+ bindControls();
+ render();
+ })
+ .catch((err) => {
+ el("loadingScreen").innerHTML =
+ "<div>Could not build the catalogue (" +
+ err.message +
+ "). Check the data-xlsx-url / data-dictionary-url attributes on .page-ukllc-catalogue, and open the console for details.</div>";
+ console.error(err);
+ });
+ }
+
+ // ---------- Rendering ----------
+
+ function bindControls() {
+ populateDatasetFilter();
+
+ el("globalSearch").addEventListener("input", (e) => {
+ searchTerm = e.target.value;
+ applyFilters();
+ });
+ el("datasetFilter").addEventListener("change", (e) => {
+ selectedDatasetFile = e.target.value;
+ applyFilters();
+ });
+ el("pageSize").addEventListener("change", (e) => {
+ pageSize = parseInt(e.target.value, 10);
+ currentPage = 1;
+ render();
+ });
+ el("resetFiltersBtn").addEventListener("click", () => {
+ el("globalSearch").value = "";
+ el("datasetFilter").value = "";
+ searchTerm = "";
+ selectedDatasetFile = "";
+ applyFilters();
+ });
+ el("downloadExcelBtn").addEventListener("click", downloadCatalogueExcel);
+ }
+
+ function populateDatasetFilter() {
+ const bar = el("filter-bar");
+ bar.innerHTML =
+ '<select id="datasetFilter"><option value="">All datasets</option>' +
+ allDatasets
+ .slice()
+ .sort((a, b) => (a.doc_name || "").localeCompare(b.doc_name || ""))
+ .map((d) => '<option value="' + escapeAttr(d.file_name) + '">' + escapeHtml(d.doc_name || d.file_name) + "</option>")
+ .join("") +
+ "</select>";
+ }
+
+ function applyFilters() {
+ const term = searchTerm.trim().toLowerCase();
+ filtered = allDatasets.filter((d) => {
+ if (selectedDatasetFile && d.file_name !== selectedDatasetFile) return false;
+ if (!term) return true;
+ const haystack = [d.file_name, d.doc_name, d.long_description, d.short_description, d.keywords]
+ .filter(Boolean)
+ .join(" ")
+ .toLowerCase();
+ if (haystack.includes(term)) return true;
+ return (d.variables || []).some(
+ (v) =>
+ (v.variable_name || "").toLowerCase().includes(term) ||
+ (v.variable_label || "").toLowerCase().includes(term)
+ );
+ });
+ currentPage = 1;
+ render();
+ }
+
+ function render() {
+ // Load basket ONCE per render, same as renderTable() in data_dictionary.js
+ refreshBasketCache();
+
+ const start = (currentPage - 1) * pageSize;
+ const pageRows = filtered.slice(start, start + pageSize);
+
+ el("resultsCount").textContent =
+ filtered.length + " dataset" + (filtered.length === 1 ? "" : "s") + " (of " + allDatasets.length + ")";
+
+ const tbody = el("catalogue-body");
+ tbody.innerHTML = "";
+
+ pageRows.forEach((d) => {
+ tbody.appendChild(buildDatasetRow(d));
+ if (expandedKeys.has(d.file_name)) {
+ tbody.appendChild(buildVariablePanelRow(d));
+ }
+ });
+
+ renderPagination();
+ }
+
+ function buildDatasetRow(d) {
+ const tr = document.createElement("tr");
+ tr.className = "dataset-row" + (expandedKeys.has(d.file_name) ? " is-open" : "");
+ tr.dataset.key = d.file_name;
+
+ const isOpen = expandedKeys.has(d.file_name);
+ const count = d.variable_count || 0;
+
+ tr.innerHTML =
+ '<td class="col-expand"><button class="expand-btn" aria-expanded="' +
+ isOpen +
+ '" aria-label="Toggle variable list">' +
+ (isOpen ? "&#9662;" : "&#9656;") +
+ "</button></td>" +
+ '<td class="col-docname" title="' + escapeAttr(d.file_name) + '">' + escapeHtml(d.doc_name || "") + "</td>" +
+ '<td class="col-desc">' + escapeHtml(d.long_description || "") + "</td>" +
+ '<td class="col-vars">' +
+ '<button class="var-count-badge' + (count === 0 ? " is-empty" : "") + '">' +
+ count + (count === 1 ? " variable" : " variables") +
+ "</button></td>";
+
+ tr.querySelector(".expand-btn").addEventListener("click", () => toggleRow(d.file_name));
+ tr.querySelector(".var-count-badge").addEventListener("click", () => toggleRow(d.file_name));
+
+ return tr;
+ }
+
+ function toggleRow(key) {
+ if (expandedKeys.has(key)) expandedKeys.delete(key);
+ else expandedKeys.add(key);
+ render();
+ }
+
+ function buildVariablePanelRow(d) {
+ const tr = document.createElement("tr");
+ tr.className = "variable-panel-row";
+ const td = document.createElement("td");
+ td.colSpan = 4; // matches the outer table's 4 columns (expand, name, description, variables)
+
+ if (!d.variables || d.variables.length === 0) {
+ td.innerHTML =
+ '<div class="variable-panel empty-state">No variables in the Data Dictionary currently list this file. ' +
+ "If this dataset was recently deposited it may not be indexed yet - check the dataset name matches exactly (including version/date) in both sources. See the browser console for a full mismatch report.</div>";
+ tr.appendChild(td);
+ return tr;
+ }
+
+ const searchVal = openVariableSearch[d.file_name] || "";
+ let vars = d.variables;
+ if (searchVal) {
+ const t = searchVal.toLowerCase();
+ vars = vars.filter(
+ (v) =>
+ (v.variable_name || "").toLowerCase().includes(t) ||
+ (v.variable_label || "").toLowerCase().includes(t) ||
+ (v.topic || "").toLowerCase().includes(t)
+ );
+ }
+ const sortState = variableSortState[d.file_name];
+ vars = sortVars(vars, sortState);
+
+ const allInBasket = vars.length > 0 && vars.every((v) => inBasketFast(v.variable_name));
+ const rowsHtml = vars
+ .map((v) => {
+ const checked = v.variable_name && inBasketFast(v.variable_name);
+ const varUrl = variableMetadataUrl(v.variable_name || "");
+ const lastTopic = lastSubtopic(v);
+ const fullPath = topicPath(v);
+ const catUrl = categoryPageUrl(v);
+ const topicCell = catUrl
+ ? '<a class="topic-link" href="' + escapeAttr(catUrl) + '" target="_blank" rel="noopener">' + escapeHtml(lastTopic) + "</a>"
+ : escapeHtml(lastTopic);
+ return (
+ "<tr>" +
+ '<td class="col-check"><input type="checkbox" class="row-select" ' +
+ 'data-var-name="' + escapeAttr(v.variable_name || "") + '" ' +
+ 'data-label="' + escapeAttr(v.variable_label || "") + '" ' +
+ 'aria-label="Add variable" ' +
+ (checked ? "checked" : "") + "></td>" +
+ "<td><a class=\"var-link\" href=\"" + escapeAttr(varUrl) + "\" target=\"_blank\" rel=\"noopener\"><code>" +
+ escapeHtml(v.variable_name || "") + "</code></a></td>" +
+ "<td>" + escapeHtml(v.variable_label || "") + "</td>" +
+ '<td class="var-topic" title="' + escapeAttr(fullPath) + '">' + topicCell + "</td>" +
+ "<td>" + escapeHtml(v.year_of_collection || "") + "</td>" +
+ "</tr>"
+ );
+ })
+ .join("");
+
+ function sortHeader(label, key) {
+ const active = sortState && sortState.key === key;
+ const arrow = active ? (sortState.dir === 1 ? "&#9650;" : "&#9660;") : "&#8645;";
+ return (
+ '<th class="sortable-header" data-sort-key="' + key + '">' +
+ '<span class="th-inner">' +
+ '<span class="header-label">' + label + "</span>" +
+ '<span class="sort-icon' + (active ? " is-active" : "") + '">' + arrow + "</span>" +
+ "</span>" +
+ "</th>"
+ );
+ }
+
+ td.innerHTML =
+ '<div class="variable-panel">' +
+ '<div class="variable-panel-toolbar">' +
+ "<strong>" + d.variables.length + " variable" + (d.variables.length === 1 ? "" : "s") + " in this file</strong>" +
+ '<input class="variable-search" type="text" placeholder="Filter these variables..." value="' +
+ escapeHtml(searchVal) +
+ '" />' +
+ '<button class="add-all-variables-btn' + (allInBasket ? " remove-mode" : "") + '">' +
+ (allInBasket ? "Remove all from basket" : "Add all to basket") +
+ "</button>" +
+ '<button class="var-download-btn" type="button">Download variable list</button>' +
+ "</div>" +
+ '<table class="variable-table"><thead><tr><th>Add variable</th>' +
+ sortHeader("Variable Name", "variable_name") +
+ sortHeader("Variable Label", "variable_label") +
+ sortHeader("Topic", "topic") +
+ sortHeader("Year", "year_of_collection") +
+ "</tr></thead>" +
+ "<tbody>" + (rowsHtml || '<tr><td colspan="5" class="empty-state">No variables match that filter.</td></tr>') + "</tbody></table>" +
+ "</div>";
+
+ tr.appendChild(td);
+
+ // -- Column sorting ---------------------------------------------------
+ td.querySelectorAll(".sortable-header").forEach((th) => {
+ th.addEventListener("click", () => {
+ const key = th.dataset.sortKey;
+ const current = variableSortState[d.file_name];
+ const dir = current && current.key === key ? current.dir * -1 : 1;
+ variableSortState[d.file_name] = { key, dir };
+ render();
+ });
+ });
+
+ // -- Individual basket checkboxes ------------------------------------
+ // data-var-name + data-label match the convention refreshBasketCheckboxesUI()
+ // in basket_header.js already recognises, so these also stay in sync when
+ // a variable is added/removed from the Data Dictionary page or elsewhere.
+ td.querySelectorAll(".row-select").forEach((cb) => {
+ cb.addEventListener("change", (e) => {
+ const varName = e.target.dataset.varName;
+ const label = e.target.dataset.label || "";
+ if (!varName) return;
+ if (e.target.checked) {
+ addToBasket(varName, label);
+ } else {
+ removeFromBasket(varName);
+ }
+ refreshBasketCache();
+ render();
+ });
+ });
+
+ // -- Per-dataset "add all / remove all" ------------------------------
+ td.querySelector(".add-all-variables-btn").addEventListener("click", () => {
+ const varNames = vars.map((v) => v.variable_name).filter(Boolean);
+ if (allInBasket) {
+ batchRemoveFromBasket(varNames);
+ } else {
+ const items = vars
+ .filter((v) => v.variable_name)
+ .map((v) => ({ varName: v.variable_name, label: v.variable_label || "" }));
+ batchAddToBasket(items);
+ }
+ refreshBasketCache();
+ render();
+ });
+
+ const input = td.querySelector(".variable-search");
+ input.addEventListener("input", (e) => {
+ openVariableSearch[d.file_name] = e.target.value;
+ render();
+ const again = document.querySelector(
+ '.dataset-row[data-key="' + cssEscape(d.file_name) + '"] + .variable-panel-row .variable-search'
+ );
+ if (again) {
+ again.focus();
+ again.setSelectionRange(again.value.length, again.value.length);
+ }
+ });
+
+ td.querySelector(".var-download-btn").addEventListener("click", (e) => {
+ e.preventDefault();
+ downloadVariablesExcel(d);
+ });
+
+ return tr;
+ }
+
+ function topicPath(v) {
+ return [v.topic, v.subtopic_1, v.subtopic_2, v.subtopic_3, v.subtopic_4].filter(Boolean).join(" > ");
+ }
+
+ function sortVars(vars, sortState) {
+ if (!sortState || !sortState.key) return vars;
+ const { key, dir } = sortState;
+ const valueOf = (v) => (key === "topic" ? lastSubtopic(v) : v[key]) || "";
+ return vars.slice().sort((a, b) => {
+ const av = String(valueOf(a)).toLowerCase();
+ const bv = String(valueOf(b)).toLowerCase();
+ if (av < bv) return -1 * dir;
+ if (av > bv) return 1 * dir;
+ return 0;
+ });
+ }
+
+ function renderPagination() {
+ const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+ const html =
+ '<button ' + (currentPage <= 1 ? "disabled" : "") + ' id="prevPage">Prev</button>' +
+ " Page " + currentPage + " of " + totalPages + " " +
+ '<button ' + (currentPage >= totalPages ? "disabled" : "") + ' id="nextPage">Next</button>';
+ el("paginationTop").innerHTML = html;
+ el("paginationBottom").innerHTML = html;
+
+ document.querySelectorAll("#prevPage").forEach((b) =>
+ b.addEventListener("click", () => {
+ currentPage = Math.max(1, currentPage - 1);
+ render();
+ })
+ );
+ document.querySelectorAll("#nextPage").forEach((b) =>
+ b.addEventListener("click", () => {
+ currentPage = Math.min(totalPages, currentPage + 1);
+ render();
+ })
+ );
+ }
+
+ // -- Excel export (bold headers, fills, column widths - CSV can't do any
+ // of that, so this uses ExcelJS, loaded via <script> on the page) -------
+ const HEADER_FILL = "FF4B067A"; // matches the site's purple accent
+ const ROW_FILL_A = "FFF7F7F7";
+ const ROW_FILL_B = "FFFFFFFF";
+ const BORDER = { style: "thin", color: { argb: "FFE0E0E0" } };
+
+ function buildStyledWorksheet(workbook, sheetName, columns, rows) {
+ const sheet = workbook.addWorksheet(sheetName);
+ sheet.columns = columns;
+
+ const headerRow = sheet.getRow(1);
+ headerRow.height = 20;
+ headerRow.eachCell((cell) => {
+ cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+ cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_FILL } };
+ cell.alignment = { vertical: "middle", horizontal: "left", wrapText: true };
+ cell.border = { bottom: { style: "medium", color: { argb: HEADER_FILL } } };
+ });
+
+ rows.forEach((r, i) => {
+ const row = sheet.addRow(r);
+ const fill = i % 2 === 0 ? ROW_FILL_A : ROW_FILL_B;
+ row.eachCell((cell) => {
+ cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fill } };
+ cell.border = { bottom: BORDER };
+ cell.alignment = { vertical: "top", wrapText: true };
+ });
+ });
+
+ sheet.views = [{ state: "frozen", ySplit: 1 }]; // keep the header visible when scrolling
+ return sheet;
+ }
+
+ function triggerExcelDownload(workbook, filename) {
+ workbook.xlsx.writeBuffer().then((buf) => {
+ const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+ const link = document.createElement("a");
+ link.href = URL.createObjectURL(blob);
+ link.download = filename;
+ document.body.appendChild(link);
+ link.click();
+ document.body.removeChild(link);
+ });
+ }
+
+ function downloadCatalogueExcel() {
+ const workbook = new ExcelJS.Workbook();
+ buildStyledWorksheet(
+ workbook,
+ "UKLLC Catalogue",
+ [
+ { header: "Dataset File Name", key: "file_name", width: 42 },
+ { header: "Dataset Name", key: "doc_name", width: 30 },
+ { header: "Dataset Description", key: "long_description", width: 60 },
+ { header: "Variable Count", key: "variable_count", width: 14 },
+ ],
+ filtered.map((d) => ({
+ file_name: d.file_name || "",
+ doc_name: d.doc_name || "",
+ long_description: d.long_description || "",
+ variable_count: d.variable_count || 0,
+ }))
+ );
+ triggerExcelDownload(workbook, "ukllc_catalogue.xlsx");
+ }
+
+ function downloadVariablesExcel(d) {
+ const workbook = new ExcelJS.Workbook();
+ buildStyledWorksheet(
+ workbook,
+ (d.doc_name || "Variables").slice(0, 31), // sheet names have a 31-char limit
+ [
+ { header: "Variable Name", key: "variable_name", width: 25 },
+ { header: "Variable Label", key: "variable_label", width: 50 },
+ { header: "Topic", key: "topic", width: 32 },
+ { header: "Year of Collection", key: "year", width: 14 },
+ ],
+ (d.variables || []).map((v) => ({
+ variable_name: v.variable_name || "",
+ variable_label: v.variable_label || "",
+ topic: topicPath(v),
+ year: v.year_of_collection || "",
+ }))
+ );
+ triggerExcelDownload(workbook, d.file_name.replace(/\.[^.]+$/, "") + "_variables.xlsx");
+ }
+
+ function escapeHtml(str) {
+ return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+ }
+
+ function escapeAttr(str) {
+ return String(str).replace(/"/g, "&quot;");
+ }
+
+ function cssEscape(str) {
+ return String(str).replace(/["\\]/g, "\\$&");
+ }
+
+ document.addEventListener("DOMContentLoaded", init);
+
+ // -- Keep in sync with basket changes made elsewhere ---------------------
+ window.addEventListener("nshd-basket-changed", () => {
+ if (!allDatasets.length) return; // catalogue hasn't finished loading yet
+ refreshBasketCache();
+ render();
+ });
+})();
