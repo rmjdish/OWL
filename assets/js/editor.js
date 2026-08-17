@@ -363,6 +363,10 @@ function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
     }
 
     case 'table': {
+      const colCount = block.rows[0] ? block.rows[0].length : 0;
+      const colHeaderCells = Array.from({ length: colCount }, (_, ci) =>
+        `<td class="db-table-col-remove"><button type="button" class="db-btn-icon db-btn-danger" data-action="remove-col" data-id="${block.id}" data-col="${ci}" ${colCount <= 1 ? 'disabled' : ''} title="Remove this column">✕</button></td>`
+      ).join('');
       const rows = block.rows.map((row, ri) => `
         <tr>
           ${row.map((cell, ci) => `<td><input type="text" class="db-input db-table-cell" data-id="${block.id}" data-prop="cell" data-row="${ri}" data-col="${ci}" value="${escHtml(cell)}"></td>`).join('')}
@@ -370,7 +374,10 @@ function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
         </tr>
       `).join('');
       body = `<label class="db-block-label">Table (first row is treated as the header)</label>
-        <div class="db-table-scroll"><table class="db-table-editor"><tbody>${rows}</tbody></table></div>
+        <div class="db-table-scroll"><table class="db-table-editor">
+          <thead><tr>${colHeaderCells}<td></td></tr></thead>
+          <tbody>${rows}</tbody>
+        </table></div>
         <div class="db-table-buttons">
           <button type="button" class="db-btn-add-item" data-action="add-row" data-id="${block.id}">+ Add row</button>
           <button type="button" class="db-btn-add-item" data-action="add-col" data-id="${block.id}">+ Add column</button>
@@ -793,6 +800,14 @@ function attachHandlers() {
   document.querySelectorAll('[data-action="remove-row"]').forEach(el => el.addEventListener('click', () => {
     const block = findBlock(el.dataset.id);
     if (block) { block.rows.splice(parseInt(el.dataset.row, 10), 1); renderAll(); }
+  }));
+  document.querySelectorAll('[data-action="remove-col"]').forEach(el => el.addEventListener('click', () => {
+    const block = findBlock(el.dataset.id);
+    if (block) {
+      const col = parseInt(el.dataset.col, 10);
+      block.rows.forEach(r => r.splice(col, 1));
+      renderAll();
+    }
   }));
 
   // Image upload
