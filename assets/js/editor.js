@@ -10,7 +10,8 @@ const state = {
     outputLocation: '', outputFormat: '', docProvided: '', papers: '', outputVars: '',
   },
   blocks: [],
-  privateFieldsOpen: false,
+  privateFieldsOpen: true,
+  publicFieldsOpen: true,
 };
 
 let blockIdCounter = 0;
@@ -235,14 +236,17 @@ function renderTopsheetForm() {
   }
 
   const privateFilledCount = privateFields.filter(([key]) => (state.topsheet[key] || '').trim()).length;
+  const publicFilledCount = publicFields.filter(([key]) => (state.topsheet[key] || '').trim()).length;
 
   return `
-    <div class="db-topsheet-section db-topsheet-public">
-      <h3>Public fields (shown on the page)</h3>
-      ${publicFields.map(fieldHtml).join('')}
-    </div>
+    <details class="db-topsheet-public" id="db-public-details"${state.publicFieldsOpen ? ' open' : ''}>
+      <summary>Public fields (shown on the page) \u2014 ${publicFilledCount} complete, ${publicFields.length - publicFilledCount} incomplete.</summary>
+      <div class="db-topsheet-section">
+        ${publicFields.map(fieldHtml).join('')}
+      </div>
+    </details>
     <details class="db-topsheet-private" id="db-private-details"${state.privateFieldsOpen ? ' open' : ''}>
-      <summary>Private fields \u2014 ${privateFilledCount} of ${privateFields.length} filled in. Kept internal, never published, but still needed by NSHD for record-keeping.</summary>
+      <summary>Private fields \u2014 ${privateFilledCount} complete, ${privateFields.length - privateFilledCount} incomplete. Kept internal, never published, but still needed by NSHD for record-keeping.</summary>
       <div class="db-topsheet-section">
         ${privateFields.map(fieldHtml).join('')}
       </div>
@@ -703,6 +707,7 @@ function attachHandlers() {
       state.topsheet[el.dataset.field] = el.dataset.dateField ? isoToDdmmyyyy(el.value) : el.value;
       syncPreviewOnly();
       updatePrivateFieldsSummary();
+      updatePublicFieldsSummary();
     });
     if (el.dataset.dateField && typeof el.showPicker === 'function') {
       el.addEventListener('click', () => {
@@ -713,6 +718,10 @@ function attachHandlers() {
   const privateDetails = document.getElementById('db-private-details');
   if (privateDetails) {
     privateDetails.addEventListener('toggle', () => { state.privateFieldsOpen = privateDetails.open; });
+  }
+  const publicDetails = document.getElementById('db-public-details');
+  if (publicDetails) {
+    publicDetails.addEventListener('toggle', () => { state.publicFieldsOpen = publicDetails.open; });
   }
 
   // Drag-to-reorder. draggable="true" sits on the whole block (required
@@ -886,7 +895,16 @@ function updatePrivateFieldsSummary() {
   const filledCount = privateFields.filter(([key]) => (state.topsheet[key] || '').trim()).length;
   const summaryEl = document.querySelector('#db-private-details summary');
   if (summaryEl) {
-    summaryEl.textContent = `Private fields \u2014 ${filledCount} of ${privateFields.length} filled in. Kept internal, never published, but still needed by NSHD for record-keeping.`;
+    summaryEl.textContent = `Private fields \u2014 ${filledCount} complete, ${privateFields.length - filledCount} incomplete. Kept internal, never published, but still needed by NSHD for record-keeping.`;
+  }
+}
+
+function updatePublicFieldsSummary() {
+  const publicFields = TOPSHEET_FORM_FIELDS.filter(f => f[3]);
+  const filledCount = publicFields.filter(([key]) => (state.topsheet[key] || '').trim()).length;
+  const summaryEl = document.querySelector('#db-public-details summary');
+  if (summaryEl) {
+    summaryEl.textContent = `Public fields (shown on the page) \u2014 ${filledCount} complete, ${publicFields.length - filledCount} incomplete.`;
   }
 }
 
@@ -1006,7 +1024,7 @@ function clearForm() {
   }
   Object.keys(state.topsheet).forEach(k => { state.topsheet[k] = ''; });
   state.blocks = [];
-  state.privateFieldsOpen = false;
+  state.privateFieldsOpen = true;
   clearAutoSave();
   renderAll();
 }
