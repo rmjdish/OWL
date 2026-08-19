@@ -27,7 +27,8 @@ document.addEventListener("DOMContentLoaded", function () {
     "Showcase Metadata":    "badge-show",
     "Access & governance":  "badge-access",
     "Navigation":           "badge-nav",
-    "Platforms":            "badge-plat"
+    "Platforms":            "badge-plat",
+    "Writing documentation":"badge-write"
   };
 
   var activeFilter = "";
@@ -152,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }).catch(onLoadError);
   } else {
     // Fallback: jargon-loader.js wasn't found on this page, fetch directly.
-    fetch("/OWL/assets/data/jargon-terms.json")
+    fetch("/OWL/assets/data/cohort_jargon/jargon-terms.json")
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
