@@ -357,7 +357,7 @@ function renderBlockEditor(block, canMoveUp, canMoveDown, displayInfo) {
       const runs = block.runs && block.runs.length ? block.runs : [{ text: '' }];
       const runRows = runs.map((run, i) => `
         <div class="db-run-row" data-run-index="${i}">
-          <input type="text" class="db-input db-run-text" data-id="${block.id}" data-run-index="${i}" value="${escHtml(run.text)}" placeholder="${i === 0 ? 'Start typing…' : 'Next segment…'}">
+          <textarea class="db-input db-run-text" rows="1" data-id="${block.id}" data-run-index="${i}" placeholder="${i === 0 ? 'Start typing…' : 'Next segment…'}">${escHtml(run.text)}</textarea>
           <label class="db-run-toggle"><input type="checkbox" data-id="${block.id}" data-run-index="${i}" data-run-prop="bold" ${run.bold ? 'checked' : ''}><strong>B</strong></label>
           <label class="db-run-toggle"><input type="checkbox" data-id="${block.id}" data-run-index="${i}" data-run-prop="italic" ${run.italic ? 'checked' : ''}><em>I</em></label>
           <label class="db-run-toggle"><input type="checkbox" data-id="${block.id}" data-run-index="${i}" data-run-prop="underline" ${run.underline ? 'checked' : ''}><u>U</u></label>
@@ -704,6 +704,11 @@ function attachHandlers() {
       syncPreviewOnly();
       updatePrivateFieldsSummary();
     });
+    if (el.dataset.dateField && typeof el.showPicker === 'function') {
+      el.addEventListener('click', () => {
+        try { el.showPicker(); } catch (e) { /* already open, or blocked - fine either way */ }
+      });
+    }
   });
   const privateDetails = document.getElementById('db-private-details');
   if (privateDetails) {
