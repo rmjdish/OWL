@@ -171,6 +171,15 @@ const PUBLIC_FIELD_CHECK_LABELS = [
   ['papers', 'Papers using these variables'],
 ];
 
+// The eleven internal-record-keeping fields (source files, syntax, output
+// file details) — never published, so this isn't checked field-by-field
+// the way the public ones are; just a single completion summary line.
+const PRIVATE_FIELD_KEYS = [
+  'sourceFiles', 'sourceFilesDate', 'syntaxProvided', 'syntaxLocation',
+  'syntaxDate', 'syntaxFormat', 'outputDataProvided', 'outputDate',
+  'outputLocation', 'outputFormat', 'docProvided',
+];
+
 function runFormattingChecks(topsheet, blocks) {
   const findings = [];
 
@@ -182,6 +191,19 @@ function runFormattingChecks(topsheet, blocks) {
       findings.push({ level: 'warning', text: `\u201c${label}\u201d is empty or missing. This will show as blank on the live page.` });
     }
   });
+
+  // Not checked field-by-field like the public ones, since these are
+  // never published — just a single completion count, since NSHD still
+  // needs them for internal record-keeping.
+  const privateFilledCount = PRIVATE_FIELD_KEYS.filter(key => (topsheet[key] || '').trim()).length;
+  if (privateFilledCount === PRIVATE_FIELD_KEYS.length) {
+    findings.push({ level: 'good', text: `All ${PRIVATE_FIELD_KEYS.length} private fields are filled in.` });
+  } else {
+    findings.push({
+      level: 'warning',
+      text: `${privateFilledCount} of ${PRIVATE_FIELD_KEYS.length} private fields are filled in \u2014 ${PRIVATE_FIELD_KEYS.length - privateFilledCount} still needed for NSHD\u2019s internal record-keeping before submission.`,
+    });
+  }
 
   // Matches report.py's check_section_count exactly, adapted to blocks:
   // a Section block is a named section; any content block before the
