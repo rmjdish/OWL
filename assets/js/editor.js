@@ -803,6 +803,17 @@ function attachHandlers() {
       const block = findBlock(el.dataset.id);
       if (block) { block.items[parseInt(el.dataset.itemIndex, 10)] = el.value; syncPreviewOnly(); }
     });
+    el.addEventListener('paste', (e) => {
+      const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+      const lines = text.split(/\r\n|\r|\n/).map(l => l.trim()).filter(Boolean);
+      if (lines.length <= 1) return; // single line - let the browser handle it normally
+      e.preventDefault();
+      const block = findBlock(el.dataset.id);
+      if (!block) return;
+      const idx = parseInt(el.dataset.itemIndex, 10);
+      block.items.splice(idx, 1, ...lines);
+      renderAll();
+    });
   });
   document.querySelectorAll('[data-action="add-item"]').forEach(el => el.addEventListener('click', () => {
     const block = findBlock(el.dataset.id);
