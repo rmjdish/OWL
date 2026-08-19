@@ -183,28 +183,54 @@ const TOPSHEET_FORM_FIELDS = [
   ['name', 'Name of person responsible for cleaning/derivation', 'text', true, 'e.g. Dr J. Fielding'],
   ['date', 'Date of submitting documentation', 'text', true, 'e.g. 14/03/2023'],
   ['sourceFiles', 'Source data file(s)', 'text', false, 'e.g. Z:\\NSHD\\raw\\atopy_raw_2023.sav'],
-  ['sourceFilesDate', 'Date source file(s) created', 'text', false, 'e.g. 02/02/2023'],
-  ['syntaxProvided', 'Syntax provided (Yes/No)', 'text', false, 'Yes or No'],
+  ['sourceFilesDate', 'Date source file(s) created', 'date', false, 'e.g. 02/02/2023'],
+  ['syntaxProvided', 'Syntax provided (Yes/No)', 'select', false, 'Yes or No'],
   ['syntaxLocation', 'Location of syntax file', 'text', false, 'e.g. Z:\\NSHD\\syntax\\atopy_derivation.sps'],
-  ['syntaxDate', 'Date syntax file created', 'text', false, 'e.g. 02/02/2023'],
+  ['syntaxDate', 'Date syntax file created', 'date', false, 'e.g. 02/02/2023'],
   ['syntaxFormat', 'Format of syntax', 'text', false, 'e.g. SPSS'],
-  ['outputDataProvided', 'Output data file provided (Yes/No)', 'text', false, 'Yes or No'],
-  ['outputDate', 'Date output file created', 'text', false, 'e.g. 14/03/2023'],
+  ['outputDataProvided', 'Output data file provided (Yes/No)', 'select', false, 'Yes or No'],
+  ['outputDate', 'Date output file created', 'date', false, 'e.g. 14/03/2023'],
   ['outputLocation', 'Location of output file', 'text', false, 'e.g. Z:\\NSHD\\output\\atopy_final.sav'],
   ['outputFormat', 'Format of output file', 'text', false, 'e.g. SPSS'],
-  ['docProvided', 'Documentation provided (Yes/No)', 'text', false, 'Yes or No'],
+  ['docProvided', 'Documentation provided (Yes/No)', 'select', false, 'Yes or No'],
 ];
+
+function ddmmyyyyToIso(str) {
+  const m = (str || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return '';
+  const [, d, mo, y] = m;
+  return `${y}-${mo.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+
+function isoToDdmmyyyy(str) {
+  const m = (str || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return '';
+  const [, y, mo, d] = m;
+  return `${d}/${mo}/${y}`;
+}
 
 function renderTopsheetForm() {
   const publicFields = TOPSHEET_FORM_FIELDS.filter(f => f[3]);
   const privateFields = TOPSHEET_FORM_FIELDS.filter(f => !f[3]);
 
   function fieldHtml([key, label, type, isPublic, placeholder]) {
-    const value = escHtml(state.topsheet[key] || '');
+    const rawValue = state.topsheet[key] || '';
+    const value = escHtml(rawValue);
     const ph = escHtml(placeholder || '');
-    const input = type === 'textarea'
-      ? `<textarea data-field="${key}" rows="3" class="db-input" placeholder="${ph}">${value}</textarea>`
-      : `<input type="text" data-field="${key}" value="${value}" class="db-input" placeholder="${ph}">`;
+    let input;
+    if (type === 'textarea') {
+      input = `<textarea data-field="${key}" rows="3" class="db-input" placeholder="${ph}">${value}</textarea>`;
+    } else if (type === 'select') {
+      const opts = ['', 'Yes', 'No'].map(opt =>
+        `<option value="${opt}"${rawValue === opt ? ' selected' : ''}>${opt || '-- Select --'}</option>`
+      ).join('');
+      input = `<select data-field="${key}" class="db-input">${opts}</select>`;
+    } else if (type === 'date') {
+      const isoValue = ddmmyyyyToIso(rawValue);
+      input = `<input type="date" data-field="${key}" data-date-field="true" value="${isoValue}" class="db-input">`;
+    } else {
+      input = `<input type="text" data-field="${key}" value="${value}" class="db-input" placeholder="${ph}">`;
+    }
     return `<label class="db-field-label">${escHtml(label)}${input}</label>`;
   }
 
@@ -674,7 +700,7 @@ function attachHandlers() {
   // Topsheet fields
   document.querySelectorAll('#db-topsheet-form [data-field]').forEach(el => {
     el.addEventListener('input', () => {
-      state.topsheet[el.dataset.field] = el.value;
+      state.topsheet[el.dataset.field] = el.dataset.dateField ? isoToDdmmyyyy(el.value) : el.value;
       syncPreviewOnly();
       updatePrivateFieldsSummary();
     });

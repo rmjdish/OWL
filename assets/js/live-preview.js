@@ -28,12 +28,21 @@ function renderHeroBanner(topsheet) {
   `;
 }
 
+const LIST_TYPE_FIELDS = new Set(['sourceVars', 'outputVars']);
+
 function renderDetailsTable(topsheet) {
   const rows = TOPSHEET_PUBLIC_FIELDS
     .filter(([key]) => (topsheet[key] || '').trim())
     .map(([key, label]) => {
-      const value = topsheet[key].split('\n').filter(l => l.trim()).join(', ');
-      return `<tr><td>${escHtml(label)}</td><td>${escHtml(value)}</td></tr>`;
+      if (LIST_TYPE_FIELDS.has(key)) {
+        const value = topsheet[key].split('\n').filter(l => l.trim()).join(', ');
+        return `<tr><td>${escHtml(label)}</td><td>${escHtml(value)}</td></tr>`;
+      }
+      // Prose fields (Summary, Papers, Categories) keep real line breaks
+      // rather than being run together with commas — a paragraph split
+      // across lines, or several papers each on their own line, reads
+      // as broken text once comma-joined.
+      return `<tr><td>${escHtml(label)}</td><td style="white-space:pre-line;">${escHtml(topsheet[key])}</td></tr>`;
     })
     .join('');
   if (!rows) return '';
