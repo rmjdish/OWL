@@ -40,9 +40,10 @@
 	"search by year":				"ti-calendar",
 	"search overview":				"ti-search",
 	"documentation hub":		"ti-versions",
-    "documentation search":		"ti-compass",
+    "search documentation":		"ti-compass",
     "writing documentation for owl":		"ti-file-pencil",
 	"create documentation":		"ti-forms",
+	"using doc builder":		"ti-forms",
 
     /* Section labels handled separately */
     /* Questionnaire waves */
