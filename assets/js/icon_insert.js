@@ -39,7 +39,7 @@
 	"study timeline":				"ti-hourglass",
 	"search by year":				"ti-calendar",
 	"search overview":				"ti-search",
-	"browse documentation":		"ti-versions",
+	"documentation hub":		"ti-versions",
     "documentation search":		"ti-compass",
     "writing documentation for owl":		"ti-file-pencil",
 	"create documentation":		"ti-forms",
