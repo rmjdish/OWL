@@ -23,6 +23,39 @@
     return type.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
   }
 
+  // Works out the site's base path ('/OWL' on GitHub project pages)
+  // without depending on some other script having already set
+  // window.SITE_BASEURL. If that global happens to be set (e.g. by a
+  // layout include) it's still honored first, but this script no
+  // longer breaks if that include is missing, renamed, or reordered —
+  // it derives the same value itself from its own <script src="...">,
+  // which Jekyll's relative_url filter already prefixes correctly.
+  function resolveBaseUrl() {
+    if (typeof window.SITE_BASEURL === 'string' && window.SITE_BASEURL) {
+      return window.SITE_BASEURL;
+    }
+    var scriptEl = document.currentScript;
+    if (!scriptEl) {
+      // Fallback for older browsers / async contexts where
+      // document.currentScript isn't available: find our own <script>
+      // tag by matching its filename.
+      var scripts = document.getElementsByTagName('script');
+      for (var i = scripts.length - 1; i >= 0; i--) {
+        if (/search-documentation\.js/.test(scripts[i].src)) { scriptEl = scripts[i]; break; }
+      }
+    }
+    if (scriptEl && scriptEl.src) {
+      var marker = '/assets/js/search-documentation.js';
+      var idx = scriptEl.src.indexOf(marker);
+      if (idx !== -1) {
+        // Strip protocol+host, keep only the path prefix before our
+        // own filename — that prefix IS the site baseurl.
+        return scriptEl.src.slice(0, idx).replace(/^https?:\/\/[^/]+/, '');
+      }
+    }
+    return '';
+  }
+
   var input = document.getElementById('docSearchInput');
   var typeFilter = document.getElementById('docTypeFilter');
   var pageSizeSelect = document.getElementById('docPageSize');
@@ -33,6 +66,17 @@
   var emptyEl = document.getElementById('docSearchEmpty');
   var errorEl = document.getElementById('docSearchError');
   var sortableHeaders = document.querySelectorAll('.doc-th-sortable');
+
+  // Nothing to do on any page that doesn't actually have the search
+  // widget on it — without this guard, addEventListener calls further
+  // down throw on null and take the rest of the page's scripts with
+  // them. pageSizeSelect is intentionally NOT required here: it's a
+  // secondary control (page-size dropdown), and its absence shouldn't
+  // block search/results from working at all — getPageSize() below
+  // falls back to "show all" when it's missing.
+  if (!input || !typeFilter || !resultsEl) {
+    return;
+  }
 
   var allDocs = [];
   var sortState = { column: 'title', direction: 'asc' };
@@ -88,6 +132,27 @@
     return doc.topics && doc.topics.length ? doc.topics : (doc.topic ? [doc.topic] : []);
   }
 
+  // Category pages live at a predictable path derived from a topic
+  // breadcrumb's last segment, e.g. the leaf
+  // "Cross-sectional beta-amyloid status (phase 1) [603411]" maps to
+  // .../cat_pages/Cross-sectional_beta-amyloid_status_(phase_1)_603411.html
+  // — spaces become underscores and the trailing "[ID]" becomes a
+  // trailing "_ID" on the filename. Topics that don't end in a
+  // "[digits]" tag (malformed data, or a future format change) return
+  // null so the chip just renders as plain text instead of a broken
+  // link.
+  var CATEGORY_PAGE_PATH = '/docs/search_methods/browse_by_category/cat_pages/';
+
+  function categoryPageUrl(topic) {
+    if (!topic) return null;
+    var segments = topic.split('>');
+    var leaf = segments[segments.length - 1].trim();
+    var m = /^(.*?)\s*\[(\d+)\]\s*$/.exec(leaf);
+    if (!m) return null;
+    var slug = m[1].trim().replace(/\s+/g, '_') + '_' + m[2];
+    return resolveBaseUrl() + CATEGORY_PAGE_PATH + slug + '.html';
+  }
+
   function renderRow(doc, rowIndex) {
     var meta = typeMeta(doc.doc_type);
     var topics = docTopics(doc);
@@ -102,42 +167,24 @@
         '<details class="doc-category-details"' + (isOpen ? ' open' : '') + '>' +
         '<summary><i class="ti ti-chevron-right" aria-hidden="true"></i>' + label + '</summary>' +
         '<div class="doc-result-categories">' +
-        topics.map(function (t) { return '<span class="doc-category-chip">' + esc(t) + '</span>'; }).join('') +
+        topics.map(function (t) {
+          var url = categoryPageUrl(t);
+          if (url) {
+            return '<a class="doc-category-chip" href="' + esc(url) + '">' + esc(t) + '</a>';
+          }
+          return '<span class="doc-category-chip">' + esc(t) + '</span>';
+        }).join('') +
         '</div></details>';
     }
 
     var tr = document.createElement('tr');
-    tr.className = 'doc-result-row' + (rowIndex % 2 === 1 ? ' doc-row-odd' : '');
+    tr.className = 'doc-result-row';
     tr.innerHTML =
       '<td><i class="ti ' + meta.icon + ' doc-result-icon" aria-hidden="true"></i>' +
       '<span class="doc-result-title">' + esc(doc.title) + '</span>' + categoriesHtml + '</td>' +
       '<td><div class="doc-conf-cell">' + confidenceBadgesHtml(doc) + '</div></td>' +
-      '<td><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span></td>';
-
-    // Zebra striping and hover are set as inline styles with 'important'
-    // priority on BOTH the row and every cell in it, rather than left to
-    // an external stylesheet rule. This site's Just the Docs theme ships
-    // its own baseline table CSS; row-only styling kept being invisible
-    // even after using !important there too, which points to the theme
-    // (or another rule) giving table cells their own explicit
-    // background — a cell's own background always paints over its
-    // parent row's background in the box-stacking order, regardless of
-    // !important on the row, so the fix has to apply at the cell level
-    // too, not just the row.
-    var cells = tr.querySelectorAll('td');
-    function setRowBg(color) {
-      if (color) {
-        tr.style.setProperty('background-color', color, 'important');
-        cells.forEach(function (td) { td.style.setProperty('background-color', color, 'important'); });
-      } else {
-        tr.style.removeProperty('background-color');
-        cells.forEach(function (td) { td.style.removeProperty('background-color'); });
-      }
-    }
-    var baseBg = rowIndex % 2 === 1 ? 'rgba(0,0,0,0.035)' : '';
-    setRowBg(baseBg);
-    tr.addEventListener('mouseenter', function () { setRowBg('hsl(180, 45%, 94%)'); });
-    tr.addEventListener('mouseleave', function () { setRowBg(baseBg); });
+      '<td><div class="doc-type-cell"><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span>' +
+      '<span class="doc-row-view-cue">View <i class="ti ti-chevron-right" aria-hidden="true"></i></span></div></td>';
 
     tr.addEventListener('click', function (e) {
       // Clicking the categories disclosure (or a chip inside it once
@@ -210,6 +257,10 @@
   }
 
   function getPageSize() {
+    // pageSizeSelect may be null if that control isn't present in the
+    // page's HTML — default to showing everything on one page rather
+    // than throwing or silently rendering zero results.
+    if (!pageSizeSelect) return Infinity;
     var v = pageSizeSelect.value;
     return v === 'all' ? Infinity : parseInt(v, 10);
   }
@@ -253,13 +304,16 @@
   // time — but they share the same currentPage/render() so clicking
   // either one keeps both in sync on the next render.
   function renderPagination(totalItems, pageSize) {
-    paginationTopEl.innerHTML = '';
-    paginationEl.innerHTML = '';
+    // Both containers are optional — some pages that use this widget
+    // don't include pagination controls in their markup at all.
+    if (!paginationTopEl && !paginationEl) return;
+    if (paginationTopEl) paginationTopEl.innerHTML = '';
+    if (paginationEl) paginationEl.innerHTML = '';
     if (pageSize === Infinity || totalItems <= pageSize) return;
 
     var totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-    paginationTopEl.appendChild(buildPaginationControl(currentPage, totalPages));
-    paginationEl.appendChild(buildPaginationControl(currentPage, totalPages));
+    if (paginationTopEl) paginationTopEl.appendChild(buildPaginationControl(currentPage, totalPages));
+    if (paginationEl) paginationEl.appendChild(buildPaginationControl(currentPage, totalPages));
   }
 
   function resetToFirstPage() {
@@ -296,7 +350,7 @@
     renderPagination(matches.length, pageSize);
   }
 
-  fetch((window.SITE_BASEURL || '') + '/assets/data/search_index.json')
+  fetch(resolveBaseUrl() + '/assets/data/search_index.json')
     .then(function (res) {
       if (!res.ok) throw new Error('search_index.json request failed: ' + res.status);
       return res.json();
@@ -316,7 +370,9 @@
 
   input.addEventListener('input', resetToFirstPage);
   typeFilter.addEventListener('change', resetToFirstPage);
-  pageSizeSelect.addEventListener('change', resetToFirstPage);
+  if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', resetToFirstPage);
+  }
   sortableHeaders.forEach(function (th) {
     th.addEventListener('click', function () {
       var col = th.getAttribute('data-sort');
