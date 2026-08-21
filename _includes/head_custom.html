@@ -11,6 +11,46 @@
     gtag('config', 'G-6Z6ZNWMRF9');
 </script>
 
+<script>
+  // Track client-side route changes (e.g. clicking a variable name)
+  // as separate GA4 page views, since GA4's automatic tracking only
+  // fires once on the initial full page load.
+  (function() {
+    let lastPath = window.location.pathname;
+
+    function trackVirtualPageview() {
+      const newPath = window.location.pathname;
+      if (newPath !== lastPath) {
+        lastPath = newPath;
+        gtag('event', 'page_view', {
+          page_path: newPath,
+          page_title: document.title
+        });
+      }
+    }
+
+    // Catches URL changes made via pushState (most SPA routers use this)
+    const originalPushState = history.pushState;
+    history.pushState = function() {
+      originalPushState.apply(this, arguments);
+      trackVirtualPageview();
+    };
+
+    // Catches URL changes made via replaceState
+    const originalReplaceState = history.replaceState;
+    history.replaceState = function() {
+      originalReplaceState.apply(this, arguments);
+      trackVirtualPageview();
+    };
+
+    // Catches back/forward browser navigation
+    window.addEventListener('popstate', trackVirtualPageview);
+  })();
+</script>
+
+
+
+
 
 <!-- CSS stylesheets to be applied for the various pages -->
 <link rel="stylesheet" href="{{ '/assets/css/navigation_sidebar.css' | relative_url }}"> 
