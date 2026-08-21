@@ -178,37 +178,12 @@
     }
 
     var tr = document.createElement('tr');
-    tr.className = 'doc-result-row' + (rowIndex % 2 === 1 ? ' doc-row-odd' : '');
+    tr.className = 'doc-result-row';
     tr.innerHTML =
       '<td><i class="ti ' + meta.icon + ' doc-result-icon" aria-hidden="true"></i>' +
       '<span class="doc-result-title">' + esc(doc.title) + '</span>' + categoriesHtml + '</td>' +
       '<td><div class="doc-conf-cell">' + confidenceBadgesHtml(doc) + '</div></td>' +
       '<td><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span></td>';
-
-    // Zebra striping and hover are set as inline styles with 'important'
-    // priority on BOTH the row and every cell in it, rather than left to
-    // an external stylesheet rule. This site's Just the Docs theme ships
-    // its own baseline table CSS; row-only styling kept being invisible
-    // even after using !important there too, which points to the theme
-    // (or another rule) giving table cells their own explicit
-    // background — a cell's own background always paints over its
-    // parent row's background in the box-stacking order, regardless of
-    // !important on the row, so the fix has to apply at the cell level
-    // too, not just the row.
-    var cells = tr.querySelectorAll('td');
-    function setRowBg(color) {
-      if (color) {
-        tr.style.setProperty('background-color', color, 'important');
-        cells.forEach(function (td) { td.style.setProperty('background-color', color, 'important'); });
-      } else {
-        tr.style.removeProperty('background-color');
-        cells.forEach(function (td) { td.style.removeProperty('background-color'); });
-      }
-    }
-    var baseBg = rowIndex % 2 === 1 ? 'rgba(0,0,0,0.035)' : '';
-    setRowBg(baseBg);
-    tr.addEventListener('mouseenter', function () { setRowBg('hsl(180, 45%, 94%)'); });
-    tr.addEventListener('mouseleave', function () { setRowBg(baseBg); });
 
     tr.addEventListener('click', function (e) {
       // Clicking the categories disclosure (or a chip inside it once
