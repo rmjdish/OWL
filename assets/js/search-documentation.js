@@ -301,13 +301,16 @@
   // time — but they share the same currentPage/render() so clicking
   // either one keeps both in sync on the next render.
   function renderPagination(totalItems, pageSize) {
-    paginationTopEl.innerHTML = '';
-    paginationEl.innerHTML = '';
+    // Both containers are optional — some pages that use this widget
+    // don't include pagination controls in their markup at all.
+    if (!paginationTopEl && !paginationEl) return;
+    if (paginationTopEl) paginationTopEl.innerHTML = '';
+    if (paginationEl) paginationEl.innerHTML = '';
     if (pageSize === Infinity || totalItems <= pageSize) return;
 
     var totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-    paginationTopEl.appendChild(buildPaginationControl(currentPage, totalPages));
-    paginationEl.appendChild(buildPaginationControl(currentPage, totalPages));
+    if (paginationTopEl) paginationTopEl.appendChild(buildPaginationControl(currentPage, totalPages));
+    if (paginationEl) paginationEl.appendChild(buildPaginationControl(currentPage, totalPages));
   }
 
   function resetToFirstPage() {
