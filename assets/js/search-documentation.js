@@ -23,6 +23,39 @@
     return type.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
   }
 
+  // Works out the site's base path ('/OWL' on GitHub project pages)
+  // without depending on some other script having already set
+  // window.SITE_BASEURL. If that global happens to be set (e.g. by a
+  // layout include) it's still honored first, but this script no
+  // longer breaks if that include is missing, renamed, or reordered —
+  // it derives the same value itself from its own <script src="...">,
+  // which Jekyll's relative_url filter already prefixes correctly.
+  function resolveBaseUrl() {
+    if (typeof window.SITE_BASEURL === 'string' && window.SITE_BASEURL) {
+      return window.SITE_BASEURL;
+    }
+    var scriptEl = document.currentScript;
+    if (!scriptEl) {
+      // Fallback for older browsers / async contexts where
+      // document.currentScript isn't available: find our own <script>
+      // tag by matching its filename.
+      var scripts = document.getElementsByTagName('script');
+      for (var i = scripts.length - 1; i >= 0; i--) {
+        if (/search-documentation\.js/.test(scripts[i].src)) { scriptEl = scripts[i]; break; }
+      }
+    }
+    if (scriptEl && scriptEl.src) {
+      var marker = '/assets/js/search-documentation.js';
+      var idx = scriptEl.src.indexOf(marker);
+      if (idx !== -1) {
+        // Strip protocol+host, keep only the path prefix before our
+        // own filename — that prefix IS the site baseurl.
+        return scriptEl.src.slice(0, idx).replace(/^https?:\/\/[^/]+/, '');
+      }
+    }
+    return '';
+  }
+
   var input = document.getElementById('docSearchInput');
   var typeFilter = document.getElementById('docTypeFilter');
   var pageSizeSelect = document.getElementById('docPageSize');
@@ -33,6 +66,14 @@
   var emptyEl = document.getElementById('docSearchEmpty');
   var errorEl = document.getElementById('docSearchError');
   var sortableHeaders = document.querySelectorAll('.doc-th-sortable');
+
+  // Nothing to do on any page that doesn't actually have the search
+  // widget on it — without this guard, addEventListener calls further
+  // down throw on null and take the rest of the page's scripts with
+  // them.
+  if (!input || !typeFilter || !pageSizeSelect || !resultsEl) {
+    return;
+  }
 
   var allDocs = [];
   var sortState = { column: 'title', direction: 'asc' };
@@ -296,7 +337,7 @@
     renderPagination(matches.length, pageSize);
   }
 
-  fetch((window.SITE_BASEURL || '') + '/assets/data/search_index.json')
+  fetch(resolveBaseUrl() + '/assets/data/search_index.json')
     .then(function (res) {
       if (!res.ok) throw new Error('search_index.json request failed: ' + res.status);
       return res.json();
