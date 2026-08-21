@@ -70,8 +70,11 @@
   // Nothing to do on any page that doesn't actually have the search
   // widget on it — without this guard, addEventListener calls further
   // down throw on null and take the rest of the page's scripts with
-  // them.
-  if (!input || !typeFilter || !pageSizeSelect || !resultsEl) {
+  // them. pageSizeSelect is intentionally NOT required here: it's a
+  // secondary control (page-size dropdown), and its absence shouldn't
+  // block search/results from working at all — getPageSize() below
+  // falls back to "show all" when it's missing.
+  if (!input || !typeFilter || !resultsEl) {
     return;
   }
 
@@ -251,6 +254,10 @@
   }
 
   function getPageSize() {
+    // pageSizeSelect may be null if that control isn't present in the
+    // page's HTML — default to showing everything on one page rather
+    // than throwing or silently rendering zero results.
+    if (!pageSizeSelect) return Infinity;
     var v = pageSizeSelect.value;
     return v === 'all' ? Infinity : parseInt(v, 10);
   }
@@ -357,7 +364,9 @@
 
   input.addEventListener('input', resetToFirstPage);
   typeFilter.addEventListener('change', resetToFirstPage);
-  pageSizeSelect.addEventListener('change', resetToFirstPage);
+  if (pageSizeSelect) {
+    pageSizeSelect.addEventListener('change', resetToFirstPage);
+  }
   sortableHeaders.forEach(function (th) {
     th.addEventListener('click', function () {
       var col = th.getAttribute('data-sort');
