@@ -183,7 +183,8 @@
       '<td><i class="ti ' + meta.icon + ' doc-result-icon" aria-hidden="true"></i>' +
       '<span class="doc-result-title">' + esc(doc.title) + '</span>' + categoriesHtml + '</td>' +
       '<td><div class="doc-conf-cell">' + confidenceBadgesHtml(doc) + '</div></td>' +
-      '<td><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span></td>';
+      '<td><div class="doc-type-cell"><span class="doc-result-type doc-type-' + esc(doc.doc_type) + '">' + esc(meta.label) + '</span>' +
+      '<span class="doc-row-view-cue">View <i class="ti ti-chevron-right" aria-hidden="true"></i></span></div></td>';
 
     tr.addEventListener('click', function (e) {
       // Clicking the categories disclosure (or a chip inside it once
