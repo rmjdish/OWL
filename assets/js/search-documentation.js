@@ -132,6 +132,27 @@
     return doc.topics && doc.topics.length ? doc.topics : (doc.topic ? [doc.topic] : []);
   }
 
+  // Category pages live at a predictable path derived from a topic
+  // breadcrumb's last segment, e.g. the leaf
+  // "Cross-sectional beta-amyloid status (phase 1) [603411]" maps to
+  // .../cat_pages/Cross-sectional_beta-amyloid_status_(phase_1)_603411.html
+  // — spaces become underscores and the trailing "[ID]" becomes a
+  // trailing "_ID" on the filename. Topics that don't end in a
+  // "[digits]" tag (malformed data, or a future format change) return
+  // null so the chip just renders as plain text instead of a broken
+  // link.
+  var CATEGORY_PAGE_PATH = '/docs/search_methods/browse_by_category/cat_pages/';
+
+  function categoryPageUrl(topic) {
+    if (!topic) return null;
+    var segments = topic.split('>');
+    var leaf = segments[segments.length - 1].trim();
+    var m = /^(.*?)\s*\[(\d+)\]\s*$/.exec(leaf);
+    if (!m) return null;
+    var slug = m[1].trim().replace(/\s+/g, '_') + '_' + m[2];
+    return resolveBaseUrl() + CATEGORY_PAGE_PATH + slug + '.html';
+  }
+
   function renderRow(doc, rowIndex) {
     var meta = typeMeta(doc.doc_type);
     var topics = docTopics(doc);
@@ -146,7 +167,13 @@
         '<details class="doc-category-details"' + (isOpen ? ' open' : '') + '>' +
         '<summary><i class="ti ti-chevron-right" aria-hidden="true"></i>' + label + '</summary>' +
         '<div class="doc-result-categories">' +
-        topics.map(function (t) { return '<span class="doc-category-chip">' + esc(t) + '</span>'; }).join('') +
+        topics.map(function (t) {
+          var url = categoryPageUrl(t);
+          if (url) {
+            return '<a class="doc-category-chip" href="' + esc(url) + '">' + esc(t) + '</a>';
+          }
+          return '<span class="doc-category-chip">' + esc(t) + '</span>';
+        }).join('') +
         '</div></details>';
     }
 
