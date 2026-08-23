@@ -137,7 +137,7 @@
     "housing":                      "ti-home-2",
     "marital":                      "ti-rings-wedding",
     "social networks":              "ti-network",
-    "fertility":                    "ti-baby",
+    "fertility":                    "ti-egg",
     "household":                    "ti-building-community",
     "life events":                  "ti-calendar-event",
     "menopause":                    "ti-gender-female",
