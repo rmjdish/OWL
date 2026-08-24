@@ -19,6 +19,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const DEBUG = true;
 
+  /* ── Give every section card a cycling colour class (section-color-1
+     through section-color-10, matching the palette in topics.css), so
+     pages with several .home-section blocks read as distinct sections
+     rather than one long purple block. Runs on ALL .home-section
+     elements, whether or not they have a headed h2/h3 — a plain intro
+     section still gets a colour. ── */
+  Array.from(document.querySelectorAll('.home-section')).forEach((el, i) => {
+    el.classList.add('section-color-' + ((i % 10) + 1));
+  });
+
   /* ── Find sections: .home-section elements with an h2[id] inside ── */
   const sections = Array.from(document.querySelectorAll('.home-section'))
     .map(el => {
