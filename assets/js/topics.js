@@ -19,41 +19,90 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const DEBUG = true;
 
-  /* ── Give every HEADED section card a cycling colour class
-     (section-color-1 through section-color-10, matching the palette
-     in topics.css). Only .home-section blocks that contain an h2/h3
-     heading enter the rotation — a headerless intro/welcome block
-     using the .home-section class (no heading, just intro text) is
-     skipped so it doesn't burn a colour slot. Without this, a
-     headerless first section would push every real, headed section
-     one slot out of sync — meaning the section the sidebar TOC
-     actually points to first would no longer be the purple one. ── */
-  /* ── Give every HEADED section card a cycling colour class
-     (section-color-1 through section-color-10, matching the palette
-     in topics.css). Only .home-section blocks that contain an h2/h3
-     heading enter the rotation — a headerless intro/welcome block
-     using the .home-section class (no heading, just intro text) is
-     skipped so it doesn't burn a colour slot. Without this, a
-     headerless first section would push every real, headed section
-     one slot out of sync — meaning the section the sidebar TOC
-     actually points to first would no longer be the purple one.
+  /* ── Colour every section, grouped where the page uses grouping ──
+     Some page templates (getting-started, documentation hub) insert
+     .gs-category-band divider bars to group several .home-section
+     cards under one labelled heading (e.g. "Search methods"). On
+     those pages, every card in a group shares ONE colour rather than
+     each rotating independently — otherwise five cards visually
+     grouped under one band end up in five unrelated colours, which
+     reads as chaotic rather than as a single labelled group.
 
-     The matching .sidebar-summary link for that section (found via
-     its heading's id) gets the SAME colour class, so the TOC entry's
-     text colour matches its section's heading colour, and its
-     active-state background matches that section's background. ── */
+     Plain pages with no bands (most topics pages) are unaffected:
+     with no band ever encountered, each headed .home-section still
+     gets its own colour in the rotation, exactly as before.
+
+     Only .home-section blocks with an h2/h3 heading enter the
+     rotation — a headerless intro block (no heading, just text)
+     using the .home-section class doesn't burn a colour slot, so it
+     can't push every real section one slot out of sync.
+
+     The matching .sidebar-summary link for each coloured section
+     (found via its heading's id) gets the SAME colour class, so the
+     TOC entry's text colour matches its section's heading colour,
+     and its active-state background matches that section's
+     background. Any sidebar link whose target never received a
+     colour — e.g. one pointing at a headerless welcome/intro block
+     instead of a real section — gets a neutral grey style instead of
+     staying default purple, so it can't be mistaken for section 1. ── */
   let colourIndex = 0;
-  Array.from(document.querySelectorAll('.home-section')).forEach(el => {
+  let groupColourClass = null;
+  let inGroup = false;
+
+  /* Known band → fixed colour mapping, matched by substring against
+     the band's class list. "search"-themed bands are always blue
+     (section-color-3), "explore"-themed bands are always amber
+     (section-color-7) — regardless of where they fall in the page —
+     so a page like "Where should I start?" keeps a stable identity
+     rather than whatever colour the rotation happens to land on.
+     A band whose class doesn't match either keyword falls back to
+     the normal auto-rotating colour. */
+  const FIXED_BAND_COLORS = [
+    ['search', 'section-color-3'],
+    ['explore', 'section-color-7']
+  ];
+  function fixedColorForBand(bandEl) {
+    const cls = bandEl.className;
+    for (let i = 0; i < FIXED_BAND_COLORS.length; i++) {
+      if (cls.indexOf(FIXED_BAND_COLORS[i][0]) !== -1) return FIXED_BAND_COLORS[i][1];
+    }
+    return null;
+  }
+
+  Array.from(document.querySelectorAll('.home-section, .gs-category-band')).forEach(el => {
+    if (el.classList.contains('gs-category-band')) {
+      const fixed = fixedColorForBand(el);
+      if (fixed) {
+        groupColourClass = fixed;
+      } else {
+        groupColourClass = 'section-color-' + ((colourIndex % 10) + 1);
+        colourIndex++;
+      }
+      inGroup = true;
+      return;
+    }
     if (el.classList.contains('no-auto-color')) return;
     const heading = el.querySelector('h2, h3');
     if (!heading) return;
-    const colorClass = 'section-color-' + ((colourIndex % 10) + 1);
+
+    let colorClass;
+    if (inGroup) {
+      colorClass = groupColourClass;
+    } else {
+      colorClass = 'section-color-' + ((colourIndex % 10) + 1);
+      colourIndex++;
+    }
     el.classList.add(colorClass);
     if (heading.id) {
       const link = document.querySelector('.sidebar-summary a[href="#' + heading.id + '"]');
       if (link) link.classList.add(colorClass);
     }
-    colourIndex++;
+  });
+
+  Array.from(document.querySelectorAll('.sidebar-summary a[href^="#"]')).forEach(link => {
+    if (!/section-color-\d+/.test(link.className)) {
+      link.classList.add('toc-neutral');
+    }
   });
 
   /* ── Find sections: .home-section elements with an h2[id] inside ── */
