@@ -19,6 +19,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const DEBUG = true;
 
+  /* ── Getting Started / Documentation pages (anything loading
+     getting-started.css) already ship a complete, hand-built colour
+     system of their own — every .home-section carries a specific
+     gs-card-* class with a permanent, deliberately-chosen colour, and
+     getting-started.css already matches each sidebar link's colour
+     and active-state highlight to it via :target/.active selectors.
+     The automatic rainbow/group colouring below is built for the
+     Topics section, which has no such system — on Getting Started
+     pages it would only fight with the existing design, so it's
+     skipped entirely here. The scroll-driven active-section
+     highlighting further down still runs as normal either way, since
+     getting-started.css's own .active rules depend on it. ── */
+  const usesGettingStartedColours = !!document.querySelector('link[href*="getting-started.css"]');
+
+  if (!usesGettingStartedColours) {
+
   /* ── Colour every section, grouped where the page uses grouping ──
      Some page templates (getting-started, documentation hub) insert
      .gs-category-band divider bars to group several .home-section
@@ -104,6 +120,8 @@ document.addEventListener('DOMContentLoaded', function () {
       link.classList.add('toc-neutral');
     }
   });
+
+  } // end !usesGettingStartedColours
 
   /* ── Find sections: .home-section elements with an h2[id] inside ── */
   const sections = Array.from(document.querySelectorAll('.home-section'))
