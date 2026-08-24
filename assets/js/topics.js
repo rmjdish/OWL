@@ -19,14 +19,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const DEBUG = true;
 
-  /* ── Give every section card a cycling colour class (section-color-1
-     through section-color-10, matching the palette in topics.css), so
-     pages with several .home-section blocks read as distinct sections
-     rather than one long purple block. Runs on ALL .home-section
-     elements, whether or not they have a headed h2/h3 — a plain intro
-     section still gets a colour. ── */
-  Array.from(document.querySelectorAll('.home-section')).forEach((el, i) => {
-    el.classList.add('section-color-' + ((i % 10) + 1));
+  /* ── Give every HEADED section card a cycling colour class
+     (section-color-1 through section-color-10, matching the palette
+     in topics.css). Only .home-section blocks that contain an h2/h3
+     heading enter the rotation — a headerless intro/welcome block
+     using the .home-section class (no heading, just intro text) is
+     skipped so it doesn't burn a colour slot. Without this, a
+     headerless first section would push every real, headed section
+     one slot out of sync — meaning the section the sidebar TOC
+     actually points to first would no longer be the purple one. ── */
+  let colourIndex = 0;
+  Array.from(document.querySelectorAll('.home-section')).forEach(el => {
+    if (el.classList.contains('no-auto-color')) return;
+    if (!el.querySelector('h2, h3')) return;
+    el.classList.add('section-color-' + ((colourIndex % 10) + 1));
+    colourIndex++;
   });
 
   /* ── Find sections: .home-section elements with an h2[id] inside ── */
