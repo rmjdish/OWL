@@ -28,11 +28,31 @@ document.addEventListener('DOMContentLoaded', function () {
      headerless first section would push every real, headed section
      one slot out of sync — meaning the section the sidebar TOC
      actually points to first would no longer be the purple one. ── */
+  /* ── Give every HEADED section card a cycling colour class
+     (section-color-1 through section-color-10, matching the palette
+     in topics.css). Only .home-section blocks that contain an h2/h3
+     heading enter the rotation — a headerless intro/welcome block
+     using the .home-section class (no heading, just intro text) is
+     skipped so it doesn't burn a colour slot. Without this, a
+     headerless first section would push every real, headed section
+     one slot out of sync — meaning the section the sidebar TOC
+     actually points to first would no longer be the purple one.
+
+     The matching .sidebar-summary link for that section (found via
+     its heading's id) gets the SAME colour class, so the TOC entry's
+     text colour matches its section's heading colour, and its
+     active-state background matches that section's background. ── */
   let colourIndex = 0;
   Array.from(document.querySelectorAll('.home-section')).forEach(el => {
     if (el.classList.contains('no-auto-color')) return;
-    if (!el.querySelector('h2, h3')) return;
-    el.classList.add('section-color-' + ((colourIndex % 10) + 1));
+    const heading = el.querySelector('h2, h3');
+    if (!heading) return;
+    const colorClass = 'section-color-' + ((colourIndex % 10) + 1);
+    el.classList.add(colorClass);
+    if (heading.id) {
+      const link = document.querySelector('.sidebar-summary a[href="#' + heading.id + '"]');
+      if (link) link.classList.add(colorClass);
+    }
     colourIndex++;
   });
 
