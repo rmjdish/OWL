@@ -44,6 +44,8 @@
     "writing documentation for owl":		"ti-file-pencil",
 	"create documentation":		"ti-forms",
 	"using doc builder":		"ti-forms",
+	"faqs":						"ti-help-circle",
+
 
     /* Section labels handled separately */
     /* Questionnaire waves */
