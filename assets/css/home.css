@@ -147,22 +147,24 @@
    state, so opening the section (either from the accordion itself
    or by clicking this same sidebar link) is what reveals it. */
 
-/* Belt-and-braces bullet removal for the nested sub-item list — the
+/* Belt-and-braces bullet removal for every row in the sidebar — the
    generic ".sidebar-summary ul { list-style:none }" rule stopped being
-   enough once these moved two levels deep, so this covers every
-   possible source: the li's own list-style-type, the native ::marker
+   reliable once the markup nested a level deeper, and it turns out the
+   dots were showing on the TOP-LEVEL rows too, not just the sub-items,
+   so this now targets every <li> here rather than just .sb-sub. Covers
+   every possible source: list-style-type, the native ::marker
    pseudo-element some browsers use instead of list-style, and a
    theme-injected ::before dot if one exists. */
-.home-page .sidebar-summary li.sb-sub {
+.home-page .sidebar-summary li {
   list-style: none !important;
   list-style-type: none !important;
 }
-.home-page .sidebar-summary li.sb-sub::marker {
+.home-page .sidebar-summary li::marker {
   content: none !important;
   display: none !important;
 }
-.home-page .sidebar-summary li.sb-sub::before,
-.home-page .sidebar-summary li.sb-sub a::before {
+.home-page .sidebar-summary li::before,
+.home-page .sidebar-summary li a::before {
   content: none !important;
   display: none !important;
 }
@@ -183,9 +185,14 @@
 }
 
 /* The caret sits inside that reserved gutter rather than inline
-   before the text — a plain solid triangle (no background box),
-   pinned to the true left edge of the row, rotating from ▸ to ▾ on
-   open. It only appears on rows that actually expand.
+   before the text — a plain solid triangle (no background box). It
+   only appears on rows that actually expand.
+   Pulled to a NEGATIVE left offset so it sits inside the sidebar's
+   own inner padding (16px 18px on .sidebar-summary), close to the
+   true visible edge of the rounded card — left:0 only reached the
+   start of the text content area, which is still ~18px in from the
+   card's actual boundary. -12px stays safely inside that padding zone
+   so it can't get clipped by the container's scroll/overflow.
    Anchored to a fixed top offset (not vertically centered) so it
    always lines up with the icon on the FIRST line of the label —
    centering across the whole box was pulling it down toward the
@@ -193,7 +200,7 @@
    top of the icon instead of beside it. */
 .home-page .sidebar-summary .sb-caret {
   position: absolute;
-  left: 0;
+  left: -12px;
   top: 6px;
   width: 0;
   height: 0;
