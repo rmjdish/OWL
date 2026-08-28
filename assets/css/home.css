@@ -126,6 +126,25 @@
 .home-page .sidebar-summary li { margin-bottom: 3px !important; }
 .home-page .sidebar-summary li.sb-sub { margin-bottom: 1px !important; }
 
+/* Thin, unobtrusive scrollbar — only ever visible if expanding every
+   section at once genuinely overflows the fixed max-height; no native
+   up/down arrow buttons (those are what showed as "grey dots"). */
+.home-page .sidebar-summary {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(106,13,173,0.35) transparent;
+}
+.home-page .sidebar-summary::-webkit-scrollbar { width: 6px; }
+.home-page .sidebar-summary::-webkit-scrollbar-track { background: transparent; }
+.home-page .sidebar-summary::-webkit-scrollbar-thumb {
+  background: rgba(106,13,173,0.35);
+  border-radius: 10px;
+}
+.home-page .sidebar-summary::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* ── Collapsible sub-item groups ──
    Each sb-parent's children live in a nested .sb-subgroup that is
    collapsed to zero height by default. It only expands once the
@@ -133,27 +152,57 @@
    directly off the matching accordion section's aria-expanded
    state, so opening the section (either from the accordion itself
    or by clicking this same sidebar link) is what reveals it. */
-.home-page .sidebar-summary li.sb-parent > a {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+
+/* Every top-level row (direct children of the sidebar's <ul>) reserves
+   the same left gutter, whether or not it actually has a caret — this
+   is what keeps "About This Resource" and "Getting Started" starting
+   at the same x-position instead of the caret pushing parent labels
+   to the right. */
+.home-page .sidebar-summary > ul > li > a {
+  position: relative;
+  padding-left: 28px;
 }
 
+.home-page .sidebar-summary li.sb-parent > a {
+  display: block;
+}
+
+/* The caret sits inside that reserved gutter rather than inline
+   before the text, and is its own small rounded chip rather than a
+   floating character — this is what makes "this row expands" obvious
+   at a glance, and it visually marks exactly which rows are
+   expandable vs. plain links (which get no chip at all). */
 .home-page .sidebar-summary .sb-caret {
-  display: inline-block;
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
   font-size: 9px;
-  flex-shrink: 0;
-  transition: transform 0.2s;
+  line-height: 1;
+  color: #fff;
+  background: rgba(58, 0, 102, 0.55);
+  border-radius: 4px;
+  transition: transform 0.2s ease, background 0.15s ease;
+}
+
+.home-page .sidebar-summary li.sb-parent > a:hover .sb-caret {
+  background: rgba(58, 0, 102, 0.85);
 }
 
 .home-page .sidebar-summary li.sb-parent.open > a .sb-caret {
-  transform: rotate(90deg);
+  transform: translateY(-50%) rotate(90deg);
 }
 
 .home-page .sidebar-summary .sb-subgroup {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.25s ease;
+  min-height: 0;
 }
 
 .home-page .sidebar-summary li.sb-parent.open .sb-subgroup {
@@ -165,6 +214,11 @@
   list-style: none !important;
   margin: 0 !important;
   padding: 0 !important;
+  min-height: 0; /* the actual fix: grid items default to
+                     min-height:auto, which was overriding the 0fr
+                     row track and leaving real height behind even
+                     while "collapsed" — that's what was pushing the
+                     sidebar into overflow and showing a scrollbar */
 }
 
 .home-page .sidebar-summary a {
