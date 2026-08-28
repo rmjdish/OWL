@@ -147,14 +147,35 @@
    state, so opening the section (either from the accordion itself
    or by clicking this same sidebar link) is what reveals it. */
 
+/* Belt-and-braces bullet removal for the nested sub-item list — the
+   generic ".sidebar-summary ul { list-style:none }" rule stopped being
+   enough once these moved two levels deep, so this covers every
+   possible source: the li's own list-style-type, the native ::marker
+   pseudo-element some browsers use instead of list-style, and a
+   theme-injected ::before dot if one exists. */
+.home-page .sidebar-summary li.sb-sub {
+  list-style: none !important;
+  list-style-type: none !important;
+}
+.home-page .sidebar-summary li.sb-sub::marker {
+  content: none !important;
+  display: none !important;
+}
+.home-page .sidebar-summary li.sb-sub::before,
+.home-page .sidebar-summary li.sb-sub a::before {
+  content: none !important;
+  display: none !important;
+}
+
 /* Every top-level row (direct children of the sidebar's <ul>) reserves
    the same left gutter, whether or not it actually has a caret — this
    is what keeps "About This Resource" and "Getting Started" starting
    at the same x-position instead of the caret pushing parent labels
-   to the right. */
+   to the right. Widened further to guarantee clearance between the
+   caret and the icon that follows it. */
 .home-page .sidebar-summary > ul > li > a {
   position: relative;
-  padding-left: 22px;
+  padding-left: 30px;
 }
 
 .home-page .sidebar-summary li.sb-parent > a {
@@ -162,9 +183,9 @@
 }
 
 /* The caret sits inside that reserved gutter rather than inline
-   before the text — a plain solid triangle (no background box), sat
-   close to the left edge, rotating from ▸ to ▾ on open. It only
-   appears on rows that actually expand.
+   before the text — a plain solid triangle (no background box),
+   pinned to the true left edge of the row, rotating from ▸ to ▾ on
+   open. It only appears on rows that actually expand.
    Anchored to a fixed top offset (not vertically centered) so it
    always lines up with the icon on the FIRST line of the label —
    centering across the whole box was pulling it down toward the
@@ -172,7 +193,7 @@
    top of the icon instead of beside it. */
 .home-page .sidebar-summary .sb-caret {
   position: absolute;
-  left: 4px;
+  left: 0;
   top: 6px;
   width: 0;
   height: 0;
