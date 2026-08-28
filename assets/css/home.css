@@ -183,7 +183,7 @@
    as you expanded its section. */
 .home-page .sidebar-summary > ul > li > a {
   position: relative;
-  padding-left: 30px !important;
+  padding-left: 32px !important;
 }
 
 .home-page .sidebar-summary li.sb-parent > a {
@@ -197,37 +197,55 @@
    own inner padding (16px 18px on .sidebar-summary), close to the
    true visible edge of the rounded card — left:0 only reached the
    start of the text content area, which is still ~18px in from the
-   card's actual boundary. -12px stays safely inside that padding zone
+   card's actual boundary. -16px stays safely inside that padding zone
    so it can't get clipped by the container's scroll/overflow.
-   Anchored to a fixed top offset (not vertically centered) so it
-   always lines up with the icon on the FIRST line of the label —
-   centering across the whole box was pulling it down toward the
-   middle of two-line labels like "Accessing NSHD Data", landing on
-   top of the icon instead of beside it. */
+   Built from two solid bars (::before/::after) rather than a
+   border-trick triangle or a text glyph — a plus (+) sign at rest
+   that rotates into a cross (×) when the section is open. This is a
+   more robust construction than the previous triangle (plain
+   rectangles, no border-color/box-model edge cases) and a very
+   familiar "expand/collapse" affordance. */
 .home-page .sidebar-summary .sb-caret {
   display: block;
   position: absolute;
-  left: -12px;
-  top: 6px;
-  width: 0;
-  height: 0;
+  left: -16px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
   font-size: 0;      /* hides the literal "▸" text character still sitting
-                         inside this span in the HTML — without this you get
-                         both that glyph AND the border-drawn triangle below,
-                         stacked on top of each other */
+                         inside this span in the HTML */
   line-height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 6px solid #6a0dad;
-  transition: transform 0.2s ease, border-left-color 0.15s ease;
 }
 
-.home-page .sidebar-summary li.sb-parent > a:hover .sb-caret {
-  border-left-color: #3a0066;
+.home-page .sidebar-summary .sb-caret::before,
+.home-page .sidebar-summary .sb-caret::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: #6a0dad;
+  transition: transform 0.25s ease, background 0.15s ease;
 }
 
-.home-page .sidebar-summary li.sb-parent.open > a .sb-caret {
+/* The vertical bar of the plus */
+.home-page .sidebar-summary .sb-caret::after {
   transform: rotate(90deg);
+}
+
+.home-page .sidebar-summary li.sb-parent > a:hover .sb-caret::before,
+.home-page .sidebar-summary li.sb-parent > a:hover .sb-caret::after {
+  background: #3a0066;
+}
+
+/* Open state: rotate both bars 45° so the plus becomes a cross (×) */
+.home-page .sidebar-summary li.sb-parent.open > a .sb-caret::before {
+  transform: rotate(45deg);
+}
+.home-page .sidebar-summary li.sb-parent.open > a .sb-caret::after {
+  transform: rotate(135deg);
 }
 
 .home-page .sidebar-summary .sb-subgroup {
