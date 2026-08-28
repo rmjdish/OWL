@@ -1,19 +1,1311 @@
----
+"""
+generate_data_coverage.py
+=========================
+Reads NSHD_Data_Dictionary_Public.json and writes docs/data-coverage.html.
+
+Usage:
+    python generate_data_coverage.py
+
+Edit the CONFIG block below to change input/output paths.
+
+Changelog (this version):
+- Topic chart and form table are now sorted by variable count, descending
+  (instead of a fixed hand-maintained order). "Other forms" is still pinned
+  to the bottom of the form table since it's a catch-all bucket, not a
+  meaningful category to rank.
+- New: Longitudinal tracking depth section (sweep-count histogram +
+  longest-tracked-variable headline stat).
+- New: UKLLC harmonised dataset coverage section.
+- New: Topic x collection-year heatmap (this finishes off the
+  TOPIC_HM_COLORS / HM_YEAR_COLS / topic_year plumbing that already existed
+  in this script but was never rendered).
+- New: a self-updating footnote under the "by form" table that flags any
+  sub-study whose Form-based count differs from its Subtopic-1 category
+  count, and explains which other instruments picked up the difference.
+  This is computed from the data each run, so it won't go stale.
+"""
+
+import json
+import re
+import os
+import io
+from collections import Counter, defaultdict
+from datetime import date
+
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import mm
+from reportlab.lib import colors as rl_colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.platypus import (
+    BaseDocTemplate, PageTemplate, Frame, Paragraph, Spacer, PageBreak,
+    Table, TableStyle, Image, KeepTogether,
+)
+from reportlab.platypus.tableofcontents import TableOfContents
+
+# ── CONFIG ────────────────────────────────────────────────────────────────────
+INPUT_JSON     = "NSHD_Data_Dictionary_Public.json"
+OUTPUT_MD      = "data-coverage.html"
+SITE_BASEURL   = "/OWL"          # Jekyll base URL
+PDF_OUTPUT_DIR = "assets/pdfs/data-coverage"             # relative to repo root
+PDF_FILENAME   = "data-coverage.pdf"
+# Hardcoded absolute path, not a Liquid `{{ site.baseurl }}` tag — matches the
+# convention used everywhere else in this codebase (see build_pages.py's
+# PDF_LINK_BASE, LINK_BASE, CATEGORY_LINK_BASE etc., which are all baked-in
+# absolute paths rather than Liquid-templated). Mixing the two was the cause
+# of the broken "data-coverage.htm is not available" download link.
+# Path matches build_pages.py's PDF_LINK_BASE convention (assets/pdfs/...).
+PDF_SITE_PATH  = f"{SITE_BASEURL}/assets/pdfs/data-coverage/{PDF_FILENAME}"
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+# ── Year → representative integer for life-stage mapping ─────────────────────
+def _year_to_int(year_str: str) -> int:
+    """Return the first (or only) year from a string like '2006-10' or '2018-2021'."""
+    if not year_str:
+        return 0
+    # Handle 4-digit range like "2018-2021"
+    m = re.match(r"(\d{4})-(\d{4})", year_str.strip())
+    if m:
+        return int(m.group(1))
+    # Handle short range like "2006-10"
+    m = re.match(r"(\d{4})-\d{2}$", year_str.strip())
+    if m:
+        return int(m.group(1))
+    # Plain year
+    m = re.match(r"(\d{4})", year_str.strip())
+    if m:
+        return int(m.group(1))
+    return 0
+
+
+def _life_stage(year_str: str) -> str:
+    """Map a collection year to a life stage (cohort born 1946)."""
+    y = _year_to_int(year_str)
+    if y == 0:
+        return "Unknown"
+    age = y - 1946
+    if age <= 5:   return "Birth–5"
+    if age <= 15:  return "Age 6–15"
+    if age <= 25:  return "Age 16–25"
+    if age <= 35:  return "Age 26–35"
+    if age <= 45:  return "Midlife 36–45"
+    if age <= 55:  return "Age 46–55"
+    if age <= 65:  return "Age 56–65"
+    if age <= 75:  return "Age 66–75"
+    return "Age 76+"
+
+
+# ── Form → display group mapping ─────────────────────────────────────────────
+FORM_GROUPS = {
+    "Diet diaries":                  ["Diet Diary"],
+    "Blood / Urine / Saliva assays":  ["Blood assays", "Urine assays", "Saliva assays"],
+    "Women's Health Questionnaire":  ["Woman's Health Questionnaire"],
+    "Insight 46 (phases 1 & 2)":    ["Insight46 - Phase 1", "Insight46 - Phase 2"],
+    "Postal questionnaire":          ["Postal questionnaire", "A - Main questionnaire", "H6 - Postal questionnaire",
+                                      "H2 - Postal questionnaire", "H5 - Postal questionnaire",
+                                      "H3 - Postal questionnaire", "Postal Questionnaire",
+                                      "Postal questionnaire and GP validation form",
+                                      "Postal questionnaire and Thyroid GP Validation form",
+                                      "Section A - Main questionnaire", "Section B - Main questionnaire",
+                                      "Section C - Main questionnaire", "Section D - Self rating questionnaire",
+                                      "Cost of living questionnaire", "T1 - Maudsley and cognitive test"],
+    "Nurse Clinic/Home visit":   ["Nurse schedule", "A - Main CAPI questionnaire", "Home visit",
+                                      "Home visit - Physical activity questionnaire", "Pre-Assessment Booklet",
+                                      "Physical activity questionnaire", "Six day call", "AD8 dementia screening interview"],
+    "DNA / Genomics":                ["DNA", "Telomeres"],
+    "Covid questionnaires":          ["Covid wave 1", "Covid wave 2", "Covid wave 3"],
+    "Imaging and devices (Ultrasound, Dicom, Actiheart moniter etc)": ["Ultrasound", "SphygmoCor", "DICOM", "Actiheart monitor", "X-Ray","ECG", "DXA Scan"],
+    "Self-completion booklet":       ["B - Self completion", "C - Self completion", "Self completion",
+                                      "B - Present State Examination",
+                                      "C - Disability Supplementary questions"],
+    "Mother's Interview":                ["A5 - Mother's interview by nurse", "A6 - Mother's interview by nurse", "A7 - Interview by the nurse",
+                                      "AN1 - Face to face interview of mother by health visitor",
+                                      "AN2 - Face to face interview of mother by health visitor", "AN2 - Mother's interview by nurse",
+                                      "AN3 - Face to face interview of mother by health visitor", "AN3 - Mother's interview by nurse",
+                                      "H1 -Health visitor interview with study member"],
+   "Teacher's questionnaire":       ["S8a - Teacher's questionnaire", "S7a - Teacher's questionnaire", "S7a - Teacher's Questionnaire",  "S.4a - School Teacher's questionnaire"],
+   "Doctor's examination":      ["D4 - Examination by the school doctor", "D3 - Examination by the school doctor", 
+                                 "D2 - Examination by the school doctor", "D1 - Examination by the school doctor"],
+   "Cognitive tests":           ["Paper Test Booklet", "Paper test", "NF3 - Test booklets", "NF2 - Mental ability and scholastic attainment", 
+                                "NF4 - Pupils questionnaire", "ACEIII questionnaire"],
+    "Myofit sub-study":              ["Myofit sub-study"],
+}
+
+# Build reverse lookup
+_FORM_TO_GROUP = {}
+for group, forms in FORM_GROUPS.items():
+    for f in forms:
+        _FORM_TO_GROUP[f] = group
+
+
+def _form_group(form_str: str) -> str:
+    return _FORM_TO_GROUP.get(form_str, "Other forms")
+
+
+# Named studies/sub-studies where the Form group can diverge from the
+# Subtopic-1 category (some of a study's variables get collected via another
+# instrument's form, e.g. a cognitive test, and so land under that
+# instrument's row in the "by form" table instead of the study's own row).
+# Maps Form group name -> Subtopic 1 base name to reconcile against.
+# Add a line here for any future named study to get an auto-generated
+# footnote if the same pattern shows up.
+SPECIAL_STUDY_GROUPS = {
+    "Myofit sub-study":             "Myofit",
+    "Insight 46 (phases 1 & 2)":    "Insight46",
+}
+
+
+# ── UKLLC dataset ID → short human-readable description ──────────────────────
+# Keyed on the exact raw identifier from "UKLLC Dataset Name(s)". Any raw ID
+# not listed here falls back to an auto-derived name (see
+# _ukllc_display_name) and is flagged in the console warnings, same pattern
+# as the unmapped-forms check above.
+UKLLC_DATASET_LABELS = {
+    "NSHD46_CAT-5211_EPIC_v0001_20260812":            "Diet (EPIC food frequency questionnaire)",
+    "NSHD46_CAT-5154_Emplymnt_Hist_v0001_20260813":   "Employment history",
+    "NSHD46_CAT-5152_Household_v0001_20260813":       "Household composition",
+    "NSHD46_CAT-51014_Heart_Circ_v0001_20260812":     "Heart and circulatory health",
+    "NSHD46_CAT-2011_Blood_Biochemistry_v0001_20260814": "Blood biochemistry",
+    "NSHD46_CAT-51013_Respiratory_v0001_20260812":    "Respiratory health",
+    "NSHD46_CAT-51015_Endo_Metab_v0001_20260812":     "Endocrine and metabolic health",
+    "NSHD46_CAT-1103_BP_v0001_20260814":              "Blood pressure",
+    "NSHD46_CAT-5151_Econ_Circ_v0001_20260813":       "Economic circumstances",
+    "NSHD46_CAT-5251_Smoking_v0001_20260812":         "Smoking history",
+    "NSHD46_CAT-11021_Anthropometry_v0001_20260812":  "Anthropometry (height, weight, body composition)",
+    "NSHD46_CAT-5252_Alcohol_v0001_20260812":         "Alcohol consumption",
+    "NSHD46_CAT-51021_Clin_disorder_v0001_20260812":  "Clinical disorders",
+    "NSHD46_CAT-51012_Cancer_v0001_20260812":         "Cancer diagnoses",
+    "NSHD46_CAT-5155_Education_v0001_20260813":       "Education history",
+    "NSHD46_APOE_v0001_20260422":                     "APOE genotype",
+}
+
+
+# ── Year display order ─────────────────────────────────────────────────────────
+# Fixed display order for the by-year chart (chronological)
+YEAR_ORDER = [
+    "1946","1948","1950","1952","1953","1954","1955","1956","1957","1959",
+    "1961","1962","1965","1966","1968","1969","1971","1972","1977","1982",
+    "1989","1993","1994","1995","1996","1997","1998","1999","2000","2003",
+    "2005","2006-10","2014","2015","2015-2018","2018-2021","2020","2020-2024",
+    "2021","2022","2023","2025"
+]
+
+LIFE_STAGE_ORDER = [
+    "Birth–5","Age 6–15","Age 16–25","Age 26–35",
+    "Midlife 36–45","Age 46–55","Age 56–65","Age 66–75","Age 76+"
+]
+
+
+# ── Load and aggregate ────────────────────────────────────────────────────────
+def load_and_aggregate(path: str) -> dict:
+    with open(path, "r", encoding="utf-8") as f:
+        records = json.load(f)
+
+    total = len(records)
+
+    topic_counts  = Counter()
+    stage_counts  = Counter()
+    year_counts   = Counter()
+    form_counts   = Counter()
+    form_years    = defaultdict(set)   # group → set of years
+
+    # New aggregations
+    topic_year      = defaultdict(lambda: defaultdict(int))
+    subtopic_depth  = [0, 0, 0, 0]   # s1, s2, s3, s4
+    field_id_years  = defaultdict(set)
+    field_id_info   = {}             # fid -> (NSHD Variable Name, Variable Label)
+
+    subtopic1_counts = Counter()             # Subtopic 1 base name -> variable count
+    subtopic1_forms  = defaultdict(Counter)  # Subtopic 1 base name -> Counter(Form -> count)
+
+    ukllc_counts          = Counter()   # UKLLC dataset name -> variable count
+    ukllc_variables_total = 0           # variables linked to *any* UKLLC dataset
+
+    for r in records:
+        topic = r.get("Topic", "").split("[")[0].strip()
+        year  = (r.get("Year of collection") or "").strip()
+        form  = (r.get("Form") or "").strip()
+        group = _form_group(form)
+
+        if topic:
+            topic_counts[topic] += 1
+        if year:
+            year_counts[year] += 1
+            stage_counts[_life_stage(year)] += 1
+            if topic:
+                topic_year[topic][year] += 1
+            fid = r.get("Showcase Field ID")
+            if fid:
+                field_id_years[fid].add(year)
+                if fid not in field_id_info:
+                    field_id_info[fid] = (
+                        r.get("NSHD Variable Name", "") or "",
+                        r.get("Variable Label", "") or "",
+                    )
+
+        for si, key in enumerate(["Subtopic 1","Subtopic 2","Subtopic 3","Subtopic 4"]):
+            if r.get(key,"").strip():
+                subtopic_depth[si] += 1
+
+        sub1_raw = (r.get("Subtopic 1") or "").strip()
+        if sub1_raw:
+            sub1_base = sub1_raw.split("[")[0].strip()
+            subtopic1_counts[sub1_base] += 1
+            if form:
+                subtopic1_forms[sub1_base][form] += 1
+
+        if group:
+            form_counts[group] += 1
+            if year:
+                form_years[group].add(year)
+
+        ukllc_raw = r.get("UKLLC Dataset Name(s)")
+        ukllc_raw = ukllc_raw.strip() if isinstance(ukllc_raw, str) else ""
+        if ukllc_raw:
+            ukllc_variables_total += 1
+            for name in re.split(r"[;,]", ukllc_raw):
+                name = name.strip()
+                if name:
+                    ukllc_counts[name] += 1
+
+    # ── Warnings for unmapped items ──────────────────────────────────────────
+    unknown_years = sorted(set(year_counts.keys()) - set(YEAR_ORDER))
+    if unknown_years:
+        print(f"  ⚠  New years not in YEAR_ORDER (add these to keep chart complete):")
+        for y in unknown_years:
+            print(f"       {y!r}  ({year_counts[y]} variables)")
+
+    all_forms_in_data = set(
+        r.get("Form", "").strip() for r in records
+        if r.get("Form", "").strip()
+    )
+    unmapped_forms = sorted(all_forms_in_data - set(_FORM_TO_GROUP.keys()))
+    if unmapped_forms:
+        print(f"  ⚠  Forms not in FORM_GROUPS (currently counted under 'Other forms'):")
+        for f in unmapped_forms:
+            n = sum(1 for r in records if r.get("Form","").strip() == f)
+            print(f"       {f!r}  ({n} variables)")
+
+    unmapped_ukllc = sorted(set(ukllc_counts.keys()) - set(UKLLC_DATASET_LABELS.keys()))
+    if unmapped_ukllc:
+        print(f"  ⚠  UKLLC dataset IDs not in UKLLC_DATASET_LABELS (using auto-derived name):")
+        for u in unmapped_ukllc:
+            print(f"       {u!r}  ({ukllc_counts[u]} variables) -> {_ukllc_display_name(u)!r}")
+
+    if not unknown_years and not unmapped_forms and not unmapped_ukllc:
+        print("  ✓  All years, forms, and UKLLC datasets are mapped — no action needed")
+
+    # ── Longitudinal depth: sweep-count histogram + most-tracked field ───────
+    # Ranked by NUMBER OF SWEEPS first (that's what "tracking depth" means),
+    # with span as a tiebreaker only — a field collected 27 times over 77
+    # years is a stronger "depth" story than one collected 15 times over the
+    # same 77-year window, even though both technically have the same span.
+    sweep_histogram = Counter()   # n_sweeps -> number of Field IDs with that many sweeps
+    most_tracked     = None       # (n_sweeps, span_years, fid, sorted_years, var_name, label)
+
+    for fid, years in field_id_years.items():
+        n = len(years)
+        sweep_histogram[n] += 1
+        if n >= 2:
+            yints = [_year_to_int(y) for y in years]
+            span = max(yints) - min(yints)
+            if most_tracked is None or (n, span) > (most_tracked[0], most_tracked[1]):
+                name, label = field_id_info.get(fid, ("", ""))
+                most_tracked = (n, span, fid, sorted(years, key=_year_to_int), name, label)
+
+    multi_sweep  = sum(1 for v in field_id_years.values() if len(v) > 1)
+    unique_fids  = len(field_id_years)
+
+    return {
+        "total":            total,
+        "topic_counts":     topic_counts,
+        "stage_counts":     stage_counts,
+        "year_counts":      year_counts,
+        "form_counts":      form_counts,
+        "form_years":       form_years,
+        "topic_year":       dict(topic_year),
+        "subtopic_depth":   subtopic_depth,
+        "multi_sweep":      multi_sweep,
+        "single_sweep":     unique_fids - multi_sweep,
+        "unique_fids":      unique_fids,
+        "subtopic1_counts": subtopic1_counts,
+        "subtopic1_forms":  subtopic1_forms,
+        "sweep_histogram":  sweep_histogram,
+        "most_tracked":     most_tracked,
+        "ukllc_counts":          ukllc_counts,
+        "ukllc_variables_total": ukllc_variables_total,
+    }
+
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+def _js_list(values) -> str:
+    """Format a Python list as a JS array literal."""
+    return "[" + ",".join(str(v) for v in values) + "]"
+
+
+def _js_str_list(strings) -> str:
+    return "[" + ",".join("'" + s.replace("'", "\\'") + "'" for s in strings) + "]"
+
+
+def _fmt(n: int) -> str:
+    return f"{n:,}"
+
+
+def _year_tags(years_set: set) -> str:
+    """Sort years and return HTML span tags."""
+    def sort_key(y):
+        return _year_to_int(y)
+    sorted_years = sorted(years_set, key=sort_key)
+    return "".join(f'<span class="year-tag">{y}</span>' for y in sorted_years)
+
+
+def _bar_pct(count: int, max_count: int) -> int:
+    return round(count / max_count * 100) if max_count else 0
+
+
+def _hex_to_rgb(hex_color: str):
+    hex_color = hex_color.lstrip("#")
+    return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+
+# ── Per-section colour palette ────────────────────────────────────────────
+# Every page section gets its own accent colour (a tinted background, a left
+# border, and a matching heading icon) so consecutive sections are visually
+# distinct instead of repeating the same card style. Colours are reused from
+# TOPIC_HM_COLORS plus the site's brand purple, so this stays one consistent
+# palette rather than introducing a second, unrelated colour scheme.
+SECTION_COLORS = {
+    "overview":           "#6a0dad",
+    "by-topic":           "#534AB7",
+    "topic-by-year":      "#BA7517",
+    "category-depth":     "#185FA5",
+    "multi-sweep":        "#639922",
+    "longitudinal-depth": "#D4537E",
+    "by-life-stage":      "#993C1D",
+    "by-year":            "#0F6E56",
+    "by-form":            "#5F5E5A",
+    "ukllc":              "#0891B2",
+}
+
+
+def _section_style(section_id: str, extra: str = "") -> str:
+    """Inline style for a section card: tinted background + accent left
+    border, unique per section. `extra` merges in any additional inline CSS
+    a given section already needs (e.g. 'margin-top:-10px;')."""
+    hexc = SECTION_COLORS.get(section_id, "#6a0dad")
+    r, g, b = _hex_to_rgb(hexc)
+    return f'background:rgba({r},{g},{b},0.06);border-left:5px solid {hexc};border-radius:10px;{extra}'
+
+
+def _section_icon_style(section_id: str) -> str:
+    """Tint a section's <h2> icon to match its accent colour."""
+    return f'color:{SECTION_COLORS.get(section_id, "#6a0dad")};'
+
+
+def _sidebar_dot(section_id: str) -> str:
+    """A small coloured square shown before each sidebar link, matching the
+    accent colour of the section it points to."""
+    hexc = SECTION_COLORS.get(section_id, "#6a0dad")
+    return (
+        f'<span style="display:inline-block;width:9px;height:9px;'
+        f'border-radius:2px;background:{hexc};flex-shrink:0;"></span>'
+    )
+
+
+def _ukllc_display_name(raw: str) -> str:
+    """Preferred short description from UKLLC_DATASET_LABELS; falls back to
+    an auto-derived name (e.g. 'NSHD46_CAT-5211_EPIC_v0001_20260812' ->
+    'EPIC') for any dataset ID not yet in the lookup table."""
+    if raw in UKLLC_DATASET_LABELS:
+        return UKLLC_DATASET_LABELS[raw]
+    name = re.sub(r"^NSHD46_CAT-\d+_", "", raw)
+    name = re.sub(r"^NSHD46_", "", name)
+    name = re.sub(r"_v\d+_\d+$", "", name)
+    name = name.replace("_", " ").strip()
+    return name or raw
+
+
+# ── Form table rows (sorted by count, descending; "Other forms" pinned last) ─
+def _form_table_rows(form_counts, form_years) -> str:
+    max_count = max(form_counts.values()) if form_counts else 1
+
+    items = [(g, c) for g, c in form_counts.items() if c > 0 and g != "Other forms"]
+    items.sort(key=lambda x: -x[1])
+    if form_counts.get("Other forms", 0) > 0:
+        items.append(("Other forms", form_counts["Other forms"]))
+
+    rows = []
+    for group, count in items:
+        pct = _bar_pct(count, max_count)
+        if group == "Other forms":
+            years_html = '<span style="font-size:11px;color:#666;font-style:italic;">Various — spanning 1946 to present including early childhood measures and specialist instruments</span>'
+        else:
+            years_html = _year_tags(form_years.get(group, set()))
+        rows.append(
+            f'        <tr><td><strong>{group}</strong></td>'
+            f'<td>{_fmt(count)}<div class="form-bar-wrap"><div class="form-bar" style="width:{pct}%"></div></div></td>'
+            f'<td>{years_html}</td></tr>'
+        )
+    return "\n".join(rows)
+
+
+def _form_category_note(form_counts, subtopic1_counts, subtopic1_forms) -> str:
+    """
+    Self-updating footnote: for every named study/sub-study whose Form group
+    is listed in SPECIAL_STUDY_GROUPS, compare its Form-based count against
+    the matching Subtopic-1 category count. If they differ, explain which
+    other instruments picked up the difference. Returns "" if everything
+    matches (nothing to flag).
+
+    To flag a new named study, just add one line to SPECIAL_STUDY_GROUPS
+    mapping its Form group name to its Subtopic 1 base name.
+    """
+    notes = []
+    for group, sub1_base in SPECIAL_STUDY_GROUPS.items():
+        form_count = form_counts.get(group, 0)
+
+        match_key = None
+        for sub1 in subtopic1_counts:
+            if sub1_base.lower() == sub1.lower() or sub1_base.lower() in sub1.lower():
+                match_key = sub1
+                break
+        if not match_key:
+            continue
+
+        cat_count = subtopic1_counts[match_key]
+        diff = cat_count - form_count
+        if diff <= 0:
+            continue
+
+        breakdown = subtopic1_forms.get(match_key, Counter())
+        others = [(f, n) for f, n in breakdown.items() if _form_group(f) != group]
+        others.sort(key=lambda x: -x[1])
+        others_str = "; ".join(f"{_fmt(n)} via {f}" for f, n in others[:4])
+
+        notes.append(
+            f'{_fmt(diff)} variables categorised under the {match_key} study were '
+            f'collected using another instrument ({others_str}) and are counted under '
+            f'that instrument\'s row above rather than under "{group}".'
+        )
+
+    if not notes:
+        return ""
+
+    body = " ".join(notes)
+    return (
+        '    <p style="font-size:11.5px;color:#666;margin:10px 0 0;font-style:italic;'
+        'line-height:1.6;">Note: this table groups variables by the instrument used to '
+        f'collect them (Form), which can differ from their category classification '
+        f'(Subtopic). {body}</p>\n'
+    )
+
+
+# ── Heatmap colours per topic ─────────────────────────────────────────────────
+TOPIC_HM_COLORS = {
+    "Questionnaire data":           "#534AB7",
+    "Diet diaries":                 "#0F6E56",
+    "Specialist questionnaire data":"#BA7517",
+    "Biological samples":           "#993C1D",
+    "Sub-Studies":                  "#185FA5",
+    "Clinical data":                "#639922",
+    "Omic":                         "#D4537E",
+    "Population characteristics":   "#888780",
+    "Raw data (long datasets)":     "#5F5E5A",
+}
+
+# Which years to show as columns in the heatmap (major sweeps only)
+HM_YEAR_COLS = [
+    "1946","1950","1957","1961","1972","1977",
+    "1982","1989","1999","2006-10",
+    "2014","2015","2015-2018","2018-2021","2020","2022","2023","2025"
+]
+
+
+def _topic_year_heatmap_section(topic_year: dict) -> str:
+    """Collection-year x topic heatmap, years down and topics across.
+    (Topics-as-columns keeps the table to ~7 columns instead of the 18 a
+    years-as-columns layout needed, which didn't fit the page width.) A
+    couple of consistently low-count topics are excluded since they add
+    columns without adding much signal.
+
+    Columns are sized by percentage with table-layout:fixed rather than
+    fixed pixel widths, so the table always fills — and never overflows —
+    its container regardless of screen width, instead of forcing a
+    horizontal scrollbar."""
+    EXCLUDE_TOPICS = {"Population characteristics", "Raw data (long datasets)"}
+
+    topic_year = {t: yrs for t, yrs in topic_year.items() if t not in EXCLUDE_TOPICS}
+    topics_sorted = sorted(topic_year.items(), key=lambda kv: -sum(kv[1].values()))
+    all_vals = [n for _, yrs in topics_sorted for n in yrs.values()]
+    global_max = max(all_vals) if all_vals else 1
+
+    n_topics = len(topics_sorted)
+    label_pct = 15
+    col_pct = (100 - label_pct) / n_topics if n_topics else 0
+
+    header_cells = "".join(
+        f'<th title="{topic}" style="width:{col_pct:.2f}%;padding:4px 2px;font-size:9.5px;font-weight:600;'
+        f'color:{TOPIC_HM_COLORS.get(topic, "#888780")};writing-mode:vertical-rl;'
+        f'text-orientation:mixed;overflow:hidden;">{topic}</th>'
+        for topic, _ in topics_sorted
+    )
+
+    rows_html = ""
+    for y in HM_YEAR_COLS:
+        row_cells = ""
+        for topic, yrs in topics_sorted:
+            color = TOPIC_HM_COLORS.get(topic, "#888780")
+            r, g, b = _hex_to_rgb(color)
+            n = yrs.get(y, 0)
+            alpha = round(n / global_max, 2) if n else 0
+            text_color = "#fff" if alpha > 0.55 else "#333"
+            title = f"{topic} — {y}: {_fmt(n)} variables" if n else f"{topic} — {y}: no variables"
+            row_cells += (
+                f'<td title="{title}" style="width:{col_pct:.2f}%;height:22px;text-align:center;'
+                f'font-size:9px;color:{text_color};'
+                f'background:rgba({r},{g},{b},{alpha});">{n if n else ""}</td>'
+            )
+        rows_html += (
+            f'<tr><td style="width:{label_pct}%;font-size:10.5px;padding:4px 6px 4px 0;'
+            f'color:#555;font-weight:600;">{y}</td>{row_cells}</tr>\n'
+        )
+
+    return (
+        f'  <div class="home-section" style="{_section_style("topic-by-year")}">\n'
+        f'    <h2 id="topic-by-year"><i class="ti ti-grid-dots" style="{_section_icon_style("topic-by-year")}" aria-hidden="true"></i>'
+        ' Topic coverage by collection year</h2>\n'
+        '    <p>Which topic areas were covered in each major data collection sweep.'
+        ' Darker cells indicate more variables collected for that topic in that sweep.'
+        ' Only major sweeps are shown as rows; hover a cell for the exact count.'
+        ' Population characteristics and Raw data are omitted here as their counts'
+        ' are low across every sweep and add little to the picture.</p>\n'
+        '    <div style="margin-top:12px;">\n'
+        '      <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;">\n'
+        f'        <thead><tr><th style="width:{label_pct}%;"></th>{header_cells}</tr></thead>\n'
+        f'        <tbody>\n{rows_html}        </tbody>\n'
+        '      </table>\n'
+        '    </div>\n'
+        '  </div>\n'
+    )
+
+
+def _depth_section(subtopic_depth: list, total: int) -> str:
+    """Generate the category depth breakdown section."""
+    labels = ["Subtopic 1 (all variables)", "Subtopic 2", "Subtopic 3", "Subtopic 4 (deepest)"]
+    colors = ["#534AB7", "#7F77DD", "#AFA9EC", "#CECBF6"]
+    max_n  = subtopic_depth[0] if subtopic_depth[0] else 1
+
+    bars = ""
+    for i, (lbl, color) in enumerate(zip(labels, colors)):
+        n   = subtopic_depth[i]
+        pct = round(n / max_n * 100)
+        pct_of_total = round(n / total * 100)
+        bars += (
+            '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">'
+            f'<span style="width:190px;font-size:12px;color:#555;flex-shrink:0;">{lbl}</span>'
+            '<div style="flex:1;height:12px;background:#ede5ff;border-radius:6px;overflow:hidden;">'
+            f'<div style="width:{pct}%;height:100%;background:{color};border-radius:6px;"></div></div>'
+            f'<span style="width:80px;font-size:11.5px;color:#777;text-align:right;">'
+            f'{_fmt(n)} ({pct_of_total}%)</span>'
+            '</div>'
+        )
+
+    out = (
+        f'  <div class="home-section" style="{_section_style("category-depth")}">\n'
+        f'    <h2 id="category-depth"><i class="ti ti-git-branch" style="{_section_icon_style("category-depth")}" aria-hidden="true"></i>'
+        ' Category classification depth</h2>\n'
+        f'    <p>All {_fmt(total)} variables have at least one subtopic level.'
+        ' Deeper classification indicates a more precisely placed variable in the'
+        ' Browse by Category hierarchy. The fourth subtopic level is the most'
+        ' specific classification available.</p>\n'
+        '    <div style="margin-top:14px;">\n'
+        + bars +
+        '    </div>\n'
+        f'    <p style="font-size:12px;color:#666;margin:8px 0 0;font-style:italic;">'
+        f'Percentages are of total variables on OWL ({_fmt(total)}).</p>\n'
+        '  </div>\n'
+    )
+    return out
+
+
+def _multisweep_section(unique_fids: int, multi_sweep: int, single_sweep: int) -> str:
+    """Generate the single vs multi-sweep Field ID section with a Chart.js donut."""
+    pct_multi  = round(multi_sweep  / unique_fids * 100) if unique_fids else 0
+    pct_single = 100 - pct_multi
+
+    row = (
+        f'  <div class="home-section" style="{_section_style("multi-sweep")}">\n'
+        f'    <h2 id="multi-sweep"><i class="ti ti-repeat" style="{_section_icon_style("multi-sweep")}" aria-hidden="true"></i>'
+        ' Single-sweep vs multi-sweep Field IDs</h2>\n'
+        f'    <p>Of the {_fmt(unique_fids)} unique Showcase Field IDs, {pct_multi}%'
+        ' were collected at more than one time point with identical question text and'
+        ' coding. These multi-sweep fields are the ones where the NSHD Showcase groups'
+        ' instances together for direct longitudinal comparison.</p>\n'
+        '    <div style="display:flex;align-items:center;gap:28px;'
+        'margin-top:14px;flex-wrap:wrap;">\n'
+        f'      <canvas id="chartMultiSweep" width="140" height="140"\n'
+        f'        role="img" style="flex-shrink:0;width:140px;height:140px;"\n'
+        f'        aria-label="Donut chart: {pct_single}% single-sweep,'
+        f' {pct_multi}% multi-sweep.">\n'
+        f'        Single-sweep: {_fmt(single_sweep)} ({pct_single}%).'
+        f' Multi-sweep: {_fmt(multi_sweep)} ({pct_multi}%).\n'
+        '      </canvas>\n'
+        '      <div style="display:flex;flex-direction:column;gap:12px;">\n'
+        '        <div style="display:flex;align-items:flex-start;gap:10px;">\n'
+        '          <span style="width:12px;height:12px;border-radius:3px;'
+        'background:#534AB7;flex-shrink:0;margin-top:3px;"></span>\n'
+        '          <div>\n'
+        f'            <p style="font-size:14px;font-weight:700;color:#534AB7;margin:0;">'
+        f'              {_fmt(single_sweep)}'
+        f'              <span style="font-size:12px;font-weight:400;color:#555;">'
+        f'Field IDs ({pct_single}%)</span></p>\n'
+        '            <p style="font-size:12px;color:#666;margin:2px 0 0;">'
+        'Single-sweep &#8212; collected at one time point only</p>\n'
+        '          </div>\n'
+        '        </div>\n'
+        '        <div style="display:flex;align-items:flex-start;gap:10px;">\n'
+        '          <span style="width:12px;height:12px;border-radius:3px;'
+        'background:#9FE1CB;flex-shrink:0;margin-top:3px;"></span>\n'
+        '          <div>\n'
+        f'            <p style="font-size:14px;font-weight:700;color:#0F6E56;margin:0;">'
+        f'              {_fmt(multi_sweep)}'
+        f'              <span style="font-size:12px;font-weight:400;color:#555;">'
+        f'Field IDs ({pct_multi}%)</span></p>\n'
+        '            <p style="font-size:12px;color:#666;margin:2px 0 0;">'
+        'Multi-sweep &#8212; grouped together on the NSHD Showcase</p>\n'
+        '          </div>\n'
+        '        </div>\n'
+        '      </div>\n'
+      '    </div>\n'
+        # ── Clarifying note ──────────────────────────────────────────────────
+        # This chart groups sweeps by DISTINCT "Year of collection" values per
+        # Field ID (see field_id_years in load_and_aggregate). Some Field IDs
+        # were genuinely collected more than once but share the same year
+        # label — e.g. Covid wave 1 and wave 2 are both stamped "2020" even
+        # though they are separate questionnaires collected months apart.
+        # Those cases collapse into a single year here and are counted as
+        # single-sweep, whereas the Longitudinal Variables page counts sweeps
+        # per row rather than per distinct year, so it correctly counts them
+        # as multi-sweep. As a result, the multi-sweep count on this page will
+        # be slightly higher than the longitudinal field count shown on the
+        # Longitudinal Variables page.
+        '    <p style="font-size:11.5px;color:#666;margin:10px 0 0;font-style:italic;'
+        'line-height:1.6;">Note: this chart groups sweeps by distinct collection'
+        ' year per Field ID. A small number of Field IDs were collected more than'
+        ' once within the same labelled year &#8212; for example, Covid wave 1 and'
+        ' wave 2 are both recorded under the year 2020, despite being separate'
+        ' questionnaires collected months apart &#8212; and are counted here as'
+        ' single-sweep. Because of this, the multi-sweep count above is slightly'
+        ' higher than the number of longitudinal fields shown on the'
+        ' <a href="/OWL/docs/longitudinal_variables/longitudinal-variables/"'
+        ' style="color:#6a0dad;">Longitudinal Variables page</a>, which counts'
+        ' sweeps individually rather than by distinct year.</p>\n'
+        '  </div>\n'
+    )
+    return row
+
+
+def _longitudinal_section(sweep_histogram: Counter, most_tracked, unique_fids: int, multi_sweep: int) -> str:
+    """Sweep-count histogram (2+ sweeps only) + headline stat for the
+    most-tracked variable (ranked by number of sweeps, not just year span)."""
+    pct_multi    = round(multi_sweep / unique_fids * 100) if unique_fids else 0
+    single_sweep = sweep_histogram.get(1, 0)
+
+    if most_tracked:
+        n_sweeps, span, fid, years, var_name, label = most_tracked
+        years_str = ", ".join(years)
+        display_name = label or var_name or fid
+        headline = (
+            f' The most consistently tracked variable is <strong>{display_name}</strong>'
+            f' (Field ID {fid}), collected across {n_sweeps} sweeps spanning'
+            f' {span} years: {years_str}.'
+        )
+    else:
+        headline = ""
+
+    return (
+        f'  <div class="home-section" style="{_section_style("longitudinal-depth")}">\n'
+        f'    <h2 id="longitudinal-depth"><i class="ti ti-clock-hour-4" style="{_section_icon_style("longitudinal-depth")}" aria-hidden="true"></i>'
+        ' Longitudinal tracking depth</h2>\n'
+        f'    <p>Of {_fmt(unique_fids)} unique Showcase Field IDs, {_fmt(multi_sweep)}'
+        f' ({pct_multi}%) have been collected at more than one sweep, some for'
+        f' decades.{headline}</p>\n'
+        '    <div style="position:relative;width:100%;height:260px;margin-top:12px;">\n'
+        '      <canvas id="chartSweeps" role="img" '
+        'aria-label="Bar chart of Field IDs by number of collection sweeps, 2 or more sweeps only.">'
+        'Sweep counts listed in page text.</canvas>\n'
+        '    </div>\n'
+        '    <p style="font-size:11.5px;color:#666;margin:8px 0 0;font-style:italic;">'
+        f'Chart shows Field IDs collected at 2 or more sweeps only — the'
+        f' {_fmt(single_sweep)} fields collected just once are excluded so the'
+        ' repeat-collection pattern is visible. "Sweeps" counts distinct collection'
+        ' years per Field ID — see the note under Single-sweep vs multi-sweep above'
+        ' for an edge case involving same-year sweeps.</p>\n'
+        '    <p style="font-size:11.5px;color:#666;margin:6px 0 0;font-style:italic;'
+        'line-height:1.6;">Note: these counts only include truly longitudinal'
+        ' variables — those collected with identical question text and coding at'
+        ' every sweep they appear in, which is why they share one Showcase Field ID'
+        ' across sweeps. If a question was re-asked with different wording, response'
+        ' options, or coding at a later sweep, it is assigned a separate Field ID and'
+        ' is not counted as a repeat sweep of the original here, even though it may'
+        ' cover the same underlying measure.</p>\n'
+        '  </div>\n'
+    )
+
+
+def _ukllc_section(ukllc_counts: Counter, ukllc_variables_total: int, total: int) -> str:
+    pct_linked = round(ukllc_variables_total / total * 100, 1) if total else 0
+    max_count  = max(ukllc_counts.values()) if ukllc_counts else 1
+    items = sorted(ukllc_counts.items(), key=lambda x: -x[1])
+
+    rows = ""
+    for raw, count in items:
+        display = _ukllc_display_name(raw)
+        pct = _bar_pct(count, max_count)
+        rows += (
+            f'        <tr><td title="{raw}"><strong>{display}</strong></td>'
+            f'<td>{_fmt(count)}<div class="form-bar-wrap">'
+            f'<div class="form-bar" style="width:{pct}%;background:{SECTION_COLORS["ukllc"]};"></div>'
+            f'</div></td></tr>\n'
+        )
+
+    return (
+        f'  <div class="home-section" style="{_section_style("ukllc")}">\n'
+        f'    <h2 id="ukllc"><i class="ti ti-link" style="{_section_icon_style("ukllc")}" aria-hidden="true"></i>'
+        ' UKLLC harmonised datasets</h2>\n'
+        f'    <p>{_fmt(ukllc_variables_total)} variables ({pct_linked}% of the'
+        f' {_fmt(total)} on OWL) have been standardised into a harmonised dataset for'
+        f' cross-cohort comparison via the UK Longitudinal Linkage Collaboration (UKLLC),'
+        f' across {len(ukllc_counts)} distinct harmonised datasets.</p>\n'
+        '    <table class="form-table">\n'
+        '      <thead><tr><th style="width:40%">Harmonised dataset</th>'
+        '<th style="width:60%">Variables</th></tr></thead>\n'
+        f'      <tbody>\n{rows}      </tbody>\n'
+        '    </table>\n'
+        '    <p style="font-size:11.5px;color:#666;margin:8px 0 0;font-style:italic;">'
+        'Hover a dataset name to see its full UKLLC identifier. Most NSHD variables are'
+        ' not yet part of a harmonised UKLLC dataset — this reflects how many variables'
+        ' have been through UKLLC\'s harmonisation process, not overall data availability.</p>\n'
+        '  </div>\n'
+    )
+
+
+# ── Build the progress bar percentage ─────────────────────────────────────────
+def _progress_pct(total: int, full_set: int = 35000) -> int:
+    return round(total / full_set * 100)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PDF GENERATION (reportlab + matplotlib)
+# ═══════════════════════════════════════════════════════════════════════════
+# Built independently from the HTML above — it reads the same `agg` dict, so
+# the numbers always match, but the layout is native reportlab (Platypus)
+# rather than a screenshot/print of the HTML. Chosen over a headless-browser
+# render or WeasyPrint because it's pure Python with no system-level
+# dependencies (no Chromium, no Cairo/Pango), so it runs anywhere
+# `pip install reportlab matplotlib` works — including a plain GitHub
+# Actions runner with no extra apt packages.
+
+PDF_STYLES = getSampleStyleSheet()
+PDF_STYLES.add(ParagraphStyle(
+    name="CoverTitle", fontName="Helvetica-Bold", fontSize=28, leading=32,
+    textColor=rl_colors.HexColor("#6a0dad"), spaceAfter=6,
+))
+PDF_STYLES.add(ParagraphStyle(
+    name="CoverSubtitle", fontName="Helvetica", fontSize=12, leading=16,
+    textColor=rl_colors.HexColor("#444444"), spaceAfter=4,
+))
+PDF_STYLES.add(ParagraphStyle(
+    name="CoverMeta", fontName="Helvetica", fontSize=9.5, leading=13,
+    textColor=rl_colors.HexColor("#666666"),
+))
+PDF_STYLES.add(ParagraphStyle(
+    name="SectionHeading", fontName="Helvetica-Bold", fontSize=13,
+    leading=16, textColor=rl_colors.white, spaceBefore=0, spaceAfter=0,
+))
+PDF_STYLES.add(ParagraphStyle(
+    name="Body", parent=PDF_STYLES["Normal"], fontName="Helvetica",
+    fontSize=9.5, leading=13.5, spaceAfter=8,
+))
+PDF_STYLES.add(ParagraphStyle(
+    name="Footnote", parent=PDF_STYLES["Normal"], fontName="Helvetica-Oblique",
+    fontSize=8, leading=11, textColor=rl_colors.HexColor("#666666"), spaceBefore=4, spaceAfter=8,
+))
+PDF_STYLES.add(ParagraphStyle(
+    name="TOCEntry", fontName="Helvetica", fontSize=10.5, leading=18,
+    textColor=rl_colors.HexColor("#333333"),
+))
+
+
+def _mpl_style_axes(ax):
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    ax.tick_params(colors="#555555", labelsize=7.5)
+    ax.xaxis.label.set_color("#555555")
+    ax.yaxis.label.set_color("#555555")
+
+
+def _fig_to_image(fig, width_mm):
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=200, transparent=True, bbox_inches="tight")
+    plt.close(fig)
+    buf.seek(0)
+    w = width_mm * mm
+    h = w * fig.get_figheight() / fig.get_figwidth()
+    return Image(buf, width=w, height=h)
+
+
+def _pdf_hbar_chart(labels, values, colors_list, width_mm=160):
+    fig, ax = plt.subplots(figsize=(6.3, max(1.8, 0.32 * len(labels))))
+    y_pos = list(range(len(labels)))[::-1]
+    ax.barh(y_pos, values, color=colors_list, height=0.65)
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(labels, fontsize=7.5)
+    ax.set_xlabel("Variables")
+    _mpl_style_axes(ax)
+    fig.tight_layout()
+    return _fig_to_image(fig, width_mm)
+
+
+def _pdf_vbar_chart(labels, values, colors_list, width_mm=160, rotate=45):
+    fig, ax = plt.subplots(figsize=(6.3, 2.6))
+    x_pos = range(len(labels))
+    ax.bar(x_pos, values, color=colors_list, width=0.65)
+    ax.set_xticks(list(x_pos))
+    ax.set_xticklabels(labels, fontsize=6.5, rotation=rotate, ha="right" if rotate else "center")
+    ax.set_ylabel("Variables")
+    _mpl_style_axes(ax)
+    fig.tight_layout()
+    return _fig_to_image(fig, width_mm)
+
+
+def _pdf_donut_chart(values, labels, colors_list, width_mm=70):
+    fig, ax = plt.subplots(figsize=(3, 3))
+    ax.pie(values, colors=colors_list, startangle=90, wedgeprops=dict(width=0.4, edgecolor="white"))
+    ax.legend(labels, loc="upper center", bbox_to_anchor=(0.5, -0.02), fontsize=7.5, frameon=False)
+    ax.set_aspect("equal")
+    fig.tight_layout()
+    return _fig_to_image(fig, width_mm)
+
+
+def _pdf_topic_year_heatmap(topics_sorted, year_labels, width_mm=165):
+    """Same years-down/topics-across layout as the HTML heatmap, rendered as
+    an RGBA image where each column keeps its topic's colour and each cell's
+    opacity reflects its count relative to the grid-wide maximum."""
+    all_vals = [n for _, yrs in topics_sorted for n in yrs.values()]
+    global_max = max(all_vals) if all_vals else 1
+    n_topics, n_years = len(topics_sorted), len(year_labels)
+
+    rgba = np.ones((n_years, n_topics, 4))
+    for j, (topic, yrs) in enumerate(topics_sorted):
+        r, g, b = _hex_to_rgb(TOPIC_HM_COLORS.get(topic, "#888780"))
+        for i, y in enumerate(year_labels):
+            n = yrs.get(y, 0)
+            alpha = (n / global_max) if n else 0.04
+            rgba[i, j] = [r / 255, g / 255, b / 255, alpha]
+
+    fig, ax = plt.subplots(figsize=(6.3, max(3.0, 0.22 * n_years)))
+    ax.imshow(rgba, aspect="auto")
+    ax.set_xticks(range(n_topics))
+    ax.set_xticklabels([t for t, _ in topics_sorted], fontsize=6.5, rotation=55, ha="right")
+    ax.set_yticks(range(n_years))
+    ax.set_yticklabels(year_labels, fontsize=6.5)
+    ax.set_xticks(np.arange(-0.5, n_topics, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, n_years, 1), minor=True)
+    ax.grid(which="minor", color="white", linewidth=1.2)
+    ax.tick_params(which="minor", bottom=False, left=False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+    fig.tight_layout()
+    return _fig_to_image(fig, width_mm)
+
+
+def _pdf_section_heading(section_id: str, title: str):
+    """Coloured bar heading, matching the accent colour used for this
+    section on the HTML page (SECTION_COLORS)."""
+    hexc = SECTION_COLORS.get(section_id, "#6a0dad")
+    p = Paragraph(title, PDF_STYLES["SectionHeading"])
+    t = Table([[p]], colWidths=[170 * mm])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), rl_colors.HexColor(hexc)),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    return t
+
+
+def _pdf_table(header, rows, col_widths, accent_hex="#6a0dad", font_size=8):
+    data = [header] + rows
+    t = Table(data, colWidths=col_widths, repeatRows=1)
+    style = [
+        ("BACKGROUND", (0, 0), (-1, 0), rl_colors.HexColor(accent_hex)),
+        ("TEXTCOLOR", (0, 0), (-1, 0), rl_colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 0), (-1, -1), font_size),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("GRID", (0, 0), (-1, -1), 0.4, rl_colors.HexColor("#dddddd")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+    ]
+    for i in range(1, len(data)):
+        if i % 2 == 0:
+            style.append(("BACKGROUND", (0, i), (-1, i), rl_colors.HexColor("#faf8fc")))
+    t.setStyle(TableStyle(style))
+    return t
+
+
+class _CoverageDocTemplate(BaseDocTemplate):
+    """BaseDocTemplate that records each section heading's page number for
+    the table of contents (reportlab's standard two-pass TOC recipe), and
+    makes each TOC entry a real clickable link to its section — done by
+    wrapping the entry text in reportlab's <a href="#bookmark"> markup
+    before handing it to TableOfContents, since the bookmark/outline entry
+    alone (bookmarkPage + addOutlineEntry) only creates the PDF reader's
+    side panel bookmarks, not a clickable link on the contents page itself."""
+
+    def afterFlowable(self, flowable):
+        if isinstance(flowable, Table) and getattr(flowable, "_toc_title", None):
+            title = flowable._toc_title
+            key = f"section-{title}"
+            self.canv.bookmarkPage(key)
+            self.canv.addOutlineEntry(title, key, level=0, closed=False)
+            linked_title = f'<a href="#{key}" color="#6a0dad"><u>{title}</u></a>'
+            self.notify("TOCEntry", (0, linked_title, self.page))
+
+
+def _add_page_footer(canv, doc):
+    canv.saveState()
+    canv.setFont("Helvetica", 8)
+    canv.setFillColor(rl_colors.HexColor("#888888"))
+    canv.drawString(18 * mm, 12 * mm, "NSHD OWL — Data Coverage")
+    canv.drawRightString(A4[0] - 18 * mm, 12 * mm, f"Page {doc.page}")
+    canv.restoreState()
+
+
+def generate_pdf(agg: dict, pdf_path: str) -> None:
+    total = agg["total"]
+    tc, sc, yc = agg["topic_counts"], agg["stage_counts"], agg["year_counts"]
+    fc, fy, ty = agg["form_counts"], agg["form_years"], agg["topic_year"]
+    sd = agg["subtopic_depth"]
+    unique_fids, multi_sweep, single_sweep = agg["unique_fids"], agg["multi_sweep"], agg["single_sweep"]
+    pct_multi = round(multi_sweep / unique_fids * 100) if unique_fids else 0
+
+    remaining = 35000 - total
+    prog_pct = _progress_pct(total)
+    generated_str = date.today().strftime("%d %B %Y")
+
+    EXCLUDE_TOPICS = {"Population characteristics", "Raw data (long datasets)"}
+    topic_sorted = sorted(tc.items(), key=lambda x: -x[1])
+    topic_colors = [TOPIC_HM_COLORS.get(t, "#888780") for t, _ in topic_sorted]
+    topic_n = len(topic_sorted)
+
+    story = []
+
+    # ── Cover page ────────────────────────────────────────────────────────
+    story.append(Spacer(1, 40 * mm))
+    story.append(Paragraph("NSHD OWL", PDF_STYLES["CoverSubtitle"]))
+    story.append(Paragraph("Data Coverage Report", PDF_STYLES["CoverTitle"]))
+    story.append(Spacer(1, 4 * mm))
+    story.append(Paragraph(
+        "What is currently available on OWL and the NSHD Showcase — and what is still to come.",
+        PDF_STYLES["CoverSubtitle"],
+    ))
+    story.append(Spacer(1, 12 * mm))
+    cover_stats = [[
+        Paragraph(f'<b><font size="20" color="#6a0dad">{_fmt(total)}</font></b><br/>'
+                  f'<font size="8" color="#555555">Variables on OWL</font>', PDF_STYLES["Body"]),
+        Paragraph(f'<b><font size="20" color="#6a0dad">~{_fmt(remaining)}</font></b><br/>'
+                  f'<font size="8" color="#555555">Still to be cleaned (Condor only)</font>', PDF_STYLES["Body"]),
+        Paragraph(f'<b><font size="20" color="#6a0dad">{prog_pct}%</font></b><br/>'
+                  f'<font size="8" color="#555555">Metadata enhancement complete</font>', PDF_STYLES["Body"]),
+    ]]
+    cover_table = Table(cover_stats, colWidths=[56 * mm, 56 * mm, 56 * mm])
+    cover_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), rl_colors.HexColor("#faf7ff")),
+        ("BOX", (0, 0), (-1, -1), 0.5, rl_colors.HexColor("#e0d5f5")),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+    ]))
+    story.append(cover_table)
+    story.append(Spacer(1, 30 * mm))
+    story.append(Paragraph(f"Generated {generated_str}", PDF_STYLES["CoverMeta"]))
+    story.append(Paragraph("rmjdish.github.io/OWL/docs/data-coverage/", PDF_STYLES["CoverMeta"]))
+    story.append(PageBreak())
+
+    # ── Table of contents ────────────────────────────────────────────────
+    toc = TableOfContents()
+    toc.levelStyles = [PDF_STYLES["TOCEntry"]]
+    story.append(Paragraph("Contents", PDF_STYLES["CoverTitle"]))
+    story.append(Spacer(1, 6 * mm))
+    story.append(toc)
+    story.append(PageBreak())
+
+    def add_section(section_id, title, body_paragraphs, note=None):
+        heading = _pdf_section_heading(section_id, title)
+        heading._toc_title = title
+        block = [heading, Spacer(1, 6)]
+        for p in body_paragraphs:
+            block.append(p)
+        if note:
+            block.append(Paragraph(note, PDF_STYLES["Footnote"]))
+        story.append(KeepTogether(block[:2]))  # heading always starts with its intro
+        story.extend(block[2:])
+        story.append(Spacer(1, 10 * mm))
+
+    # ── Overview ─────────────────────────────────────────────────────────
+    n_years = len(yc)
+    top2 = topic_sorted[:2]
+    top2_str = " and ".join(f"{t[0]} ({_fmt(t[1])})" for t in top2)
+    add_section("overview", "What is currently available", [
+        Paragraph(
+            f"OWL and the NSHD Showcase currently provide access to around <b>{_fmt(total)} variables</b> — "
+            f"those cleaned and enhanced as part of the Metadata Enhancement Project. The full NSHD repository "
+            f"contains approximately 35,000+ variables; the remaining ~{_fmt(remaining)} are available on Condor. "
+            f"The {_fmt(total)} variables shown here cover {n_years} collection years spanning 1946 to 2025, "
+            f"across {topic_n} topic areas and 50+ data collection forms.",
+            PDF_STYLES["Body"],
+        ),
+    ])
+
+    # ── By topic ─────────────────────────────────────────────────────────
+    add_section("by-topic", "Variables by topic area", [
+        Paragraph(
+            f"Variables are organised into {topic_n} top-level topic areas, shown largest to smallest. "
+            f"{top2_str} make up the largest share.",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_hbar_chart([t for t, _ in topic_sorted], [n for _, n in topic_sorted], topic_colors),
+    ])
+
+    # ── Topic by year heatmap ────────────────────────────────────────────
+    ty_filtered = {t: yrs for t, yrs in ty.items() if t not in EXCLUDE_TOPICS}
+    ty_sorted = sorted(ty_filtered.items(), key=lambda kv: -sum(kv[1].values()))
+    add_section("topic-by-year", "Topic coverage by collection year", [
+        Paragraph(
+            "Which topic areas were covered in each major data collection sweep. Darker cells indicate more "
+            "variables collected for that topic in that sweep. Population characteristics and Raw data are "
+            "omitted as their counts are low across every sweep.",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_topic_year_heatmap(ty_sorted, HM_YEAR_COLS),
+    ])
+
+    # ── Category depth ───────────────────────────────────────────────────
+    depth_labels = ["Subtopic 1\n(all variables)", "Subtopic 2", "Subtopic 3", "Subtopic 4\n(deepest)"]
+    depth_colors = ["#534AB7", "#7F77DD", "#AFA9EC", "#CECBF6"]
+    add_section("category-depth", "Category classification depth", [
+        Paragraph(
+            f"All {_fmt(total)} variables have at least one subtopic level. Deeper classification indicates a "
+            "more precisely placed variable in the Browse by Category hierarchy.",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_hbar_chart(depth_labels, sd, depth_colors, width_mm=140),
+    ])
+
+    # ── Multi-sweep donut ────────────────────────────────────────────────
+    add_section("multi-sweep", "Single-sweep vs multi-sweep Field IDs", [
+        Paragraph(
+            f"Of the {_fmt(unique_fids)} unique Showcase Field IDs, {pct_multi}% were collected at more than "
+            "one time point with identical question text and coding.",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_donut_chart(
+            [single_sweep, multi_sweep],
+            [f"Single-sweep ({100 - pct_multi}%)", f"Multi-sweep ({pct_multi}%)"],
+            ["#534AB7", "#9FE1CB"],
+        ),
+    ], note=(
+        "Note: this chart groups sweeps by distinct collection year per Field ID. A small number of Field IDs "
+        "were collected more than once within the same labelled year (e.g. Covid wave 1 and wave 2, both "
+        "recorded as 2020) and are counted here as single-sweep."
+    ))
+
+    # ── Longitudinal depth ───────────────────────────────────────────────
+    sweep_items = sorted((k, v) for k, v in agg["sweep_histogram"].items() if k >= 2)
+    most_tracked = agg["most_tracked"]
+    if most_tracked:
+        n_sweeps, span, fid, years, var_name, label = most_tracked
+        headline = (
+            f" The most consistently tracked variable is <b>{label or var_name or fid}</b> (Field ID {fid}), "
+            f"collected across {n_sweeps} sweeps spanning {span} years."
+        )
+    else:
+        headline = ""
+    add_section("longitudinal-depth", "Longitudinal tracking depth", [
+        Paragraph(
+            f"Of {_fmt(unique_fids)} unique Showcase Field IDs, {_fmt(multi_sweep)} ({pct_multi}%) have been "
+            f"collected at more than one sweep, some for decades.{headline}",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_vbar_chart([str(k) for k, _ in sweep_items], [v for _, v in sweep_items],
+                        ["#7F77DD"] * len(sweep_items), width_mm=140, rotate=0),
+    ], note=(
+        "Note: these counts only include truly longitudinal variables — those collected with identical "
+        "question text and coding at every sweep they appear in. Re-worded or re-coded repeats of a question "
+        "get a separate Field ID and are not counted as a repeat sweep here."
+    ))
+
+    # ── By life stage ────────────────────────────────────────────────────
+    stage_colors = ['#9FE1CB','#5DCAA5','#1D9E75','#0F6E56','#534AB7','#3C3489','#7F77DD','#AFA9EC','#CECBF6']
+    stage_data = [sc.get(s, 0) for s in LIFE_STAGE_ORDER]
+    add_section("by-life-stage", "Variables by life stage", [
+        Paragraph(
+            "The volume of variables reflects the intensity of data collection at each phase of life. The "
+            "richest coverage is at ages 56–65, corresponding to the major 2006–2010 clinic visit.",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_vbar_chart(LIFE_STAGE_ORDER, stage_data, stage_colors, width_mm=150),
+    ])
+
+    # ── By collection year ───────────────────────────────────────────────
+    year_labels = [y for y in YEAR_ORDER if yc.get(y, 0) > 0]
+    year_data = [yc[y] for y in year_labels]
+    peak_years = sorted(yc.items(), key=lambda x: -x[1])[:4]
+    peak_str = ", ".join(f"{y} ({_fmt(n)})" for y, n in peak_years)
+    add_section("by-year", "Variables by collection year", [
+        Paragraph(
+            f"Variable counts for each collection year or period. The dominant peaks reflect the major "
+            f"intensive data collection sweeps — {peak_str}.",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_vbar_chart(year_labels, year_data, ["#534AB7"] * len(year_labels), width_mm=165),
+    ])
+
+    # ── By form ──────────────────────────────────────────────────────────
+    max_form = max(fc.values()) if fc else 1
+    form_items = [(g, c) for g, c in fc.items() if c > 0 and g != "Other forms"]
+    form_items.sort(key=lambda x: -x[1])
+    if fc.get("Other forms", 0) > 0:
+        form_items.append(("Other forms", fc["Other forms"]))
+    form_rows = [[g, _fmt(c)] for g, c in form_items]
+    form_note = _form_category_note(fc, agg["subtopic1_counts"], agg["subtopic1_forms"])
+    form_note_plain = re.sub(r"<[^>]+>", "", form_note).strip() if form_note else ""
+    add_section("by-form", "Variables by data collection form", [
+        Paragraph(
+            "Variables come from a wide range of data collection instruments, shown largest to smallest "
+            '("Other forms" is a catch-all bucket and is always listed last).',
+            PDF_STYLES["Body"],
+        ),
+        _pdf_table(["Form", "Variables"], form_rows, [120 * mm, 30 * mm], accent_hex=SECTION_COLORS["by-form"]),
+    ], note=form_note_plain or None)
+
+    # ── UKLLC ────────────────────────────────────────────────────────────
+    ukllc_counts, ukllc_total = agg["ukllc_counts"], agg["ukllc_variables_total"]
+    pct_linked = round(ukllc_total / total * 100, 1) if total else 0
+    ukllc_items = sorted(ukllc_counts.items(), key=lambda x: -x[1])
+    ukllc_rows = [[_ukllc_display_name(raw), _fmt(c)] for raw, c in ukllc_items]
+    add_section("ukllc", "UKLLC harmonised datasets", [
+        Paragraph(
+            f"{_fmt(ukllc_total)} variables ({pct_linked}% of the {_fmt(total)} on OWL) have been standardised "
+            f"into a harmonised dataset for cross-cohort comparison via the UK Longitudinal Linkage "
+            f"Collaboration (UKLLC), across {len(ukllc_counts)} distinct harmonised datasets.",
+            PDF_STYLES["Body"],
+        ),
+        _pdf_table(["Harmonised dataset", "Variables"], ukllc_rows, [120 * mm, 30 * mm],
+                   accent_hex=SECTION_COLORS["ukllc"]),
+    ])
+
+    os.makedirs(os.path.dirname(pdf_path) or ".", exist_ok=True)
+    doc = _CoverageDocTemplate(
+        pdf_path, pagesize=A4,
+        topMargin=20 * mm, bottomMargin=20 * mm, leftMargin=20 * mm, rightMargin=20 * mm,
+        title="NSHD OWL Data Coverage", author="NSHD OWL",
+    )
+    frame = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="normal")
+    doc.addPageTemplates([PageTemplate(id="normal", frames=frame, onPage=_add_page_footer)])
+    doc.multiBuild(story)
+
+
+# ── Generate MD ───────────────────────────────────────────────────────────────
+def generate(agg: dict) -> str:
+    total     = agg["total"]
+    tc        = agg["topic_counts"]
+    sc        = agg["stage_counts"]
+    yc        = agg["year_counts"]
+    fc        = agg["form_counts"]
+    fy        = agg["form_years"]
+    ty        = agg["topic_year"]
+    sd        = agg["subtopic_depth"]
+    unique_fids  = agg["unique_fids"]
+    multi_sweep  = agg["multi_sweep"]
+    single_sweep = agg["single_sweep"]
+    pct_multi    = round(multi_sweep  / unique_fids * 100) if unique_fids else 0
+    pct_single   = 100 - pct_multi
+
+    remaining = 35000 - total
+    prog_pct  = _progress_pct(total)
+
+    # Topic chart data — sorted by count, descending
+    TOPIC_DISPLAY_NAMES = {
+        "Sub-Studies": "Sub-studies",
+        "Raw data (long datasets)": "Raw data",
+    }
+    topic_sorted  = sorted(tc.items(), key=lambda x: -x[1])
+    topic_display = [TOPIC_DISPLAY_NAMES.get(t, t) for t, _ in topic_sorted]
+    topic_data    = [n for _, n in topic_sorted]
+    topic_n       = len(topic_sorted)
+
+    # Life stage chart data
+    stage_data = [sc.get(s, 0) for s in LIFE_STAGE_ORDER]
+
+    # Year chart data (only years that exist in the data, in order)
+    year_labels = [y for y in YEAR_ORDER if yc.get(y, 0) > 0]
+    year_data   = [yc[y] for y in year_labels]
+
+    # Sweep-count histogram data — 2+ sweeps only. The 1-sweep bucket
+    # (~20,600 Field IDs) would dwarf everything else and isn't the point of
+    # this chart; "tracking depth" is about the fields collected repeatedly.
+    sweep_items  = sorted((k, v) for k, v in agg["sweep_histogram"].items() if k >= 2)
+    sweep_labels = [str(k) for k, _ in sweep_items]
+    sweep_data   = [v for _, v in sweep_items]
+
+    # Summary sentence
+    n_years = len(yc)
+
+    # Topic summary for text
+    top2 = topic_sorted[:2]
+    top2_str = " and ".join(f"{t[0]} ({_fmt(t[1])})" for t in top2)
+
+    # Year peak text
+    peak_years = sorted(yc.items(), key=lambda x: -x[1])[:4]
+    peak_str   = ", ".join(f"{y} ({_fmt(n)})" for y, n in peak_years)
+
+    form_rows_html = _form_table_rows(fc, fy)
+    form_note_html = _form_category_note(fc, agg["subtopic1_counts"], agg["subtopic1_forms"])
+
+    topic_colors_js = _js_str_list([])  # placeholder unused, colours generated below
+    # Auto-generate enough topic colours even if topic count changes
+    _BASE_TOPIC_COLORS = ['#1D9E75','#0F6E56','#5DCAA5','#085041','#9FE1CB','#3C3489','#7F77DD','#B5D4F4','#D3D1C7']
+    topic_colors = [_BASE_TOPIC_COLORS[i % len(_BASE_TOPIC_COLORS)] for i in range(topic_n)]
+
+    generated_str = date.today().strftime("%d %B %Y")
+
+    return f"""---
 layout: default
 title: Data Coverage
 nav_order: 3
 permalink: /docs/data-coverage/
 ---
 
-<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/topics.css">
-<link rel="stylesheet" href="{{ site.baseurl }}/assets/css/getting-started.css">
+<link rel="stylesheet" href="{{{{ site.baseurl }}}}/assets/css/topics.css">
+<link rel="stylesheet" href="{{{{ site.baseurl }}}}/assets/css/getting-started.css">
 
 <style>
 /* Matches the .doc-pdf-download button used on generated documentation
    pages (see build_pages.py) — same icon, colour, and shape, so the PDF
    download affordance looks identical everywhere on the site. */
-.doc-pdf-download { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#1a4d7a; color:#fff; border-radius:6px; text-decoration:none; font-size:13px; font-weight:600; }
-.doc-pdf-download:hover { background:#123a5c; }
+.doc-pdf-download {{ display:inline-flex; align-items:center; gap:6px; padding:6px 14px; background:#1a4d7a; color:#fff; border-radius:6px; text-decoration:none; font-size:13px; font-weight:600; }}
+.doc-pdf-download:hover {{ background:#123a5c; }}
 </style>
 
 <div class="page-topics page-questionnaire_by_year">
@@ -23,7 +1315,7 @@ permalink: /docs/data-coverage/
       <h1><i class="ti ti-chart-bar" aria-hidden="true"></i> Data Coverage</h1>
       <p>What is currently available on OWL and the NSHD Showcase — and what is still to come.</p>
     </div>
-    <a class="doc-pdf-download" href="/OWL/assets/data-coverage/data-coverage.pdf" download
+    <a class="doc-pdf-download" href="{PDF_SITE_PATH}" download
        onclick="event.stopImmediatePropagation();" onmousedown="event.stopImmediatePropagation();"
        style="flex-shrink:0;">
       <i class="ti ti-download" aria-hidden="true"></i> Download PDF version
@@ -33,49 +1325,49 @@ permalink: /docs/data-coverage/
   <div class="sidebar-summary">
     <h3><i class="ti ti-list" aria-hidden="true"></i> On this page</h3>
     <ul style="list-style:none;margin:0;padding:0;">
-      <li><a href="#overview" class="gs-toc-da-owl" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#6a0dad;flex-shrink:0;"></span><i class="ti ti-info-circle" aria-hidden="true"></i> What's available</a></li>
-      <li><a href="#by-topic" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#534AB7;flex-shrink:0;"></span><i class="ti ti-tags" aria-hidden="true"></i> By topic area</a></li>
-      <li><a href="#topic-by-year" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#BA7517;flex-shrink:0;"></span><i class="ti ti-grid-dots" aria-hidden="true"></i> Topic by year</a></li>
-      <li><a href="#category-depth" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#185FA5;flex-shrink:0;"></span><i class="ti ti-git-branch" aria-hidden="true"></i> Category depth</a></li>
-      <li><a href="#multi-sweep" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#639922;flex-shrink:0;"></span><i class="ti ti-repeat" aria-hidden="true"></i> Multi-sweep</a></li>
-      <li><a href="#longitudinal-depth" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#D4537E;flex-shrink:0;"></span><i class="ti ti-clock-hour-4" aria-hidden="true"></i> Longitudinal depth</a></li>
-      <li><a href="#by-life-stage" class="gs-toc-da-condor" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#993C1D;flex-shrink:0;"></span><i class="ti ti-timeline" aria-hidden="true"></i> By life stage</a></li>
-      <li><a href="#by-year" class="gs-toc-da-skylark" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#0F6E56;flex-shrink:0;"></span><i class="ti ti-calendar" aria-hidden="true"></i> By collection year</a></li>
-      <li><a href="#by-form" class="gs-toc-da-journey" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#5F5E5A;flex-shrink:0;"></span><i class="ti ti-clipboard-list" aria-hidden="true"></i> By data collection form</a></li>
-      <li><a href="#ukllc" class="gs-toc-da-journey" style="display:flex;align-items:center;gap:7px;"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:#0891B2;flex-shrink:0;"></span><i class="ti ti-link" aria-hidden="true"></i> UKLLC datasets</a></li>
+      <li><a href="#overview" class="gs-toc-da-owl" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("overview")}<i class="ti ti-info-circle" aria-hidden="true"></i> What's available</a></li>
+      <li><a href="#by-topic" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("by-topic")}<i class="ti ti-tags" aria-hidden="true"></i> By topic area</a></li>
+      <li><a href="#topic-by-year" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("topic-by-year")}<i class="ti ti-grid-dots" aria-hidden="true"></i> Topic by year</a></li>
+      <li><a href="#category-depth" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("category-depth")}<i class="ti ti-git-branch" aria-hidden="true"></i> Category depth</a></li>
+      <li><a href="#multi-sweep" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("multi-sweep")}<i class="ti ti-repeat" aria-hidden="true"></i> Multi-sweep</a></li>
+      <li><a href="#longitudinal-depth" class="gs-toc-da-showcase" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("longitudinal-depth")}<i class="ti ti-clock-hour-4" aria-hidden="true"></i> Longitudinal depth</a></li>
+      <li><a href="#by-life-stage" class="gs-toc-da-condor" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("by-life-stage")}<i class="ti ti-timeline" aria-hidden="true"></i> By life stage</a></li>
+      <li><a href="#by-year" class="gs-toc-da-skylark" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("by-year")}<i class="ti ti-calendar" aria-hidden="true"></i> By collection year</a></li>
+      <li><a href="#by-form" class="gs-toc-da-journey" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("by-form")}<i class="ti ti-clipboard-list" aria-hidden="true"></i> By data collection form</a></li>
+      <li><a href="#ukllc" class="gs-toc-da-journey" style="display:flex;align-items:center;gap:7px;">{_sidebar_dot("ukllc")}<i class="ti ti-link" aria-hidden="true"></i> UKLLC datasets</a></li>
     </ul>
     <a href="/OWL/" class="sidebar-back"><i class="ti ti-arrow-left" aria-hidden="true"></i> Back to Home</a>
   </div>
 
   <div class="gs-welcome-box">
-    <p>OWL and the NSHD Showcase currently provide access to around <strong>28,898 variables</strong> — those that have been cleaned and enhanced as part of the
-	<a href="/OWL/docs/accessing-nshd-data/metadata-enhancement-project/" style="color:#6a0dad;">Metadata Enhancement Project</a>. The full NSHD repository contains approximately <strong>35,000+
-	variables</strong>; the remaining ~6,102 are available on <a href="https://condor.ucl.ac.uk/Condor" style="color:#6a0dad;" target="_blank">Condor</a>.
-	New variables are added to OWL and the Showcase periodically as each questionnaire is processed and deposited. See below for more details for what is available on this platform.</p>
+    <p>OWL and the NSHD Showcase currently provide access to around <strong>{_fmt(total)} variables</strong> — those that have been cleaned and enhanced as part of the
+\t<a href="/OWL/docs/accessing-nshd-data/metadata-enhancement-project/" style="color:#6a0dad;">Metadata Enhancement Project</a>. The full NSHD repository contains approximately <strong>35,000+
+\tvariables</strong>; the remaining ~{_fmt(remaining)} are available on <a href="https://condor.ucl.ac.uk/Condor" style="color:#6a0dad;" target="_blank">Condor</a>.
+\tNew variables are added to OWL and the Showcase periodically as each questionnaire is processed and deposited. See below for more details for what is available on this platform.</p>
   </div>
 
-  <div class="home-section" style="background:rgba(106,13,173,0.06);border-left:5px solid #6a0dad;border-radius:10px;">
-    <h2 id="overview"><i class="ti ti-info-circle" style="color:#6a0dad;" aria-hidden="true"></i> What is currently available</h2>
+  <div class="home-section" style="{_section_style("overview")}">
+    <h2 id="overview"><i class="ti ti-info-circle" style="{_section_icon_style("overview")}" aria-hidden="true"></i> What is currently available</h2>
 
     <style>
-      .cov-stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0; }
-      .cov-stat { background:#faf7ff; border:1px solid rgba(106,13,173,0.15); border-radius:8px; padding:14px 16px; text-align:center; }
-      .cov-stat .num { font-size:26px; font-weight:700; color:#6a0dad; margin:0 0 3px; display:block; }
-      .cov-stat .lbl { font-size:11.5px; color:#555; margin:0; line-height:1.4; }
-      .cov-progress-wrap { margin:14px 0; }
-      .cov-prog-label { display:flex; justify-content:space-between; font-size:12px; color:#333; margin-bottom:4px; }
-      .cov-prog-label span:last-child { font-weight:700; color:#6a0dad; }
-      .cov-prog-track { height:12px; background:#ede5ff; border-radius:6px; overflow:hidden; }
-      .cov-prog-fill { height:100%; background:linear-gradient(90deg, hsl(180 45% 45%), hsl(270 45% 50%)); border-radius:6px; }
+      .cov-stat-grid {{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:14px 0; }}
+      .cov-stat {{ background:#faf7ff; border:1px solid rgba(106,13,173,0.15); border-radius:8px; padding:14px 16px; text-align:center; }}
+      .cov-stat .num {{ font-size:26px; font-weight:700; color:#6a0dad; margin:0 0 3px; display:block; }}
+      .cov-stat .lbl {{ font-size:11.5px; color:#555; margin:0; line-height:1.4; }}
+      .cov-progress-wrap {{ margin:14px 0; }}
+      .cov-prog-label {{ display:flex; justify-content:space-between; font-size:12px; color:#333; margin-bottom:4px; }}
+      .cov-prog-label span:last-child {{ font-weight:700; color:#6a0dad; }}
+      .cov-prog-track {{ height:12px; background:#ede5ff; border-radius:6px; overflow:hidden; }}
+      .cov-prog-fill {{ height:100%; background:linear-gradient(90deg, hsl(180 45% 45%), hsl(270 45% 50%)); border-radius:6px; }}
     </style>
 
     <div class="cov-stat-grid">
       <div class="cov-stat">
-        <span class="num">28,898</span>
+        <span class="num">{_fmt(total)}</span>
         <p class="lbl">Variables on OWL and the NSHD Showcase</p>
       </div>
       <div class="cov-stat">
-        <span class="num">~6,102</span>
+        <span class="num">~{_fmt(remaining)}</span>
         <p class="lbl">Variables still to be cleaned — on Condor only</p>
       </div>
       <div class="cov-stat">
@@ -87,20 +1379,20 @@ permalink: /docs/data-coverage/
     <div class="cov-progress-wrap">
       <div class="cov-prog-label">
         <span>Metadata enhancement progress</span>
-        <span>~83% complete</span>
+        <span>~{prog_pct}% complete</span>
       </div>
       <div class="cov-prog-track">
-        <div class="cov-prog-fill" style="width:83%"></div>
+        <div class="cov-prog-fill" style="width:{prog_pct}%"></div>
       </div>
     </div>
 
-    <p style="font-size:12px; color:#666; margin:6px 0 0; font-style:italic;">The 28,898 variables shown here cover 43 collection years spanning 1946 to 2025, across 9 topic areas and 50+ data collection forms.
-	The charts below break these down in detail.</p>
+    <p style="font-size:12px; color:#666; margin:6px 0 0; font-style:italic;">The {_fmt(total)} variables shown here cover {n_years} collection years spanning 1946 to 2025, across {topic_n} topic areas and 50+ data collection forms.
+\tThe charts below break these down in detail.</p>
   </div>
 
-  <div class="home-section" style="background:rgba(83,74,183,0.06);border-left:5px solid #534AB7;border-radius:10px;">
-    <h2 id="by-topic"><i class="ti ti-tags" style="color:#534AB7;" aria-hidden="true"></i> Variables by topic area</h2>
-    <p>Variables are organised into 9 top-level topic areas, shown largest to smallest. Questionnaire data (9,006) and Diet diaries (4,888) make up the largest share.</p>
+  <div class="home-section" style="{_section_style("by-topic")}">
+    <h2 id="by-topic"><i class="ti ti-tags" style="{_section_icon_style("by-topic")}" aria-hidden="true"></i> Variables by topic area</h2>
+    <p>Variables are organised into {topic_n} top-level topic areas, shown largest to smallest. {top2_str} make up the largest share.</p>
 
     <div id="legend-topic" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px;font-size:11.5px;"></div>
     <div style="position:relative;width:100%;height:360px;">
@@ -108,86 +1400,13 @@ permalink: /docs/data-coverage/
     </div>
   </div>
 
-  <div class="home-section" style="background:rgba(186,117,23,0.06);border-left:5px solid #BA7517;border-radius:10px;">
-    <h2 id="topic-by-year"><i class="ti ti-grid-dots" style="color:#BA7517;" aria-hidden="true"></i> Topic coverage by collection year</h2>
-    <p>Which topic areas were covered in each major data collection sweep. Darker cells indicate more variables collected for that topic in that sweep. Only major sweeps are shown as rows; hover a cell for the exact count. Population characteristics and Raw data are omitted here as their counts are low across every sweep and add little to the picture.</p>
-    <div style="margin-top:12px;">
-      <table style="width:100%;table-layout:fixed;border-collapse:collapse;font-size:11px;">
-        <thead><tr><th style="width:15%;"></th><th title="Questionnaire data" style="width:12.14%;padding:4px 2px;font-size:9.5px;font-weight:600;color:#534AB7;writing-mode:vertical-rl;text-orientation:mixed;overflow:hidden;">Questionnaire data</th><th title="Diet diaries" style="width:12.14%;padding:4px 2px;font-size:9.5px;font-weight:600;color:#0F6E56;writing-mode:vertical-rl;text-orientation:mixed;overflow:hidden;">Diet diaries</th><th title="Specialist questionnaire data" style="width:12.14%;padding:4px 2px;font-size:9.5px;font-weight:600;color:#BA7517;writing-mode:vertical-rl;text-orientation:mixed;overflow:hidden;">Specialist questionnaire data</th><th title="Sub-Studies" style="width:12.14%;padding:4px 2px;font-size:9.5px;font-weight:600;color:#185FA5;writing-mode:vertical-rl;text-orientation:mixed;overflow:hidden;">Sub-Studies</th><th title="Biological samples" style="width:12.14%;padding:4px 2px;font-size:9.5px;font-weight:600;color:#993C1D;writing-mode:vertical-rl;text-orientation:mixed;overflow:hidden;">Biological samples</th><th title="Clinical data" style="width:12.14%;padding:4px 2px;font-size:9.5px;font-weight:600;color:#639922;writing-mode:vertical-rl;text-orientation:mixed;overflow:hidden;">Clinical data</th><th title="Omic" style="width:12.14%;padding:4px 2px;font-size:9.5px;font-weight:600;color:#D4537E;writing-mode:vertical-rl;text-orientation:mixed;overflow:hidden;">Omic</th></tr></thead>
-        <tbody>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1946</td><td title="Questionnaire data — 1946: 3 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.0);">3</td><td title="Diet diaries — 1946: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 1946: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1946: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1946: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1946: 12 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.0);">12</td><td title="Omic — 1946: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1950</td><td title="Questionnaire data — 1950: 10 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.0);">10</td><td title="Diet diaries — 1950: 152 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0.05);">152</td><td title="Specialist questionnaire data — 1950: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1950: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1950: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1950: 13 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.0);">13</td><td title="Omic — 1950: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1957</td><td title="Questionnaire data — 1957: 18 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.01);">18</td><td title="Diet diaries — 1957: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 1957: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1957: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1957: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1957: 29 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.01);">29</td><td title="Omic — 1957: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1961</td><td title="Questionnaire data — 1961: 42 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.01);">42</td><td title="Diet diaries — 1961: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 1961: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1961: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1961: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1961: 27 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.01);">27</td><td title="Omic — 1961: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1972</td><td title="Questionnaire data — 1972: 92 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.03);">92</td><td title="Diet diaries — 1972: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 1972: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1972: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1972: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1972: 22 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.01);">22</td><td title="Omic — 1972: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1977</td><td title="Questionnaire data — 1977: 214 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.07);">214</td><td title="Diet diaries — 1977: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 1977: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1977: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1977: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1977: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0);"></td><td title="Omic — 1977: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1982</td><td title="Questionnaire data — 1982: 1,115 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.34);">1115</td><td title="Diet diaries — 1982: 1,181 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0.36);">1181</td><td title="Specialist questionnaire data — 1982: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1982: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1982: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1982: 36 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.01);">36</td><td title="Omic — 1982: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1989</td><td title="Questionnaire data — 1989: 1,335 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.41);">1335</td><td title="Diet diaries — 1989: 1,181 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0.36);">1181</td><td title="Specialist questionnaire data — 1989: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 1989: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1989: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 1989: 162 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.05);">162</td><td title="Omic — 1989: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">1999</td><td title="Questionnaire data — 1999: 1,211 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.37);">1211</td><td title="Diet diaries — 1999: 1,047 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0.32);">1047</td><td title="Specialist questionnaire data — 1999: 326 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0.1);">326</td><td title="Sub-Studies — 1999: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 1999: 31 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0.01);">31</td><td title="Clinical data — 1999: 346 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.11);">346</td><td title="Omic — 1999: 1,066 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0.33);">1066</td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2006-10</td><td title="Questionnaire data — 2006-10: 2,375 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#fff;background:rgba(83,74,183,0.73);">2375</td><td title="Diet diaries — 2006-10: 1,327 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0.41);">1327</td><td title="Specialist questionnaire data — 2006-10: 141 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0.04);">141</td><td title="Sub-Studies — 2006-10: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 2006-10: 3,255 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#fff;background:rgba(153,60,29,1.0);">3255</td><td title="Clinical data — 2006-10: 1,476 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.45);">1476</td><td title="Omic — 2006-10: 3 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0.0);">3</td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2014</td><td title="Questionnaire data — 2014: 726 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.22);">726</td><td title="Diet diaries — 2014: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2014: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 2014: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 2014: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 2014: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0);"></td><td title="Omic — 2014: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2015</td><td title="Questionnaire data — 2015: 754 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.23);">754</td><td title="Diet diaries — 2015: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2015: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 2015: 3 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0.0);">3</td><td title="Biological samples — 2015: 250 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0.08);">250</td><td title="Clinical data — 2015: 181 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.06);">181</td><td title="Omic — 2015: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2015-2018</td><td title="Questionnaire data — 2015-2018: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0);"></td><td title="Diet diaries — 2015-2018: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2015-2018: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 2015-2018: 935 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0.29);">935</td><td title="Biological samples — 2015-2018: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 2015-2018: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0);"></td><td title="Omic — 2015-2018: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2018-2021</td><td title="Questionnaire data — 2018-2021: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0);"></td><td title="Diet diaries — 2018-2021: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2018-2021: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 2018-2021: 1,856 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#fff;background:rgba(24,95,165,0.57);">1856</td><td title="Biological samples — 2018-2021: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 2018-2021: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0);"></td><td title="Omic — 2018-2021: 4 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0.0);">4</td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2020</td><td title="Questionnaire data — 2020: 6 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.0);">6</td><td title="Diet diaries — 2020: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2020: 648 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0.2);">648</td><td title="Sub-Studies — 2020: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 2020: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 2020: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0);"></td><td title="Omic — 2020: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2022</td><td title="Questionnaire data — 2022: 513 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.16);">513</td><td title="Diet diaries — 2022: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2022: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 2022: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 2022: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 2022: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0);"></td><td title="Omic — 2022: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2023</td><td title="Questionnaire data — 2023: 240 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.07);">240</td><td title="Diet diaries — 2023: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2023: 75 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0.02);">75</td><td title="Sub-Studies — 2023: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 2023: 18 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0.01);">18</td><td title="Clinical data — 2023: 229 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0.07);">229</td><td title="Omic — 2023: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-<tr><td style="width:15%;font-size:10.5px;padding:4px 6px 4px 0;color:#555;font-weight:600;">2025</td><td title="Questionnaire data — 2025: 243 variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(83,74,183,0.07);">243</td><td title="Diet diaries — 2025: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(15,110,86,0);"></td><td title="Specialist questionnaire data — 2025: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(186,117,23,0);"></td><td title="Sub-Studies — 2025: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(24,95,165,0);"></td><td title="Biological samples — 2025: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(153,60,29,0);"></td><td title="Clinical data — 2025: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(99,153,34,0);"></td><td title="Omic — 2025: no variables" style="width:12.14%;height:22px;text-align:center;font-size:9px;color:#333;background:rgba(212,83,126,0);"></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
+{_topic_year_heatmap_section(ty)}
+{_depth_section(sd, total)}
+{_multisweep_section(unique_fids, multi_sweep, single_sweep)}
+{_longitudinal_section(agg["sweep_histogram"], agg["most_tracked"], unique_fids, multi_sweep)}
 
-  <div class="home-section" style="background:rgba(24,95,165,0.06);border-left:5px solid #185FA5;border-radius:10px;">
-    <h2 id="category-depth"><i class="ti ti-git-branch" style="color:#185FA5;" aria-hidden="true"></i> Category classification depth</h2>
-    <p>All 28,898 variables have at least one subtopic level. Deeper classification indicates a more precisely placed variable in the Browse by Category hierarchy. The fourth subtopic level is the most specific classification available.</p>
-    <div style="margin-top:14px;">
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><span style="width:190px;font-size:12px;color:#555;flex-shrink:0;">Subtopic 1 (all variables)</span><div style="flex:1;height:12px;background:#ede5ff;border-radius:6px;overflow:hidden;"><div style="width:100%;height:100%;background:#534AB7;border-radius:6px;"></div></div><span style="width:80px;font-size:11.5px;color:#777;text-align:right;">28,898 (100%)</span></div><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><span style="width:190px;font-size:12px;color:#555;flex-shrink:0;">Subtopic 2</span><div style="flex:1;height:12px;background:#ede5ff;border-radius:6px;overflow:hidden;"><div style="width:77%;height:100%;background:#7F77DD;border-radius:6px;"></div></div><span style="width:80px;font-size:11.5px;color:#777;text-align:right;">22,268 (77%)</span></div><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><span style="width:190px;font-size:12px;color:#555;flex-shrink:0;">Subtopic 3</span><div style="flex:1;height:12px;background:#ede5ff;border-radius:6px;overflow:hidden;"><div style="width:44%;height:100%;background:#AFA9EC;border-radius:6px;"></div></div><span style="width:80px;font-size:11.5px;color:#777;text-align:right;">12,765 (44%)</span></div><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><span style="width:190px;font-size:12px;color:#555;flex-shrink:0;">Subtopic 4 (deepest)</span><div style="flex:1;height:12px;background:#ede5ff;border-radius:6px;overflow:hidden;"><div style="width:12%;height:100%;background:#CECBF6;border-radius:6px;"></div></div><span style="width:80px;font-size:11.5px;color:#777;text-align:right;">3,373 (12%)</span></div>    </div>
-    <p style="font-size:12px;color:#666;margin:8px 0 0;font-style:italic;">Percentages are of total variables on OWL (28,898).</p>
-  </div>
-
-  <div class="home-section" style="background:rgba(99,153,34,0.06);border-left:5px solid #639922;border-radius:10px;">
-    <h2 id="multi-sweep"><i class="ti ti-repeat" style="color:#639922;" aria-hidden="true"></i> Single-sweep vs multi-sweep Field IDs</h2>
-    <p>Of the 23,021 unique Showcase Field IDs, 10% were collected at more than one time point with identical question text and coding. These multi-sweep fields are the ones where the NSHD Showcase groups instances together for direct longitudinal comparison.</p>
-    <div style="display:flex;align-items:center;gap:28px;margin-top:14px;flex-wrap:wrap;">
-      <canvas id="chartMultiSweep" width="140" height="140"
-        role="img" style="flex-shrink:0;width:140px;height:140px;"
-        aria-label="Donut chart: 90% single-sweep, 10% multi-sweep.">
-        Single-sweep: 20,669 (90%). Multi-sweep: 2,352 (10%).
-      </canvas>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <span style="width:12px;height:12px;border-radius:3px;background:#534AB7;flex-shrink:0;margin-top:3px;"></span>
-          <div>
-            <p style="font-size:14px;font-weight:700;color:#534AB7;margin:0;">              20,669              <span style="font-size:12px;font-weight:400;color:#555;">Field IDs (90%)</span></p>
-            <p style="font-size:12px;color:#666;margin:2px 0 0;">Single-sweep &#8212; collected at one time point only</p>
-          </div>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:10px;">
-          <span style="width:12px;height:12px;border-radius:3px;background:#9FE1CB;flex-shrink:0;margin-top:3px;"></span>
-          <div>
-            <p style="font-size:14px;font-weight:700;color:#0F6E56;margin:0;">              2,352              <span style="font-size:12px;font-weight:400;color:#555;">Field IDs (10%)</span></p>
-            <p style="font-size:12px;color:#666;margin:2px 0 0;">Multi-sweep &#8212; grouped together on the NSHD Showcase</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <p style="font-size:11.5px;color:#666;margin:10px 0 0;font-style:italic;line-height:1.6;">Note: this chart groups sweeps by distinct collection year per Field ID. A small number of Field IDs were collected more than once within the same labelled year &#8212; for example, Covid wave 1 and wave 2 are both recorded under the year 2020, despite being separate questionnaires collected months apart &#8212; and are counted here as single-sweep. Because of this, the multi-sweep count above is slightly higher than the number of longitudinal fields shown on the <a href="/OWL/docs/longitudinal_variables/longitudinal-variables/" style="color:#6a0dad;">Longitudinal Variables page</a>, which counts sweeps individually rather than by distinct year.</p>
-  </div>
-
-  <div class="home-section" style="background:rgba(212,83,126,0.06);border-left:5px solid #D4537E;border-radius:10px;">
-    <h2 id="longitudinal-depth"><i class="ti ti-clock-hour-4" style="color:#D4537E;" aria-hidden="true"></i> Longitudinal tracking depth</h2>
-    <p>Of 23,021 unique Showcase Field IDs, 2,352 (10%) have been collected at more than one sweep, some for decades. The most consistently tracked variable is <strong>Interview contact status (recoded) at age 19</strong> (Field ID 6200), collected across 27 sweeps spanning 77 years: 1948, 1950, 1952, 1953, 1954, 1955, 1956, 1957, 1959, 1961, 1965, 1966, 1968, 1969, 1971, 1972, 1977, 1982, 1989, 1999, 2006-10, 2014, 2015, 2021, 2022, 2023, 2025.</p>
-    <div style="position:relative;width:100%;height:260px;margin-top:12px;">
-      <canvas id="chartSweeps" role="img" aria-label="Bar chart of Field IDs by number of collection sweeps, 2 or more sweeps only.">Sweep counts listed in page text.</canvas>
-    </div>
-    <p style="font-size:11.5px;color:#666;margin:8px 0 0;font-style:italic;">Chart shows Field IDs collected at 2 or more sweeps only — the 20,669 fields collected just once are excluded so the repeat-collection pattern is visible. "Sweeps" counts distinct collection years per Field ID — see the note under Single-sweep vs multi-sweep above for an edge case involving same-year sweeps.</p>
-    <p style="font-size:11.5px;color:#666;margin:6px 0 0;font-style:italic;line-height:1.6;">Note: these counts only include truly longitudinal variables — those collected with identical question text and coding at every sweep they appear in, which is why they share one Showcase Field ID across sweeps. If a question was re-asked with different wording, response options, or coding at a later sweep, it is assigned a separate Field ID and is not counted as a repeat sweep of the original here, even though it may cover the same underlying measure.</p>
-  </div>
-
-
-  <div class="home-section" style="background:rgba(153,60,29,0.06);border-left:5px solid #993C1D;border-radius:10px;">
-    <h2 id="by-life-stage"><i class="ti ti-timeline" style="color:#993C1D;" aria-hidden="true"></i> Variables by life stage</h2>
+  <div class="home-section" style="{_section_style("by-life-stage")}">
+    <h2 id="by-life-stage"><i class="ti ti-timeline" style="{_section_icon_style("by-life-stage")}" aria-hidden="true"></i> Variables by life stage</h2>
     <p>The volume of variables reflects the intensity of data collection at each phase of life. The richest coverage is at ages 56–65 — corresponding to the major 2006–2010 clinic visit — followed by ages 46–55 and 66–75. Early-life coverage (birth to age 25) is smaller in scale but represents foundational measures collected across the study's first two decades.</p>
 
     <div id="legend-stage" style="display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px;font-size:11.5px;"></div>
@@ -196,28 +1415,28 @@ permalink: /docs/data-coverage/
     </div>
   </div>
 
-  <div class="home-section" style="background:rgba(15,110,86,0.06);border-left:5px solid #0F6E56;border-radius:10px;">
-    <h2 id="by-year"><i class="ti ti-calendar" style="color:#0F6E56;" aria-hidden="true"></i> Variables by collection year</h2>
-    <p>The chart shows variable counts for each collection year or period. The dominant peaks reflect the major intensive data collection sweeps — 2006-10 (8,581), 1999 (4,029), 1989 (2,680), 1982 (2,334). Early sweeps in the 1940s–70s have fewer variables, reflecting the simpler instruments used in those decades.</p>
+  <div class="home-section" style="{_section_style("by-year")}">
+    <h2 id="by-year"><i class="ti ti-calendar" style="{_section_icon_style("by-year")}" aria-hidden="true"></i> Variables by collection year</h2>
+    <p>The chart shows variable counts for each collection year or period. The dominant peaks reflect the major intensive data collection sweeps — {peak_str}. Early sweeps in the 1940s–70s have fewer variables, reflecting the simpler instruments used in those decades.</p>
 
     <div style="position:relative;width:100%;height:280px;">
       <canvas id="chartYear" role="img" aria-label="Bar chart of variables by collection year.">Year counts listed in page text.</canvas>
     </div>
   </div>
 
-  <div class="home-section" style="background:rgba(95,94,90,0.06);border-left:5px solid #5F5E5A;border-radius:10px;">
-    <h2 id="by-form"><i class="ti ti-clipboard-list" style="color:#5F5E5A;" aria-hidden="true"></i> Variables by data collection form</h2>
+  <div class="home-section" style="{_section_style("by-form")}">
+    <h2 id="by-form"><i class="ti ti-clipboard-list" style="{_section_icon_style("by-form")}" aria-hidden="true"></i> Variables by data collection form</h2>
     <p>Variables come from a wide range of data collection instruments, shown largest to smallest ("Other forms" is a catch-all bucket and is always listed last).</p>
 
     <style>
-      .form-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:10px; }
-      .form-table th { padding:8px 12px; background:#3a0066; color:white; text-align:left; font-size:12px; font-weight:500; }
-      .form-table td { padding:8px 12px; vertical-align:top; line-height:1.5; border-bottom:1px solid rgba(0,0,0,0.06); }
-      .form-table tr:nth-child(odd)  td { background:hsl(180 45% 97%); }
-      .form-table tr:nth-child(even) td { background:hsl(35 60% 97%); }
-      .form-bar-wrap { width:100%; height:8px; background:#ede5ff; border-radius:4px; margin-top:4px; overflow:hidden; }
-      .form-bar { height:100%; border-radius:4px; background:hsl(270 45% 50%); }
-      .year-tag { display:inline-block; font-size:10px; padding:1px 6px; border-radius:8px; background:hsl(270 35% 90%); color:hsl(270 35% 22%); margin:1px 2px; }
+      .form-table {{ width:100%; border-collapse:collapse; font-size:12px; margin-top:10px; }}
+      .form-table th {{ padding:8px 12px; background:#3a0066; color:white; text-align:left; font-size:12px; font-weight:500; }}
+      .form-table td {{ padding:8px 12px; vertical-align:top; line-height:1.5; border-bottom:1px solid rgba(0,0,0,0.06); }}
+      .form-table tr:nth-child(odd)  td {{ background:hsl(180 45% 97%); }}
+      .form-table tr:nth-child(even) td {{ background:hsl(35 60% 97%); }}
+      .form-bar-wrap {{ width:100%; height:8px; background:#ede5ff; border-radius:4px; margin-top:4px; overflow:hidden; }}
+      .form-bar {{ height:100%; border-radius:4px; background:hsl(270 45% 50%); }}
+      .year-tag {{ display:inline-block; font-size:10px; padding:1px 6px; border-radius:8px; background:hsl(270 35% 90%); color:hsl(270 35% 22%); margin:1px 2px; }}
     </style>
 
     <table class="form-table">
@@ -227,177 +1446,161 @@ permalink: /docs/data-coverage/
         <th style="width:64%">Collection years</th>
       </tr></thead>
       <tbody>
-        <tr><td><strong>Diet diaries</strong></td><td>4,901<div class="form-bar-wrap"><div class="form-bar" style="width:100%"></div></div></td><td><span class="year-tag">1950</span><span class="year-tag">1982</span><span class="year-tag">1989</span><span class="year-tag">1999</span><span class="year-tag">2006-10</span></td></tr>
-        <tr><td><strong>Postal questionnaire</strong></td><td>4,745<div class="form-bar-wrap"><div class="form-bar" style="width:97%"></div></div></td><td><span class="year-tag">1966</span><span class="year-tag">1968</span><span class="year-tag">1971</span><span class="year-tag">1972</span><span class="year-tag">1977</span><span class="year-tag">1982</span><span class="year-tag">1989</span><span class="year-tag">2006-10</span><span class="year-tag">2014</span><span class="year-tag">2022</span><span class="year-tag">2023</span><span class="year-tag">2025</span></td></tr>
-        <tr><td><strong>Nurse Clinic/Home visit</strong></td><td>3,573<div class="form-bar-wrap"><div class="form-bar" style="width:73%"></div></div></td><td><span class="year-tag">1999</span><span class="year-tag">2006-10</span><span class="year-tag">2015</span><span class="year-tag">2023</span></td></tr>
-        <tr><td><strong>Blood / Urine / Saliva assays</strong></td><td>3,565<div class="form-bar-wrap"><div class="form-bar" style="width:73%"></div></div></td><td><span class="year-tag">1999</span><span class="year-tag">2006-10</span><span class="year-tag">2015</span><span class="year-tag">2020-2024</span><span class="year-tag">2021</span><span class="year-tag">2023</span></td></tr>
-        <tr><td><strong>Women's Health Questionnaire</strong></td><td>2,800<div class="form-bar-wrap"><div class="form-bar" style="width:57%"></div></div></td><td><span class="year-tag">1993</span><span class="year-tag">1994</span><span class="year-tag">1995</span><span class="year-tag">1996</span><span class="year-tag">1997</span><span class="year-tag">1998</span><span class="year-tag">1999</span><span class="year-tag">2000</span><span class="year-tag">2003</span><span class="year-tag">2005</span><span class="year-tag">2006-10</span></td></tr>
-        <tr><td><strong>Insight 46 (phases 1 & 2)</strong></td><td>2,590<div class="form-bar-wrap"><div class="form-bar" style="width:53%"></div></div></td><td><span class="year-tag">2015-2018</span><span class="year-tag">2018-2021</span></td></tr>
-        <tr><td><strong>Imaging and devices (Ultrasound, Dicom, Actiheart moniter etc)</strong></td><td>1,513<div class="form-bar-wrap"><div class="form-bar" style="width:31%"></div></div></td><td><span class="year-tag">1999</span><span class="year-tag">2006-10</span><span class="year-tag">2018-2021</span></td></tr>
-        <tr><td><strong>DNA / Genomics</strong></td><td>1,071<div class="form-bar-wrap"><div class="form-bar" style="width:22%"></div></div></td><td><span class="year-tag">1999</span><span class="year-tag">2006-10</span><span class="year-tag">2018-2021</span></td></tr>
-        <tr><td><strong>Covid questionnaires</strong></td><td>1,064<div class="form-bar-wrap"><div class="form-bar" style="width:22%"></div></div></td><td><span class="year-tag">2020</span><span class="year-tag">2021</span><span class="year-tag">2022</span></td></tr>
-        <tr><td><strong>Self-completion booklet</strong></td><td>867<div class="form-bar-wrap"><div class="form-bar" style="width:18%"></div></div></td><td><span class="year-tag">1982</span><span class="year-tag">1989</span><span class="year-tag">1999</span><span class="year-tag">2006-10</span><span class="year-tag">2015</span><span class="year-tag">2023</span></td></tr>
-        <tr><td><strong>Myofit sub-study</strong></td><td>817<div class="form-bar-wrap"><div class="form-bar" style="width:17%"></div></div></td><td><span class="year-tag">2020-2024</span></td></tr>
-        <tr><td><strong>Cognitive tests</strong></td><td>165<div class="form-bar-wrap"><div class="form-bar" style="width:3%"></div></div></td><td><span class="year-tag">1954</span><span class="year-tag">1957</span><span class="year-tag">1961</span><span class="year-tag">1999</span><span class="year-tag">2006-10</span><span class="year-tag">2015</span><span class="year-tag">2020-2024</span><span class="year-tag">2023</span></td></tr>
-        <tr><td><strong>Doctor's examination</strong></td><td>92<div class="form-bar-wrap"><div class="form-bar" style="width:2%"></div></div></td><td><span class="year-tag">1952</span><span class="year-tag">1953</span><span class="year-tag">1957</span><span class="year-tag">1961</span></td></tr>
-        <tr><td><strong>Mother's Interview</strong></td><td>78<div class="form-bar-wrap"><div class="form-bar" style="width:2%"></div></div></td><td><span class="year-tag">1948</span><span class="year-tag">1950</span><span class="year-tag">1952</span><span class="year-tag">1955</span><span class="year-tag">1957</span><span class="year-tag">1961</span><span class="year-tag">1965</span></td></tr>
-        <tr><td><strong>Teacher's questionnaire</strong></td><td>19<div class="form-bar-wrap"><div class="form-bar" style="width:0%"></div></div></td><td><span class="year-tag">1956</span><span class="year-tag">1959</span><span class="year-tag">1961</span></td></tr>
-        <tr><td><strong>Other forms</strong></td><td>1,038<div class="form-bar-wrap"><div class="form-bar" style="width:21%"></div></div></td><td><span style="font-size:11px;color:#666;font-style:italic;">Various — spanning 1946 to present including early childhood measures and specialist instruments</span></td></tr>
+{form_rows_html}
       </tbody>
     </table>
-    <p style="font-size:11.5px;color:#666;margin:10px 0 0;font-style:italic;line-height:1.6;">Note: this table groups variables by the instrument used to collect them (Form), which can differ from their category classification (Subtopic). 40 variables categorised under the Myofit study were collected using another instrument (37 via ACEIII questionnaire; 3 via Blood assays) and are counted under that instrument's row above rather than under "Myofit sub-study". 204 variables categorised under the Insight46 study were collected using another instrument (201 via Ultrasound; 3 via Blood assays) and are counted under that instrument's row above rather than under "Insight 46 (phases 1 & 2)".</p>
-
+{form_note_html}
     <div class="callout-note" style="margin-top:12px;">
       <i class="ti ti-info-circle" aria-hidden="true"></i>
       <span>Variable counts shown here reflect the current cleaned dataset. New variables are added periodically as questionnaires are processed. See the <a href="https://datashare.ndph.ox.ac.uk/nshd46/exinfo.cgi" style="color:#6a0dad;" target="_blank">NSHD Showcase Essential Information page</a> for the live list of what has been deposited.</span>
     </div>
   </div>
 
-  <div class="home-section" style="background:rgba(8,145,178,0.06);border-left:5px solid #0891B2;border-radius:10px;">
-    <h2 id="ukllc"><i class="ti ti-link" style="color:#0891B2;" aria-hidden="true"></i> UKLLC harmonised datasets</h2>
-    <p>2,865 variables (9.9% of the 28,898 on OWL) have been standardised into a harmonised dataset for cross-cohort comparison via the UK Longitudinal Linkage Collaboration (UKLLC), across 16 distinct harmonised datasets.</p>
-    <table class="form-table">
-      <thead><tr><th style="width:40%">Harmonised dataset</th><th style="width:60%">Variables</th></tr></thead>
-      <tbody>
-        <tr><td title="NSHD46_CAT-5211_EPIC_v0001_20260812"><strong>Diet (EPIC food frequency questionnaire)</strong></td><td>566<div class="form-bar-wrap"><div class="form-bar" style="width:100%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-5154_Emplymnt_Hist_v0001_20260813"><strong>Employment history</strong></td><td>483<div class="form-bar-wrap"><div class="form-bar" style="width:85%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-5152_Household_v0001_20260813"><strong>Household composition</strong></td><td>381<div class="form-bar-wrap"><div class="form-bar" style="width:67%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-51014_Heart_Circ_v0001_20260812"><strong>Heart and circulatory health</strong></td><td>378<div class="form-bar-wrap"><div class="form-bar" style="width:67%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-2011_Blood_Biochemistry_v0001_20260814"><strong>Blood biochemistry</strong></td><td>198<div class="form-bar-wrap"><div class="form-bar" style="width:35%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-51013_Respiratory_v0001_20260812"><strong>Respiratory health</strong></td><td>133<div class="form-bar-wrap"><div class="form-bar" style="width:23%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-51015_Endo_Metab_v0001_20260812"><strong>Endocrine and metabolic health</strong></td><td>125<div class="form-bar-wrap"><div class="form-bar" style="width:22%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-1103_BP_v0001_20260814"><strong>Blood pressure</strong></td><td>120<div class="form-bar-wrap"><div class="form-bar" style="width:21%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-5151_Econ_Circ_v0001_20260813"><strong>Economic circumstances</strong></td><td>120<div class="form-bar-wrap"><div class="form-bar" style="width:21%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-5251_Smoking_v0001_20260812"><strong>Smoking history</strong></td><td>120<div class="form-bar-wrap"><div class="form-bar" style="width:21%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-11021_Anthropometry_v0001_20260812"><strong>Anthropometry (height, weight, body composition)</strong></td><td>89<div class="form-bar-wrap"><div class="form-bar" style="width:16%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-5252_Alcohol_v0001_20260812"><strong>Alcohol consumption</strong></td><td>73<div class="form-bar-wrap"><div class="form-bar" style="width:13%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-51021_Clin_disorder_v0001_20260812"><strong>Clinical disorders</strong></td><td>52<div class="form-bar-wrap"><div class="form-bar" style="width:9%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-51012_Cancer_v0001_20260812"><strong>Cancer diagnoses</strong></td><td>29<div class="form-bar-wrap"><div class="form-bar" style="width:5%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_CAT-5155_Education_v0001_20260813"><strong>Education history</strong></td><td>22<div class="form-bar-wrap"><div class="form-bar" style="width:4%;background:#0891B2;"></div></div></td></tr>
-        <tr><td title="NSHD46_APOE_v0001_20260422"><strong>APOE genotype</strong></td><td>6<div class="form-bar-wrap"><div class="form-bar" style="width:1%;background:#0891B2;"></div></div></td></tr>
-      </tbody>
-    </table>
-    <p style="font-size:11.5px;color:#666;margin:8px 0 0;font-style:italic;">Hover a dataset name to see its full UKLLC identifier. Most NSHD variables are not yet part of a harmonised UKLLC dataset — this reflects how many variables have been through UKLLC's harmonisation process, not overall data availability.</p>
-  </div>
-
+{_ukllc_section(agg["ukllc_counts"], agg["ukllc_variables_total"], total)}
 
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-(function() {
+(function() {{
 
-  const TOPIC_COLORS = ['#1D9E75','#0F6E56','#5DCAA5','#085041','#9FE1CB','#3C3489','#7F77DD','#B5D4F4','#D3D1C7'];
+  const TOPIC_COLORS = {_js_str_list(topic_colors)};
   const STAGE_COLORS = ['#9FE1CB','#5DCAA5','#1D9E75','#0F6E56','#534AB7','#3C3489','#7F77DD','#AFA9EC','#CECBF6'];
 
-  function makeLegend(id, labels, colors) {
+  function makeLegend(id, labels, colors) {{
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = labels.map((l,i) =>
       `<span style="display:inline-flex;align-items:center;gap:5px;">
-        <span style="width:11px;height:11px;border-radius:2px;background:${colors[i]};flex-shrink:0;"></span>
-        <span style="color:var(--color-text-secondary)">${l}</span>
+        <span style="width:11px;height:11px;border-radius:2px;background:${{colors[i]}};flex-shrink:0;"></span>
+        <span style="color:var(--color-text-secondary)">${{l}}</span>
       </span>`
     ).join('');
-  }
+  }}
 
-  new Chart(document.getElementById('chartTopic'), {
+  new Chart(document.getElementById('chartTopic'), {{
     type: 'bar',
-    data: {
-      labels: ['Questionnaire data','Diet diaries','Specialist questionnaire data','Sub-studies','Biological samples','Clinical data','Omic','Population characteristics','Raw data'],
-      datasets: [{ data: [9006,4888,4089,3651,3554,2598,1073,34,5], backgroundColor: TOPIC_COLORS, borderWidth: 0, borderRadius: 3 }]
-    },
-    options: {
+    data: {{
+      labels: {_js_str_list(topic_display)},
+      datasets: [{{ data: {_js_list(topic_data)}, backgroundColor: TOPIC_COLORS, borderWidth: 0, borderRadius: 3 }}]
+    }},
+    options: {{
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + ' variables' } } },
-      scales: {
-        x: { ticks: { font:{size:11}, color:'#888', callback: v => v.toLocaleString() }, grid: { color:'rgba(136,135,128,0.12)' } },
-        y: { ticks: { font:{size:11}, color:'#555' }, grid: { display:false } }
-      }
-    }
-  });
+      plugins: {{ legend: {{ display: false }}, tooltip: {{ callbacks: {{ label: c => ' ' + c.raw.toLocaleString() + ' variables' }} }} }},
+      scales: {{
+        x: {{ ticks: {{ font:{{size:11}}, color:'#888', callback: v => v.toLocaleString() }}, grid: {{ color:'rgba(136,135,128,0.12)' }} }},
+        y: {{ ticks: {{ font:{{size:11}}, color:'#555' }}, grid: {{ display:false }} }}
+      }}
+    }}
+  }});
 
-  makeLegend('legend-topic', ['Questionnaire data','Diet diaries','Specialist questionnaire data','Sub-studies','Biological samples','Clinical data','Omic','Population characteristics','Raw data'], TOPIC_COLORS);
+  makeLegend('legend-topic', {_js_str_list(topic_display)}, TOPIC_COLORS);
 
-  new Chart(document.getElementById('chartStage'), {
+  new Chart(document.getElementById('chartStage'), {{
     type: 'bar',
-    data: {
-      labels: ['Birth–5','Age 6–15','Age 16–25','Age 26–35','Midlife 36–45','Age 46–55','Age 56–65','Age 66–75','Age 76+'],
-      datasets: [{ data: [211,210,69,331,5014,6294,8807,6637,1325], backgroundColor: STAGE_COLORS, borderWidth: 0, borderRadius: 3 }]
-    },
-    options: {
+    data: {{
+      labels: {_js_str_list(LIFE_STAGE_ORDER)},
+      datasets: [{{ data: {_js_list(stage_data)}, backgroundColor: STAGE_COLORS, borderWidth: 0, borderRadius: 3 }}]
+    }},
+    options: {{
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + ' variables' } } },
-      scales: {
-        x: { ticks: { font:{size:11}, color:'#555', maxRotation:35, autoSkip:false }, grid: { display:false } },
-        y: { ticks: { font:{size:11}, color:'#888', callback: v => v.toLocaleString() }, grid: { color:'rgba(136,135,128,0.12)' } }
-      }
-    }
-  });
+      plugins: {{ legend: {{ display: false }}, tooltip: {{ callbacks: {{ label: c => ' ' + c.raw.toLocaleString() + ' variables' }} }} }},
+      scales: {{
+        x: {{ ticks: {{ font:{{size:11}}, color:'#555', maxRotation:35, autoSkip:false }}, grid: {{ display:false }} }},
+        y: {{ ticks: {{ font:{{size:11}}, color:'#888', callback: v => v.toLocaleString() }}, grid: {{ color:'rgba(136,135,128,0.12)' }} }}
+      }}
+    }}
+  }});
 
-  makeLegend('legend-stage', ['Birth–5','Age 6–15','Age 16–25','Age 26–35','Midlife 36–45','Age 46–55','Age 56–65','Age 66–75','Age 76+'], STAGE_COLORS);
+  makeLegend('legend-stage', {_js_str_list(LIFE_STAGE_ORDER)}, STAGE_COLORS);
 
-  new Chart(document.getElementById('chartMultiSweep'), {
+  new Chart(document.getElementById('chartMultiSweep'), {{
     type: 'doughnut',
-    data: {
-      labels: ['Single-sweep (90%)', 'Multi-sweep (10%)'],
-      datasets: [{
-        data: [20669, 2352],
+    data: {{
+      labels: ['Single-sweep ({pct_single}%)', 'Multi-sweep ({pct_multi}%)'],
+      datasets: [{{
+        data: [{single_sweep}, {multi_sweep}],
         backgroundColor: ['#534AB7', '#9FE1CB'],
         borderWidth: 0,
         hoverOffset: 6
-      }]
-    },
-    options: {
+      }}]
+    }},
+    options: {{
       responsive: false,
       maintainAspectRatio: false,
       cutout: '68%',
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: function(c) { return ' ' + c.raw.toLocaleString() + ' Field IDs'; } } }
-      }
-    }
-  });
+      plugins: {{
+        legend: {{ display: false }},
+        tooltip: {{ callbacks: {{ label: function(c) {{ return ' ' + c.raw.toLocaleString() + ' Field IDs'; }} }} }}
+      }}
+    }}
+  }});
 
-  new Chart(document.getElementById('chartSweeps'), {
+  new Chart(document.getElementById('chartSweeps'), {{
     type: 'bar',
-    data: {
-      labels: ['2','3','4','5','6','7','8','9','10','13','14','15','27'],
-      datasets: [{ data: [1075,170,773,21,148,83,55,14,8,1,1,2,1], backgroundColor: '#7F77DD', borderWidth: 0, borderRadius: 3 }]
-    },
-    options: {
+    data: {{
+      labels: {_js_str_list(sweep_labels)},
+      datasets: [{{ data: {_js_list(sweep_data)}, backgroundColor: '#7F77DD', borderWidth: 0, borderRadius: 3 }}]
+    }},
+    options: {{
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + ' Field IDs' } } },
-      scales: {
-        x: { title: { display:true, text:'Number of sweeps', color:'#555', font:{size:11} },
-              ticks: { font:{size:11}, color:'#555' }, grid: { display:false } },
-        y: { ticks: { font:{size:11}, color:'#888', callback: v => v.toLocaleString() }, grid: { color:'rgba(136,135,128,0.12)' } }
-      }
-    }
-  });
+      plugins: {{ legend: {{ display: false }}, tooltip: {{ callbacks: {{ label: c => ' ' + c.raw.toLocaleString() + ' Field IDs' }} }} }},
+      scales: {{
+        x: {{ title: {{ display:true, text:'Number of sweeps', color:'#555', font:{{size:11}} }},
+              ticks: {{ font:{{size:11}}, color:'#555' }}, grid: {{ display:false }} }},
+        y: {{ ticks: {{ font:{{size:11}}, color:'#888', callback: v => v.toLocaleString() }}, grid: {{ color:'rgba(136,135,128,0.12)' }} }}
+      }}
+    }}
+  }});
 
-  new Chart(document.getElementById('chartYear'), {
+  new Chart(document.getElementById('chartYear'), {{
     type: 'bar',
-    data: {
-      labels: ['1946','1948','1950','1952','1953','1954','1955','1956','1957','1959','1961','1962','1965','1966','1968','1969','1971','1972','1977','1982','1989','1993','1994','1995','1996','1997','1998','1999','2000','2003','2005','2006-10','2014','2015','2015-2018','2018-2021','2020','2020-2024','2021','2022','2023','2025'],
-      datasets: [{ data: [15,19,177,35,26,10,4,3,48,14,70,6,8,31,7,2,15,116,215,2334,2680,232,258,265,273,400,333,4029,504,182,44,8581,727,1189,935,1860,654,857,415,515,564,244], backgroundColor: '#534AB7', borderWidth: 0, borderRadius: 2 }]
-    },
-    options: {
+    data: {{
+      labels: {_js_str_list(year_labels)},
+      datasets: [{{ data: {_js_list(year_data)}, backgroundColor: '#534AB7', borderWidth: 0, borderRadius: 2 }}]
+    }},
+    options: {{
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + c.raw.toLocaleString() + ' variables' } } },
-      scales: {
-        x: { ticks: { font:{size:10}, color:'#555', maxRotation:45, autoSkip:false }, grid: { display:false } },
-        y: { ticks: { font:{size:11}, color:'#888', callback: v => v.toLocaleString() }, grid: { color:'rgba(136,135,128,0.12)' } }
-      }
-    }
-  });
+      plugins: {{ legend: {{ display: false }}, tooltip: {{ callbacks: {{ label: c => ' ' + c.raw.toLocaleString() + ' variables' }} }} }},
+      scales: {{
+        x: {{ ticks: {{ font:{{size:10}}, color:'#555', maxRotation:45, autoSkip:false }}, grid: {{ display:false }} }},
+        y: {{ ticks: {{ font:{{size:11}}, color:'#888', callback: v => v.toLocaleString() }}, grid: {{ color:'rgba(136,135,128,0.12)' }} }}
+      }}
+    }}
+  }});
 
-})();
+}})();
 </script>
 
-<script src="{{ site.baseurl }}/assets/js/topics.js"></script>
+<script src="{{{{ site.baseurl }}}}/assets/js/topics.js"></script>
+"""
+
+
+# ── Main ──────────────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    print(f"Reading {INPUT_JSON}...")
+    agg = load_and_aggregate(INPUT_JSON)
+
+    print(f"  {agg['total']:,} total variables")
+    print(f"  {len(agg['topic_counts'])} topic areas")
+    print(f"  {len(agg['year_counts'])} collection years")
+    print(f"  {len(agg['form_counts'])} form groups")
+    print(f"  {agg['unique_fids']:,} unique Field IDs, {agg['multi_sweep']:,} multi-sweep")
+    print(f"  {agg['ukllc_variables_total']:,} variables linked to {len(agg['ukllc_counts'])} UKLLC datasets")
+
+    md = generate(agg)
+
+    with open(OUTPUT_MD, "w", encoding="utf-8") as f:
+        f.write(md)
+
+    print(f"\n✓ Written to {OUTPUT_MD} ({len(md.splitlines())} lines)")
+
+    pdf_path = os.path.join(PDF_OUTPUT_DIR, PDF_FILENAME)
+    print(f"\nBuilding PDF...")
+    generate_pdf(agg, pdf_path)
+    print(f"✓ Written to {pdf_path}")
