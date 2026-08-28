@@ -49,6 +49,31 @@
 
         link.classList.toggle('active', isActive);
       });
+
+      // Collapse/expand each sidebar sub-item group so it mirrors
+      // whether its parent accordion section is currently open.
+      // This is the single source of truth for sidebar grouping —
+      // it fires after every outer-accordion click, inner-accordion
+      // click, sidebar-link click, and on initial load, so the
+      // sidebar never needs its own independent open/closed state.
+      document.querySelectorAll('.sidebar-summary li.sb-parent').forEach(function (parentLi) {
+        var secId = parentLi.dataset.sec;
+        var row = document.getElementById(secId);
+        var trigger = row ? row.querySelector('.sec-trigger') : null;
+        var isOpen = !!trigger && trigger.getAttribute('aria-expanded') === 'true';
+
+        parentLi.classList.toggle('open', isOpen);
+
+        // Keep the collapsed group out of the tab order / AT tree
+        // (it's still in the DOM with zero height for the CSS
+        // grid-rows transition, so without this a keyboard user
+        // could tab into invisible links).
+        var subgroupInner = parentLi.querySelector('.sb-subgroup-inner');
+        if (subgroupInner) {
+          if (isOpen) subgroupInner.removeAttribute('inert');
+          else subgroupInner.setAttribute('inert', '');
+        }
+      });
     }
 
     /* ----------------------------------------------------------
