@@ -41,7 +41,7 @@ classes: home-page
   <div class="sidebar-summary">
     <h3><i class="ti ti-list" aria-hidden="true"></i> On this page</h3>
     <ul>
-      <li><a href="#sec-about" data-sec="sec-about">📘 About This Resource</a></li>
+      <li><a href="#sec-about" data-sec="sec-about"><span class="sb-spacer"></span>📘 About This Resource</a></li>
 
       <li class="sb-parent" data-sec="sec-getting-started">
         <a href="#sec-getting-started" data-sec="sec-getting-started"><span class="sb-caret">▸</span>🧭 Getting Started</a>
@@ -57,9 +57,9 @@ classes: home-page
         </div>
       </li>
 
-      <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
+      <li><a href="#sec-coverage" data-sec="sec-coverage"><span class="sb-spacer"></span>📊 Data Coverage</a></li>
 
-      <li><a href="#sec-timeline" data-sec="sec-timeline">🕰️ Study Timeline</a></li>
+      <li><a href="#sec-timeline" data-sec="sec-timeline"><span class="sb-spacer"></span>🕰️ Study Timeline</a></li>
 
       <li class="sb-parent" data-sec="sec-data-access">
         <a href="#sec-data-access" data-sec="sec-data-access"><span class="sb-caret">▸</span>🗄️ Accessing NSHD Data</a>
@@ -98,7 +98,7 @@ classes: home-page
         </div>
       </li>
 
-      <li><a href="#sec-access" data-sec="sec-access">🔐 Access &amp; Permissions</a></li>
+      <li><a href="#sec-access" data-sec="sec-access"><span class="sb-spacer"></span>🔐 Access &amp; Permissions</a></li>
     </ul>
   </div>
 

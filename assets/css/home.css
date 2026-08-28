@@ -169,54 +169,50 @@
   display: none !important;
 }
 
-/* Every top-level row (direct children of the sidebar's <ul>) reserves
-   the same left gutter, whether or not it actually has a caret — this
-   is what keeps "About This Resource" and "Getting Started" starting
-   at the same x-position instead of the caret pushing parent labels
-   to the right. Widened further to guarantee clearance between the
-   caret and the icon that follows it.
-   !important is required here: the older per-section ".active" rules
-   further down this file (e.g. a[data-sec="sec-about"].active) set
-   their own padding-left:5px with higher specificity, and were
-   silently overriding this back down to 5px the moment a row became
-   active — which is what was pulling every label sharply left as soon
-   as you expanded its section. */
+/* Every top-level row (direct children of the sidebar's <ul>) uses
+   flexbox to lay the caret/spacer slot and the label side by side.
+   This REPLACES an earlier version that used position:absolute for
+   the caret, anchored to position:relative on this <a> — that
+   depended on the ".sidebar-summary > ul > li > a" selector actually
+   matching in the live DOM to establish the right positioning
+   context, and evidently wasn't reliably doing so (possibly due to
+   how the Jekyll/kramdown build processes this embedded HTML),
+   which is the most likely reason the caret wasn't appearing despite
+   the CSS being correct and deployed. Flexbox in normal document flow
+   sidesteps that dependency entirely — much harder for this to
+   silently fail. Every row (whether it has a real .sb-caret or a
+   blank .sb-spacer) reserves the same 12px-wide slot, which is what
+   keeps every label starting at the same x-position. */
 .home-page .sidebar-summary > ul > li > a {
-  position: relative;
-  padding-left: 32px !important;
+  display: flex !important;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 8px !important;
 }
 
-.home-page .sidebar-summary li.sb-parent > a {
-  display: block;
-}
-
-/* The caret sits inside that reserved gutter rather than inline
-   before the text — a plain solid triangle (no background box). It
-   only appears on rows that actually expand.
-   Pulled to a NEGATIVE left offset so it sits inside the sidebar's
-   own inner padding (16px 18px on .sidebar-summary), close to the
-   true visible edge of the rounded card — left:0 only reached the
-   start of the text content area, which is still ~18px in from the
-   card's actual boundary. -16px stays safely inside that padding zone
-   so it can't get clipped by the container's scroll/overflow.
-   Built from two solid bars (::before/::after) rather than a
-   border-trick triangle or a text glyph — a plus (+) sign at rest
-   that rotates into a cross (×) when the section is open. This is a
-   more robust construction than the previous triangle (plain
-   rectangles, no border-color/box-model edge cases) and a very
-   familiar "expand/collapse" affordance. */
-.home-page .sidebar-summary .sb-caret {
-  display: block;
-  position: absolute;
-  left: -16px;
-  top: 5px;
+.home-page .sidebar-summary .sb-caret,
+.home-page .sidebar-summary .sb-spacer {
+  flex: 0 0 12px;
   width: 12px;
   height: 12px;
+  margin-top: 3px; /* nudges the slot down to line up with the first line of the label */
+}
+
+/* The caret itself only needs position:relative scoped to its own
+   small box — its ::before/::after bars are positioned inside THIS
+   element, not relative to the whole row, so there's no dependency
+   on any ancestor selector matching. */
+.home-page .sidebar-summary .sb-caret {
+  position: relative;
   font-size: 0;      /* hides the literal "▸" text character still sitting
                          inside this span in the HTML */
   line-height: 0;
 }
 
+/* A plain plus (+) sign built from two solid bars, rotating into a
+   cross (×) when the section is open — a familiar expand/collapse
+   affordance, built from plain rectangles rather than a border-trick
+   triangle or a text glyph. */
 .home-page .sidebar-summary .sb-caret::before,
 .home-page .sidebar-summary .sb-caret::after {
   content: '';
