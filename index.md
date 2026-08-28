@@ -43,36 +43,60 @@ classes: home-page
     <ul>
       <li><a href="#sec-about" data-sec="sec-about">📘 About This Resource</a></li>
 
-      <li class="sb-parent"><a href="#sec-getting-started" data-sec="sec-getting-started">🧭 Getting Started</a></li>
-      <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where">Where should I start?</a></li>
-      <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
-      <li class="sb-sub"><a href="#gs-data-dictionary" data-sec="sec-getting-started" data-inner="gs-data-dictionary">The Data Dictionary</a></li>
-      <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
-      <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata">Variable Metadata</a></li>
-      <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
+      <li class="sb-parent" data-sec="sec-getting-started">
+        <a href="#sec-getting-started" data-sec="sec-getting-started"><span class="sb-caret">▸</span>🧭 Getting Started</a>
+        <div class="sb-subgroup">
+          <ul class="sb-subgroup-inner">
+            <li class="sb-sub"><a href="#gs-where" data-sec="sec-getting-started" data-inner="gs-where">Where should I start?</a></li>
+            <li class="sb-sub"><a href="#gs-organised" data-sec="sec-getting-started" data-inner="gs-organised">How the site is organised</a></li>
+            <li class="sb-sub"><a href="#gs-data-dictionary" data-sec="sec-getting-started" data-inner="gs-data-dictionary">The Data Dictionary</a></li>
+            <li class="sb-sub"><a href="#gs-basket" data-sec="sec-getting-started" data-inner="gs-basket">Basket Management</a></li>
+            <li class="sb-sub"><a href="#gs-variable-metadata" data-sec="sec-getting-started" data-inner="gs-variable-metadata">Variable Metadata</a></li>
+            <li class="sb-sub"><a href="#gs-jargon" data-sec="sec-getting-started" data-inner="gs-jargon">Cohort study jargon</a></li>
+          </ul>
+        </div>
+      </li>
 
       <li><a href="#sec-coverage" data-sec="sec-coverage">📊 Data Coverage</a></li>
 
       <li><a href="#sec-timeline" data-sec="sec-timeline">🕰️ Study Timeline</a></li>
 
-      <li class="sb-parent"><a href="#sec-data-access" data-sec="sec-data-access">🗄️ Accessing NSHD Data</a></li>
-      <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview">Overview</a></li>
-      <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms">OWL, Showcase &amp; Condor</a></li>
-      <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm">Variable Metadata Pages</a></li>
-      <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep">Metadata Enhancement Project</a></li>
+      <li class="sb-parent" data-sec="sec-data-access">
+        <a href="#sec-data-access" data-sec="sec-data-access"><span class="sb-caret">▸</span>🗄️ Accessing NSHD Data</a>
+        <div class="sb-subgroup">
+          <ul class="sb-subgroup-inner">
+            <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview">Overview</a></li>
+            <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms">OWL, Showcase &amp; Condor</a></li>
+            <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm">Variable Metadata Pages</a></li>
+            <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep">Metadata Enhancement Project</a></li>
+          </ul>
+        </div>
+      </li>
 
-      <li class="sb-parent"><a href="#sec-search" data-sec="sec-search">🔍 Search Methods</a></li>
-      <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd">Search Data Dictionary</a></li>
-      <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat">Browse by Category</a></li>
-      <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
-      <li class="sb-sub"><a href="#search-long" data-sec="sec-search" data-inner="search-long">Longitudinal Search</a></li>
-      <li class="sb-sub"><a href="#search-year" data-sec="sec-search" data-inner="search-year">Search by Year</a></li>
-      <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
+      <li class="sb-parent" data-sec="sec-search">
+        <a href="#sec-search" data-sec="sec-search"><span class="sb-caret">▸</span>🔍 Search Methods</a>
+        <div class="sb-subgroup">
+          <ul class="sb-subgroup-inner">
+            <li class="sb-sub"><a href="#search-dd" data-sec="sec-search" data-inner="search-dd">Search Data Dictionary</a></li>
+            <li class="sb-sub"><a href="#search-cat" data-sec="sec-search" data-inner="search-cat">Browse by Category</a></li>
+            <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
+            <li class="sb-sub"><a href="#search-long" data-sec="sec-search" data-inner="search-long">Longitudinal Search</a></li>
+            <li class="sb-sub"><a href="#search-year" data-sec="sec-search" data-inner="search-year">Search by Year</a></li>
+            <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
+          </ul>
+        </div>
+      </li>
 
-      <li class="sb-parent"><a href="#sec-explore" data-sec="sec-explore">🧭 Explore Documentation</a></li>
-      <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest">NSHD Questionnaires</a></li>
-      <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics">Topics</a></li>
-      <li class="sb-sub"><a href="#doc-documentation" data-sec="sec-explore" data-inner="doc-documentation">Documentation</a></li>
+      <li class="sb-parent" data-sec="sec-explore">
+        <a href="#sec-explore" data-sec="sec-explore"><span class="sb-caret">▸</span>🧭 Explore Documentation</a>
+        <div class="sb-subgroup">
+          <ul class="sb-subgroup-inner">
+            <li class="sb-sub"><a href="#doc-quest" data-sec="sec-explore" data-inner="doc-quest">NSHD Questionnaires</a></li>
+            <li class="sb-sub"><a href="#doc-topics" data-sec="sec-explore" data-inner="doc-topics">Topics</a></li>
+            <li class="sb-sub"><a href="#doc-documentation" data-sec="sec-explore" data-inner="doc-documentation">Documentation</a></li>
+          </ul>
+        </div>
+      </li>
 
       <li><a href="#sec-access" data-sec="sec-access">🔐 Access &amp; Permissions</a></li>
     </ul>
