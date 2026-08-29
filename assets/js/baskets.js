@@ -189,6 +189,30 @@ window.addEventListener("load", function () {
     updateBasketResultsCount();
   };
 
+  // A labeled divider row, not just colour, so the restricted group
+  // reads as an intentional, explained block rather than an
+  // undifferentiated wall of pink — especially important on a page
+  // where every row happens to be restricted and there's nothing to
+  // visually contrast it against.
+  function buildDividerRow(kind, count) {
+    const tr = document.createElement("tr");
+    tr.classList.add("basket-divider-row");
+    const td = document.createElement("td");
+    td.colSpan = 3;
+    if (kind === "restricted") {
+      td.innerHTML = '<i class="ti ti-lock" aria-hidden="true" style="margin-right:6px;"></i>' +
+        "<strong>Restricted variable" + (count === 1 ? "" : "s") + " (" + count + ")</strong> — pinned to the top";
+      td.style.cssText = "background:#FCEBEB; color:#791F1F; font-weight:600; padding:6px 12px; " +
+        "border-top:2px solid #E24B4A; border-bottom:2px solid #E24B4A; font-size:12.5px;";
+    } else {
+      td.textContent = "Other variables";
+      td.style.cssText = "color:#888; font-size:11.5px; font-weight:600; text-transform:uppercase; " +
+        "letter-spacing:0.04em; padding:8px 12px 4px; border-top:1px solid rgba(0,0,0,0.08);";
+    }
+    tr.appendChild(td);
+    return tr;
+  }
+
   function renderBasket() {
     let basket = loadBasket();
     basket = sortBasketData(basket);
@@ -214,7 +238,26 @@ window.addEventListener("load", function () {
     const start = (basketPage - 1) * basketPageSize;
     const end = start + basketPageSize;
 
-    basket.slice(start, end).forEach(function (item) {
+    basket.slice(start, end).forEach(function (item, i) {
+      const globalIndex = start + i;
+
+      // Header divider right before the very first restricted row
+      // overall (only ever the first row of page 1, since restricted
+      // items are always pinned to the front).
+      if (globalIndex === 0 && restrictedFirst.length > 0 && isRestricted(item.varName)) {
+        tbody.appendChild(buildDividerRow("restricted", restrictedFirst.length));
+      }
+
+      // Quieter divider right where the restricted block ends and
+      // ordinary rows resume — checked against the FULL list's
+      // boundary, not just this page, so it still shows up correctly
+      // even when that boundary falls in the middle of a page rather
+      // than neatly between pages.
+      if (globalIndex === restrictedFirst.length && restrictedFirst.length > 0 &&
+          restrictedFirst.length < basket.length) {
+        tbody.appendChild(buildDividerRow("rest"));
+      }
+
       const tr = document.createElement("tr");
 
       // Light tint so a restricted row is visible at a glance even
