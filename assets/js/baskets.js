@@ -642,6 +642,11 @@ window.addEventListener("load", function () {
     if (syncNote) syncNote.style.display = "none";
   }
 
+  function setUploadIntroVisible(visible) {
+    const intro = document.querySelector(".upload-basket-intro");
+    if (intro) intro.style.display = visible ? "" : "none";
+  }
+
   function closeUploadPanel() {
     document.getElementById("uploadBasketPanel").style.display = "none";
     const fileInput = document.getElementById("uploadBasketFile");
@@ -649,12 +654,19 @@ window.addEventListener("load", function () {
     uploadParsedItems = [];
     resetUploadPanel();
     hideUploadProgress();
+    setUploadIntroVisible(true);
   }
 
   function handleUploadFile(file, uploadBtn) {
     resetUploadPanel();
     document.getElementById("uploadBasketPanel").style.display = "block";
     uploadBtn.disabled = true;
+    // Pre-upload guidance has served its purpose the moment there's an
+    // actual file being processed — from here on the screen fills with
+    // real, specific outcomes (progress, checks, banners, preview), and
+    // the generic "here's what you can upload" text is just competing
+    // with them for attention rather than adding anything new.
+    setUploadIntroVisible(false);
     showUploadProgress(0, "Reading file... 0%", false);
 
     const isCsv = /\.csv$/i.test(file.name);
@@ -880,19 +892,12 @@ window.addEventListener("load", function () {
     const existingSet = new Set(existingBasket.map(item => item.varName));
     uploadExistingVarNames = existingSet;
 
-    const syncNote = document.getElementById("uploadSyncNote");
-    if (syncNote) {
-      if (typeof getAutoAddSiblings === "function" && getAutoAddSiblings()) {
-        syncNote.style.display = "block";
-        syncNote.innerHTML =
-          '<i class="ti ti-info-circle" aria-hidden="true"></i> Sync linked sweeps is currently <b>on</b> — ' +
-          "this upload may add more variables than are literally marked in your file, since linked sweeps of " +
-          "longitudinal variables get included automatically. You'll see exactly which ones below before confirming, " +
-          "and can turn the toggle off (next to the basket icon) if you only want what's in the file.";
-      } else {
-        syncNote.style.display = "none";
-      }
-    }
+    // The generic "Sync linked sweeps is on" explanation used to show
+    // here unconditionally whenever the toggle was on. It's retired —
+    // updateSyncAddedBox() (further down, via renderUploadLinkedOption)
+    // already shows the concrete outcome ("N extra variable(s) will be
+    // added") whenever there's actually something to say, which makes
+    // this generic version pure repetition sitting above it.
 
     uploadParsedItems = [];
     let previewRows = "";
@@ -1029,6 +1034,7 @@ window.addEventListener("load", function () {
     uploadBtn.addEventListener("click", function () {
       document.getElementById("uploadBasketPanel").style.display = "block";
       resetUploadPanel();
+      setUploadIntroVisible(true);
       uploadFileInput.click();
     });
 
