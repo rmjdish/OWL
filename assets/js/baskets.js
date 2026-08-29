@@ -10,6 +10,36 @@ window.addEventListener("load", function () {
   // Update this if the file is hosted somewhere else on the site.
   const DATA_DICTIONARY_URL = "/OWL/assets/data/search_methods/search_by_year/NSHD_Data_Dictionary_Public_full.json";
 
+  // Small { varName: message } lookup of restricted variables only —
+  // same file variable-restricted-icon.js reads, kept in sync with it.
+  // Used here to pin restricted rows to the top of the basket table and
+  // drive the two highlighted banners; icon rendering itself is left to
+  // variable-restricted-icon.js, which already decorates this table's
+  // name links automatically via its MutationObserver, so this file
+  // never inserts a lock icon itself — only tracks restriction status.
+  const RESTRICTED_LOOKUP_URL = "/OWL/assets/data/sensitive/restricted_variables.json";
+  let restrictedLookup = {};
+
+  function isRestricted(varName) {
+    return !!restrictedLookup[varName];
+  }
+
+  function loadRestrictedLookup() {
+    return fetch(RESTRICTED_LOOKUP_URL)
+      .then(r => r.ok ? r.json() : {})
+      .then(data => { restrictedLookup = data || {}; })
+      .catch(() => { restrictedLookup = {}; })
+      .then(() => {
+        // The initial renderBasket() call further down may already have
+        // run before this fetch resolved — re-render now that we
+        // actually know which basket items are restricted, so the
+        // pinning and banner aren't stuck showing the pre-lookup state.
+        renderBasket();
+        renderBasketPagination();
+        updateBasketResultsCount();
+      });
+  }
+
   // CDN build of ExcelJS, used to produce a real, styled .xlsx client-side.
   const EXCELJS_CDN_URL = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
 
@@ -113,6 +143,20 @@ window.addEventListener("load", function () {
     warningEl.classList.toggle("show", basket.length > 500);
   }
 
+  // ── Toggles the restricted-variables banner on the basket page ─────
+  // Same trigger points as updateBasketLimitWarning above, so the two
+  // banners always stay in sync with each other and with the actual
+  // basket contents.
+  function updateBasketRestrictedWarning() {
+    const basket = loadBasket();
+    const restrictedItems = basket.filter(item => isRestricted(item.varName));
+    const warningEl = document.getElementById("basketRestrictedWarning");
+    if (!warningEl) return;
+    const countEl = document.getElementById("basketRestrictedCount");
+    if (countEl) countEl.textContent = restrictedItems.length;
+    warningEl.style.display = restrictedItems.length > 0 ? "block" : "none";
+  }
+
   function updateBasketResultsCount() {
     const basket = loadBasket();
     const total = basket.length;
@@ -149,6 +193,15 @@ window.addEventListener("load", function () {
     let basket = loadBasket();
     basket = sortBasketData(basket);
 
+    // Restricted variables are pinned to the top, ahead of everything
+    // else — partitioning rather than replacing the sort means the
+    // column sort the user picked is still respected *within* each
+    // group. Done before pagination (not just within the current page)
+    // so a restricted variable never ends up buried on page 3.
+    const restrictedFirst = basket.filter(item => isRestricted(item.varName));
+    const rest = basket.filter(item => !isRestricted(item.varName));
+    basket = restrictedFirst.concat(rest);
+
     const tbody = document.querySelector("#basketTable tbody");
     const countEl = document.getElementById("basketCountPage");
 
@@ -156,12 +209,21 @@ window.addEventListener("load", function () {
     countEl.textContent = basket.length;
 
     updateBasketLimitWarning();
+    updateBasketRestrictedWarning();
 
     const start = (basketPage - 1) * basketPageSize;
     const end = start + basketPageSize;
 
     basket.slice(start, end).forEach(function (item) {
       const tr = document.createElement("tr");
+
+      // Light tint so a restricted row is visible at a glance even
+      // before noticing the lock icon next to its name (added
+      // separately, site-wide, by variable-restricted-icon.js).
+      if (isRestricted(item.varName)) {
+        tr.classList.add("restricted-row");
+        tr.style.background = "#FFE9DA";
+      }
 
       // ============================================================
       // ⭐ REMOVE BUTTON — now uses global removeFromBasket()
@@ -565,6 +627,8 @@ window.addEventListener("load", function () {
     document.getElementById("uploadInvalidValueBox").style.display = "none";
     document.getElementById("uploadDuplicateBox").style.display = "none";
     document.getElementById("uploadLimitWarningBox").style.display = "none";
+    const restrictedBanner = document.getElementById("uploadRestrictedBanner");
+    if (restrictedBanner) restrictedBanner.style.display = "none";
     document.getElementById("uploadPreview").style.display = "none";
     document.getElementById("uploadDone").innerHTML = "";
     uploadLinkedSiblings = [];
@@ -925,6 +989,21 @@ window.addEventListener("load", function () {
       document.getElementById("uploadLimitWarningBox").style.display = "block";
     }
 
+    // Not collapsible, unlike the checks above — this one stays visible
+    // for the whole review step rather than needing a click to expand,
+    // since it's the one thing worth seeing at a glance before confirming.
+    const restrictedInFile = uploadParsedItems.filter(v => isRestricted(v.name));
+    const restrictedBanner = document.getElementById("uploadRestrictedBanner");
+    if (restrictedBanner) {
+      if (restrictedInFile.length > 0) {
+        document.getElementById("uploadRestrictedList").textContent =
+          restrictedInFile.map(v => v.name).join(", ");
+        restrictedBanner.style.display = "block";
+      } else {
+        restrictedBanner.style.display = "none";
+      }
+    }
+
     document.getElementById("uploadVarCount").textContent = uploadParsedItems.length;
     document.getElementById("uploadNewCount").textContent = newCount;
     document.getElementById("uploadAlreadyCount").textContent = uploadParsedItems.length - newCount;
@@ -1023,6 +1102,8 @@ window.addEventListener("load", function () {
 
   renderBasket();
   updateBasketLimitWarning();
+  updateBasketRestrictedWarning();
+  loadRestrictedLookup();
 
   // ── Keep the visible list in sync with async basket changes ─────────────
   // The Remove button above calls renderBasket() synchronously right after
