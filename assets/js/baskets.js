@@ -825,7 +825,11 @@ window.addEventListener("load", function () {
   function rebuildPreviewTableBody() {
     const rowsToShow = isIncludeLinkedChecked() ? getSyncCandidateItems() : [];
     const syncRowsHtml = rowsToShow.map(function (s) {
-      return '<tr class="sync-added-row">' +
+      // A restricted tint wins over the usual sync-added mint background —
+      // restriction is the more important thing to notice, and a linked
+      // sibling can be restricted just like any other variable.
+      const restrictedStyle = isRestricted(s.varName) ? ' style="background:#FFE9DA;"' : '';
+      return '<tr class="sync-added-row"' + restrictedStyle + '>' +
         '<td style="text-align:center;"><i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
         "<td>" + s.varName + "</td><td>" + (s.label || "") + "</td>" +
         '<td class="status-sync">Linked sweep (auto)</td></tr>';
@@ -935,7 +939,8 @@ window.addEventListener("load", function () {
       const isNew = !existingSet.has(name);
       uploadParsedItems.push({ name: name, label: label, isNew: isNew });
 
-      previewRows += "<tr><td>" + uploadParsedItems.length + "</td><td>" + name + "</td><td>" + label + "</td>" +
+      const restrictedStyle = isRestricted(name) ? ' style="background:#FFE9DA;"' : '';
+      previewRows += "<tr" + restrictedStyle + "><td>" + uploadParsedItems.length + "</td><td>" + name + "</td><td>" + label + "</td>" +
         '<td class="' + (isNew ? 'status-new">New' : 'status-existing">Already in basket') + "</td></tr>";
     }
 
