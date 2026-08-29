@@ -220,15 +220,24 @@ window.addEventListener("load", function () {
       // Light tint so a restricted row is visible at a glance even
       // before noticing the lock icon next to its name (added
       // separately, site-wide, by variable-restricted-icon.js).
-      if (isRestricted(item.varName)) {
-        tr.classList.add("restricted-row");
-        tr.style.background = "#FFE9DA";
+      // Applied to each CELL, not the row — this table gives every
+      // column its own background colour (green/purple/peach), and a
+      // td's own background always paints over its parent tr's, so
+      // setting tr.style.background alone had no visible effect.
+      // !important guarantees it wins regardless of how specific the
+      // existing column-colour rule is.
+      const restricted = isRestricted(item.varName);
+      if (restricted) tr.classList.add("restricted-row");
+
+      function tintIfRestricted(td) {
+        if (restricted) td.style.setProperty("background", "#FFE9DA", "important");
       }
 
       // ============================================================
       // ⭐ REMOVE BUTTON — now uses global removeFromBasket()
       // ============================================================
       const tdRemove = document.createElement("td");
+      tintIfRestricted(tdRemove);
       const btn = document.createElement("button");
       btn.textContent = "Remove";
 
@@ -256,6 +265,7 @@ window.addEventListener("load", function () {
 
 	// ⭐ Variable name as link to metadata page
 	const tdName = document.createElement("td");
+	tintIfRestricted(tdName);
 	const link = document.createElement("a");
 
 	link.textContent = item.varName;
@@ -267,6 +277,7 @@ window.addEventListener("load", function () {
 
       // Label
       const tdLabel = document.createElement("td");
+      tintIfRestricted(tdLabel);
       tdLabel.textContent = item.label || "";
       tr.appendChild(tdLabel);
 
@@ -828,11 +839,15 @@ window.addEventListener("load", function () {
       // A restricted tint wins over the usual sync-added mint background —
       // restriction is the more important thing to notice, and a linked
       // sibling can be restricted just like any other variable.
-      const restrictedStyle = isRestricted(s.varName) ? ' style="background:#FFE9DA;"' : '';
-      return '<tr class="sync-added-row"' + restrictedStyle + '>' +
-        '<td style="text-align:center;"><i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
-        "<td>" + s.varName + "</td><td>" + (s.label || "") + "</td>" +
-        '<td class="status-sync">Linked sweep (auto)</td></tr>';
+      // Same fix as the main basket table: apply to each cell with
+      // !important, not just the row, in case this table's own CSS
+      // also colours cells individually (e.g. the status column).
+      const restrictedBg = isRestricted(s.varName) ? "background:#FFE9DA !important;" : "";
+      const cellStyle = restrictedBg ? ' style="' + restrictedBg + '"' : '';
+      return '<tr class="sync-added-row">' +
+        '<td style="text-align:center;' + restrictedBg + '"><i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
+        "<td" + cellStyle + ">" + s.varName + "</td><td" + cellStyle + ">" + (s.label || "") + "</td>" +
+        '<td class="status-sync"' + cellStyle + ">Linked sweep (auto)</td></tr>";
     }).join("");
     document.getElementById("uploadPreviewBody").innerHTML = syncRowsHtml + uploadFileRowsHtml;
   }
@@ -939,9 +954,9 @@ window.addEventListener("load", function () {
       const isNew = !existingSet.has(name);
       uploadParsedItems.push({ name: name, label: label, isNew: isNew });
 
-      const restrictedStyle = isRestricted(name) ? ' style="background:#FFE9DA;"' : '';
-      previewRows += "<tr" + restrictedStyle + "><td>" + uploadParsedItems.length + "</td><td>" + name + "</td><td>" + label + "</td>" +
-        '<td class="' + (isNew ? 'status-new">New' : 'status-existing">Already in basket') + "</td></tr>";
+      const restrictedStyle = isRestricted(name) ? ' style="background:#FFE9DA !important;"' : '';
+      previewRows += "<tr><td" + restrictedStyle + ">" + uploadParsedItems.length + "</td><td" + restrictedStyle + ">" + name + "</td><td" + restrictedStyle + ">" + label + "</td>" +
+        '<td class="' + (isNew ? 'status-new"' : 'status-existing"') + restrictedStyle + ">" + (isNew ? "New" : "Already in basket") + "</td></tr>";
     }
 
     if (missingNameRows.length > 0) {
