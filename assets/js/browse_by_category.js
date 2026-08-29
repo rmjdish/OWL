@@ -68,14 +68,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const label   = row["Variable Label"] || "";
       const checked = inBasketFast(name);   // ← O(1) Set lookup, no localStorage read
 
-      // Restricted-variable hook: head_custom CSS renders the lock icon
-      // off data-restricted, same pattern as the documentation icon.
-      const isRestricted = row["Is variable restricted?"] === "Yes";
-      const secMessage    = (row["Security message"] || "").replace(/"/g, "&quot;");
-      const restrictedAttrs = isRestricted
-        ? ` data-restricted="true" title="${secMessage}"`
-        : "";
-
       return `
         <tr>
           <td class="check-col" style="width:40px;">
@@ -86,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
                    ${checked ? "checked" : ""}>
           </td>
           <td style="width:40px;">${row["Order"]}</td>
-          <td style="width:95px;"${restrictedAttrs}>
+          <td style="width:95px;">
             <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${name}.html"
                target="_blank">${name}</a>
           </td>
