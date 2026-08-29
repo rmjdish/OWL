@@ -230,7 +230,7 @@ window.addEventListener("load", function () {
       if (restricted) tr.classList.add("restricted-row");
 
       function tintIfRestricted(td) {
-        if (restricted) td.style.setProperty("background", "#FFE9DA", "important");
+        if (restricted) td.style.setProperty("background", "#FCEBEB", "important");
       }
 
       // ============================================================
@@ -842,7 +842,7 @@ window.addEventListener("load", function () {
       // Same fix as the main basket table: apply to each cell with
       // !important, not just the row, in case this table's own CSS
       // also colours cells individually (e.g. the status column).
-      const restrictedBg = isRestricted(s.varName) ? "background:#FFE9DA !important;" : "";
+      const restrictedBg = isRestricted(s.varName) ? "background:#FCEBEB !important;" : "";
       const cellStyle = restrictedBg ? ' style="' + restrictedBg + '"' : '';
       return '<tr class="sync-added-row">' +
         '<td style="text-align:center;' + restrictedBg + '"><i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
@@ -954,7 +954,7 @@ window.addEventListener("load", function () {
       const isNew = !existingSet.has(name);
       uploadParsedItems.push({ name: name, label: label, isNew: isNew });
 
-      const restrictedStyle = isRestricted(name) ? ' style="background:#FFE9DA !important;"' : '';
+      const restrictedStyle = isRestricted(name) ? ' style="background:#FCEBEB !important;"' : '';
       previewRows += "<tr><td" + restrictedStyle + ">" + uploadParsedItems.length + "</td><td" + restrictedStyle + ">" + name + "</td><td" + restrictedStyle + ">" + label + "</td>" +
         '<td class="' + (isNew ? 'status-new"' : 'status-existing"') + restrictedStyle + ">" + (isNew ? "New" : "Already in basket") + "</td></tr>";
     }
