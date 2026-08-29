@@ -23,6 +23,7 @@ permalink: /docs/getting-started/basket-management/
       <li><a href="#add-all-button" class="gs-toc-bm-addall"><i class="ti ti-checkbox" aria-hidden="true"></i> Add All to Basket button</a></li>
       <li><a href="#sync-linked-sweeps" class="gs-toc-bm-sync"><i class="ti ti-toggle-right" aria-hidden="true" style="color:#6a0dad;"></i> Syncing linked sweeps</a></li>
       <li><a href="#pagination" class="gs-toc-bm-pagination"><i class="ti ti-layout-grid" aria-hidden="true"></i> Pagination for bulk adding</a></li>
+      <li><a href="#restricted-variables" class="gs-toc-bm-restricted"><i class="ti ti-lock" aria-hidden="true" style="color:hsl(4 70% 45%);"></i> Restricted variables</a></li>
       <li><a href="#reviewing-exporting" class="gs-toc-bm-reviewing"><i class="ti ti-list-check" aria-hidden="true"></i> Reviewing &amp; exporting</a></li>
       <li><a href="#uploading-basket" class="gs-toc-bm-upload"><i class="ti ti-upload" aria-hidden="true"></i> Uploading a basket</a></li>
       <li><a href="#basket-limit" class="gs-toc-bm-limit"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Maximum basket size</a></li>
@@ -129,6 +130,58 @@ permalink: /docs/getting-started/basket-management/
     <div class="callout-note">
       <i class="ti ti-info-circle" aria-hidden="true"></i>
       <span>Keep the 500-variable basket limit in mind when using Add All with large page sizes — see the <a href="#basket-limit" style="color:#6a0dad;">Maximum basket size</a> section below if you're working with a large result set.</span>
+    </div>
+  </div>
+
+  <div class="home-section gs-card-restricted" style="background:hsl(4 70% 97%); border-left:4px solid hsl(4 70% 50%); border-radius:12px; padding:20px 24px;">
+    <h2 id="restricted-variables"><i class="ti ti-lock" aria-hidden="true" style="color:hsl(4 70% 45%);"></i> Restricted variables</h2>
+    <p>Some variables carry an access restriction beyond the standard public/sensitive classification — you'll recognise them by the small lock icon next to their name wherever they appear on the site (see <a href="/OWL/docs/getting-started/how-the-site-is-organised/#variable-icons" style="color:hsl(4 70% 40%);">Variable status icons</a>). Hovering the lock shows a message specific to that variable, usually naming who to contact to request it.</p>
+
+    <div class="callout-note">
+      <i class="ti ti-info-circle" aria-hidden="true"></i>
+      <span><strong>Restricted variables can be added to your basket exactly like any other variable.</strong> The checkbox, the Add All to Basket button, and pagination-based bulk adding (see <a href="#pagination" style="color:hsl(4 70% 40%);">Using pagination to add more at once</a> above) all work identically whether a variable is restricted or not — nothing on the site stops you from selecting one.</span>
+    </div>
+
+    <p>This is a deliberate choice, not an oversight. Blocking restricted variables from the basket wouldn't actually prevent anyone from requesting one — the same result is available by marking <strong>Y</strong> against that variable directly in an offline copy of the Data Dictionary and uploading it (see <a href="#uploading-basket" style="color:hsl(4 70% 40%);">Uploading a basket</a> above), which OWL also accepts without checking restriction status. Blocking it in one place while leaving it open in another wouldn't add any real protection — it would just make the two routes behave inconsistently. So OWL treats every variable the same way while you're building a basket, restricted or not, and handles the actual access control at the point where it matters: the formal data request.</p>
+
+    <h3 style="font-size:16px; margin-top:20px;">What happens at each stage</h3>
+    <p>Restriction status doesn't change anything about how a variable behaves in your basket on OWL itself — only what happens once it leaves OWL and reaches Condor:</p>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin: 14px 0;">
+
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <span style="background:#009688; color:#fff; font-size:13px; font-weight:600; padding:6px 14px; border-radius:5px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0;">
+          <i class="ti ti-square-rounded-plus" aria-hidden="true"></i> Adding to your basket
+        </span>
+        <span style="font-size:14px; color:#333;">— works exactly as normal. Tick the row, or use Add All to Basket, or upload a marked-up file; a restricted variable is added to your basket the same way any other one is, and shows the same way in your basket page.</span>
+      </div>
+
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <span style="background:#4CAF50; color:#fff; font-size:13px; font-weight:600; padding:6px 14px; border-radius:5px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0;">
+          <i class="ti ti-download" aria-hidden="true"></i> Downloading your basket
+        </span>
+        <span style="font-size:14px; color:#333;">— also works exactly as normal. The exported Data Dictionary marks a restricted variable <strong>Y</strong> in the Request variable column the same as everything else in your basket — the file itself doesn't distinguish restricted variables from any other kind.</span>
+      </div>
+
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <span style="background:#D32F2F; color:#fff; font-size:13px; font-weight:600; padding:6px 14px; border-radius:5px; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0;">
+          <i class="ti ti-alert-circle" aria-hidden="true"></i> Uploading to Condor
+        </span>
+        <span style="font-size:14px; color:#333;">— this is the one step where restriction status matters. When your downloaded basket file is submitted as a formal data request through Condor, <strong>restricted variables will not be imported automatically</strong> along with the rest of your request.</span>
+      </div>
+
+    </div>
+
+    <div class="callout-warning">
+      <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+      <span><strong>Restricted variables must be requested separately from the rest of your basket.</strong> Because Condor won't import them as part of a normal basket upload, you'll need to request each one directly, outside of that upload — who to contact depends on the specific variable, and that contact detail is exactly what's shown when you hover the lock icon next to it. Check every restricted variable in your basket before submitting to Condor, and follow up on each one using the message shown for that variable, rather than assuming the bulk upload has taken care of it.</span>
+    </div>
+
+    <p>A practical habit: before uploading to Condor, scan through your basket for any lock icons, note the contact given for each, and send those requests alongside your main submission rather than after — that way you're not waiting on a second round trip once you discover a variable didn't come through.</p>
+
+    <div class="callout-note">
+      <i class="ti ti-info-circle" aria-hidden="true"></i>
+      <span><strong>Restricted variables are pinned to the top of the basket page</strong>, ahead of everything else in your list, rather than sitting wherever they happen to fall alphabetically or by the order you added them. This is exactly to make the habit above easier — you don't need to scan the whole basket looking for lock icons; anything restricted is already grouped together at the top, ready to check off before you submit to Condor.</span>
     </div>
   </div>
 
