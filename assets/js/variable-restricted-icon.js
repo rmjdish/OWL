@@ -71,7 +71,6 @@
   }
 
   function decorate(index) {
-    var addedAny = false;
     document.querySelectorAll('a[href*="/assets/variable_metadata/"]').forEach(function (link) {
       // A data attribute on the link itself, rather than checking
       // nextElementSibling's class (as variable-doc-icon.js does) —
@@ -80,10 +79,7 @@
       // a given pass would see the OTHER script's wrapper as
       // nextElementSibling and misjudge whether it had already run.
       // Marking the link itself sidesteps that entirely.
-      if (link.dataset.restrictedIconAdded) {
-        addedAny = true;
-        return;
-      }
+      if (link.dataset.restrictedIconAdded) return;
 
       var varName = extractVarName(link.getAttribute('href') || '');
       if (!varName) return;
@@ -95,10 +91,25 @@
       icon.classList.add('var-restricted-icon-wrap');
       link.insertAdjacentElement('afterend', icon);
       link.dataset.restrictedIconAdded = 'true';
-      addedAny = true;
     });
 
-    if (addedAny) ensureLegend();
+    // Keep the legend in sync with whether a restricted icon is
+    // CURRENTLY present anywhere on the page — not just whether one was
+    // added in this pass. addedAny alone only ever causes the legend to
+    // appear, never disappear: once the last restricted row on a page
+    // is removed (e.g. removing the last restricted variable from a
+    // basket, which re-renders that table without it), its link and
+    // dataset flag vanish from the DOM entirely, so addedAny quietly
+    // stays false on the next pass — but nothing was ever telling the
+    // legend itself to go. Checking for a live .var-restricted-icon-wrap
+    // instead removes it as soon as none remain.
+    var anyIconsPresent = !!document.querySelector('.var-restricted-icon-wrap');
+    var legend = document.querySelector('.var-restricted-legend');
+    if (anyIconsPresent) {
+      ensureLegend();
+    } else if (legend) {
+      legend.remove();
+    }
   }
 
   function run() {
