@@ -1059,6 +1059,21 @@ window.addEventListener("load", function () {
       const addedNames = batchAddToBasket(finalItems, { expandSiblings: false });
 
       document.getElementById("uploadPreview").style.display = "none";
+
+      // All of these describe the file as it stood BEFORE confirming —
+      // once the items are actually in the basket, none of them are
+      // still true (the sync box says what "will be" added; the
+      // restricted banner says what's "found in this file", both now
+      // past tense) or still useful (the four checks below were about
+      // deciding whether to proceed, a decision that's now made). Only
+      // the success message below should remain.
+      ["uploadMissingNameBox", "uploadInvalidValueBox", "uploadDuplicateBox",
+       "uploadLimitWarningBox", "uploadSyncAddedBox", "uploadRestrictedBanner"]
+        .forEach(function (id) {
+          const el = document.getElementById(id);
+          if (el) el.style.display = "none";
+        });
+
       document.getElementById("uploadDone").innerHTML =
         "<b>" + addedNames.length + " new variable(s) added to your basket.</b> Your basket now has " +
         loadBasket().length + " variable(s).";
