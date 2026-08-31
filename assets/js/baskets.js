@@ -627,7 +627,13 @@ window.addEventListener("load", function () {
 
   let uploadParsedItems = []; // { name, label, isNew }
   let uploadLinkedSiblings = []; // [{ varName, label }, ...] — computed per file, before confirm
-  let uploadFileRowsHtml = ""; // the file's own preview rows, kept separate so sync rows can be prepended without rebuilding these
+  // The file's own rows, split by restriction status. Kept as data
+  // rather than pre-built HTML so rebuildPreviewTableBody() can number
+  // them continuously alongside the sync rows, whose own count can
+  // change independently (the "include linked" checkbox can be toggled
+  // without re-parsing the file).
+  let uploadRestrictedFileItems = []; // { name, label, isNew }
+  let uploadNormalFileItems = []; // { name, label, isNew }
   let uploadExistingVarNames = new Set(); // basket contents at the moment this file was parsed
 
   function normCell(v) {
@@ -687,7 +693,8 @@ window.addEventListener("load", function () {
     document.getElementById("uploadDone").innerHTML = "";
     uploadLinkedSiblings = [];
     uploadExistingVarNames = new Set();
-    uploadFileRowsHtml = "";
+    uploadRestrictedFileItems = [];
+    uploadNormalFileItems = [];
     const linkedRow = document.getElementById("uploadIncludeLinkedRow");
     if (linkedRow) linkedRow.style.display = "none";
     const syncAddedBox = document.getElementById("uploadSyncAddedBox");
@@ -871,14 +878,19 @@ window.addEventListener("load", function () {
     return checkbox ? checkbox.checked : false;
   }
 
-  // Rebuilds the preview table with sync-added rows at the top, followed by
-  // the file's own rows (stored separately in uploadFileRowsHtml so they
-  // never need re-parsing). Sync rows only appear here when they'll
+  // Rebuilds the preview table with sync-added rows at the top, then
+  // restricted rows from the file, then everything else — all three
+  // groups sharing one continuous row count (1, 2, 3, ...) rather than
+  // each starting its own. Sync rows only appear here when they'll
   // actually be added — i.e. the checkbox is ticked — since the table
   // represents what confirming will really do, not what's merely possible.
   function rebuildPreviewTableBody() {
-    const rowsToShow = isIncludeLinkedChecked() ? getSyncCandidateItems() : [];
-    const syncRowsHtml = rowsToShow.map(function (s) {
+    const syncItems = isIncludeLinkedChecked() ? getSyncCandidateItems() : [];
+    let idx = 0;
+    let html = "";
+
+    syncItems.forEach(function (s) {
+      idx++;
       // A restricted tint wins over the usual sync-added mint background —
       // restriction is the more important thing to notice, and a linked
       // sibling can be restricted just like any other variable.
@@ -887,12 +899,33 @@ window.addEventListener("load", function () {
       // also colours cells individually (e.g. the status column).
       const restrictedBg = isRestricted(s.varName) ? "background:#FCEBEB !important;" : "";
       const cellStyle = restrictedBg ? ' style="' + restrictedBg + '"' : '';
-      return '<tr class="sync-added-row">' +
-        '<td style="text-align:center;' + restrictedBg + '"><i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
+      html += '<tr class="sync-added-row">' +
+        '<td style="text-align:center;' + restrictedBg + '">' + idx +
+        ' <i class="ti ti-link" aria-hidden="true" title="Added because of Sync linked sweeps"></i></td>' +
         "<td" + cellStyle + ">" + s.varName + "</td><td" + cellStyle + ">" + (s.label || "") + "</td>" +
         '<td class="status-sync"' + cellStyle + ">Linked sweep (auto)</td></tr>";
-    }).join("");
-    document.getElementById("uploadPreviewBody").innerHTML = syncRowsHtml + uploadFileRowsHtml;
+    });
+
+    uploadRestrictedFileItems.forEach(function (item) {
+      idx++;
+      const statusText = (item.isNew ? "New" : "Already in basket") + " — Restricted variable";
+      html += "<tr>" +
+        '<td style="text-align:center;background:#FCEBEB !important;">' + idx +
+        ' <i class="ti ti-lock" aria-hidden="true" title="Restricted variable" style="color:hsl(4 70% 45%);"></i></td>' +
+        '<td style="background:#FCEBEB !important;">' + item.name + "</td>" +
+        '<td style="background:#FCEBEB !important;">' + item.label + "</td>" +
+        '<td class="' + (item.isNew ? "status-new" : "status-existing") +
+        '" style="background:#FCEBEB !important;">' + statusText + "</td></tr>";
+    });
+
+    uploadNormalFileItems.forEach(function (item) {
+      idx++;
+      html += "<tr><td>" + idx + "</td><td>" + item.name + "</td><td>" + item.label + "</td>" +
+        '<td class="' + (item.isNew ? "status-new" : "status-existing") + '">' +
+        (item.isNew ? "New" : "Already in basket") + "</td></tr>";
+    });
+
+    document.getElementById("uploadPreviewBody").innerHTML = html;
   }
 
   function updateSyncAddedBox() {
@@ -962,12 +995,12 @@ window.addEventListener("load", function () {
     // this generic version pure repetition sitting above it.
 
     uploadParsedItems = [];
-    // Built separately so restricted rows can be pinned to the front —
-    // same reasoning as the main basket table: a restricted variable
-    // should never be easy to miss just because it happened to be
-    // further down the uploaded file.
-    let restrictedRowsHtml = "";
-    let normalRowsHtml = "";
+    // Split by restriction status here, at parse time — but the actual
+    // HTML (including row numbers) is built later in
+    // rebuildPreviewTableBody(), where sync rows are also known, so all
+    // three groups can share one continuous numbering sequence.
+    uploadRestrictedFileItems = [];
+    uploadNormalFileItems = [];
     const invalidRequestValues = [];
     const missingNameRows = [];
     const duplicateNames = [];
@@ -1002,21 +1035,11 @@ window.addEventListener("load", function () {
       const isNew = !existingSet.has(name);
       uploadParsedItems.push({ name: name, label: label, isNew: isNew });
 
-      const restricted = isRestricted(name);
-      const restrictedStyle = restricted ? ' style="background:#FCEBEB !important;"' : '';
-      // Lock icon in place of the row number, same treatment sync rows
-      // already get with their link icon — a visual match between the
-      // two "pinned to the top for a reason" row types.
-      const numberCell = restricted
-        ? '<td style="text-align:center;background:#FCEBEB !important;"><i class="ti ti-lock" aria-hidden="true" title="Restricted variable"></i></td>'
-        : "<td>" + uploadParsedItems.length + "</td>";
-      const statusText = (isNew ? "New" : "Already in basket") + (restricted ? " — Restricted variable" : "");
-      const rowHtml = "<tr>" + numberCell + "<td" + restrictedStyle + ">" + name + "</td><td" + restrictedStyle + ">" + label + "</td>" +
-        '<td class="' + (isNew ? 'status-new"' : 'status-existing"') + restrictedStyle + ">" + statusText + "</td></tr>";
-
-      if (restricted) restrictedRowsHtml += rowHtml;
-      else normalRowsHtml += rowHtml;
+      const item = { name: name, label: label, isNew: isNew };
+      if (isRestricted(name)) uploadRestrictedFileItems.push(item);
+      else uploadNormalFileItems.push(item);
     }
+
 
     if (missingNameRows.length > 0) {
       document.getElementById("uploadMissingNameSummary").textContent =
@@ -1092,7 +1115,6 @@ window.addEventListener("load", function () {
     document.getElementById("uploadNewCount").textContent = newCount;
     document.getElementById("uploadAlreadyCount").textContent = uploadParsedItems.length - newCount;
     document.getElementById("uploadCurrentCount").textContent = existingBasket.length;
-    uploadFileRowsHtml = restrictedRowsHtml + normalRowsHtml;
     rebuildPreviewTableBody();
 
     uploadLinkedSiblings = [];
