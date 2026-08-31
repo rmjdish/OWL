@@ -962,7 +962,12 @@ window.addEventListener("load", function () {
     // this generic version pure repetition sitting above it.
 
     uploadParsedItems = [];
-    let previewRows = "";
+    // Built separately so restricted rows can be pinned to the front —
+    // same reasoning as the main basket table: a restricted variable
+    // should never be easy to miss just because it happened to be
+    // further down the uploaded file.
+    let restrictedRowsHtml = "";
+    let normalRowsHtml = "";
     const invalidRequestValues = [];
     const missingNameRows = [];
     const duplicateNames = [];
@@ -997,9 +1002,20 @@ window.addEventListener("load", function () {
       const isNew = !existingSet.has(name);
       uploadParsedItems.push({ name: name, label: label, isNew: isNew });
 
-      const restrictedStyle = isRestricted(name) ? ' style="background:#FCEBEB !important;"' : '';
-      previewRows += "<tr><td" + restrictedStyle + ">" + uploadParsedItems.length + "</td><td" + restrictedStyle + ">" + name + "</td><td" + restrictedStyle + ">" + label + "</td>" +
-        '<td class="' + (isNew ? 'status-new"' : 'status-existing"') + restrictedStyle + ">" + (isNew ? "New" : "Already in basket") + "</td></tr>";
+      const restricted = isRestricted(name);
+      const restrictedStyle = restricted ? ' style="background:#FCEBEB !important;"' : '';
+      // Lock icon in place of the row number, same treatment sync rows
+      // already get with their link icon — a visual match between the
+      // two "pinned to the top for a reason" row types.
+      const numberCell = restricted
+        ? '<td style="text-align:center;background:#FCEBEB !important;"><i class="ti ti-lock" aria-hidden="true" title="Restricted variable"></i></td>'
+        : "<td>" + uploadParsedItems.length + "</td>";
+      const statusText = (isNew ? "New" : "Already in basket") + (restricted ? " — Restricted variable" : "");
+      const rowHtml = "<tr>" + numberCell + "<td" + restrictedStyle + ">" + name + "</td><td" + restrictedStyle + ">" + label + "</td>" +
+        '<td class="' + (isNew ? 'status-new"' : 'status-existing"') + restrictedStyle + ">" + statusText + "</td></tr>";
+
+      if (restricted) restrictedRowsHtml += rowHtml;
+      else normalRowsHtml += rowHtml;
     }
 
     if (missingNameRows.length > 0) {
@@ -1076,7 +1092,7 @@ window.addEventListener("load", function () {
     document.getElementById("uploadNewCount").textContent = newCount;
     document.getElementById("uploadAlreadyCount").textContent = uploadParsedItems.length - newCount;
     document.getElementById("uploadCurrentCount").textContent = existingBasket.length;
-    uploadFileRowsHtml = previewRows;
+    uploadFileRowsHtml = restrictedRowsHtml + normalRowsHtml;
     rebuildPreviewTableBody();
 
     uploadLinkedSiblings = [];
