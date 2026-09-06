@@ -100,7 +100,7 @@ function solidHeaderTable(rows, widths, colorSet) {
 function panelWrap(contentArray, key) {
   const t = THEME[key];
   return {
-    table: { widths: ["*"], body: [[{ stack: contentArray, margin: [6, 6, 6, 6] }]] },
+    table: { widths: ["*"], body: [[{ stack: contentArray, margin: [6, 6, 6, 6], unbreakable: true }]] },
     layout: {
       fillColor: () => t.panelBg,
       hLineWidth: () => 1.25, vLineWidth: () => 1.25,
@@ -199,7 +199,8 @@ function buildValsSection(pdfData) {
         { width: 12, table: { widths: [9], body: [[{ text: "", fillColor: MISSING_ROW_COLOR }]] }, layout: { hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: () => MISSING_BORDER_COLOR, vLineColor: () => MISSING_BORDER_COLOR } },
         { width: "*", text: "Values shown in this colour are missing-value codes - they are excluded from the plots and statistics shown in the Distribution section.", italics: true, fontSize: 8.5, color: "#777777" },
       ],
-      margin: [0, 8, 0, 0],
+      columnGap: 4,
+      margin: [0, 10, 0, 0],
     });
   }
   return flow;
@@ -254,7 +255,7 @@ function buildDistSection(pdfData, plotDataUri) {
 
 // ── Cover + contents + full document assembly ───────────────────────────
 
-function buildCover(pdfData, pageUrl, gradientDataUri) {
+function buildCover(pdfData, pageUrl, bannerDataUri) {
   const flow = [];
   if (pageUrl) {
     flow.push({ text: "< View this variable's live page", link: pageUrl, color: "#1D7A5F", fontSize: 10.5, margin: [0, 0, 0, 30] });
@@ -262,17 +263,18 @@ function buildCover(pdfData, pageUrl, gradientDataUri) {
     flow.push({ text: "", margin: [0, 0, 0, 55] });
   }
   flow.push({ text: "NSHD OWL Variable Metadata Page", bold: true, fontSize: 16, color: "#6a0dad", alignment: "center", margin: [0, 0, 0, 20] });
-  if (gradientDataUri) {
-    flow.push({ image: gradientDataUri, width: 495, height: 130, margin: [0, 0, 0, 20] });
+  if (bannerDataUri) {
+    flow.push({ image: bannerDataUri, width: 495, height: 152, margin: [0, 0, 0, 20] });
+  } else {
+    flow.push({ text: pdfData.varname, bold: true, fontSize: 34, alignment: "center", color: "#2b004d", margin: [0, 0, 0, 4] });
+    flow.push({ text: pdfData.label, bold: true, fontSize: 14, alignment: "center", color: "#6a0dad", margin: [0, 0, 0, 8] });
   }
-  flow.push({ text: pdfData.varname, bold: true, fontSize: 34, alignment: "center", color: "#2b004d", margin: [0, 0, 0, 4] });
-  flow.push({ text: pdfData.label, bold: true, fontSize: 14, alignment: "center", color: "#6a0dad", margin: [0, 0, 0, 8] });
   flow.push({ text: "Variable metadata, linked longitudinal variables, category memberships, value labels, and frequency distribution.",
     alignment: "center", fontSize: 11.5, color: "#555555" });
   return flow;
 }
 
-function buildDocDefinition(pdfData, plotDataUri, pageUrl, gradientDataUri) {
+function buildDocDefinition(pdfData, plotDataUri, pageUrl, bannerDataUri) {
   const sections = [
     { name: "Metadata", key: "metadata", build: () => buildMetadataSection(pdfData) },
     { name: "Linked & Longitudinal", key: "linked", build: () => buildLinkedSection(pdfData) },
@@ -283,16 +285,18 @@ function buildDocDefinition(pdfData, plotDataUri, pageUrl, gradientDataUri) {
   ];
 
   const content = [];
-  content.push(...buildCover(pdfData, pageUrl, gradientDataUri));
+  content.push(...buildCover(pdfData, pageUrl, bannerDataUri));
   content.push({ text: "", pageBreak: "after" });
 
   content.push({ text: "Contents", fontSize: 20, margin: [0, 0, 0, 14] });
-  content.push({ toc: { textStyle: { fontSize: 12 }, textMargin: [0, 4, 0, 4] } });
+  sections.forEach((s) => {
+    content.push({ toc: { id: s.key, textStyle: { fontSize: 12, color: THEME[s.key].text, decoration: "underline" }, textMargin: [0, 5, 0, 5] } });
+  });
   content.push({ text: "", pageBreak: "after" });
 
   sections.forEach((s) => {
     const inner = s.build();
-    const tocMarker = { text: s.name, tocItem: true, id: s.name, fontSize: 0.1, color: "white", margin: [0, 0, 0, 0] };
+    const tocMarker = { text: s.name, tocItem: s.key, id: s.name, fontSize: 0.1, color: "white", margin: [0, 0, 0, 0] };
     content.push(tocMarker);
     content.push(panelWrap(inner, s.key));
   });
@@ -342,31 +346,54 @@ async function downloadVariablePdf(varname, pageUrl) {
   const imgEl = document.getElementById("dist-plot-img");
   const plotDataUri = imgEl && imgEl.src && imgEl.src.startsWith("data:image") ? imgEl.src : null;
 
-  // Gradient hero image for the cover - generated once, cached, since
-  // it's identical for every variable's PDF.
-  const gradientDataUri = await getOrBuildHeroGradient();
+  // Hero banner image - the gradient plus the variable name/label drawn
+  // directly onto the same canvas, so the text sits reliably inside the
+  // banner. Built fresh per variable (not cached) since the text differs -
+  // canvas drawing is cheap enough that this isn't worth caching.
+  const bannerDataUri = buildHeroBannerImage(pdfData.varname, pdfData.label);
 
-  const docDefinition = buildDocDefinition(pdfData, plotDataUri, pageUrl, gradientDataUri);
+  const docDefinition = buildDocDefinition(pdfData, plotDataUri, pageUrl, bannerDataUri);
   pdfMake.createPdf(docDefinition).download(`${varname}.pdf`);
 }
 
-let _cachedGradient = null;
-function getOrBuildHeroGradient() {
-  if (_cachedGradient) return Promise.resolve(_cachedGradient);
-  return new Promise((resolve) => {
-    const canvas = document.createElement("canvas");
-    canvas.width = 1200; canvas.height = 400;
-    const ctx = canvas.getContext("2d");
-    const grad = ctx.createLinearGradient(0, 0, 1200, 400);
-    grad.addColorStop(0, "#E8F5E9");
-    grad.addColorStop(0.33, "#F3E5F5");
-    grad.addColorStop(0.66, "#FFF3E0");
-    grad.addColorStop(1, "#E0F7FA");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1200, 400);
-    _cachedGradient = canvas.toDataURL("image/png");
-    resolve(_cachedGradient);
-  });
+function buildHeroBannerImage(varname, label) {
+  const canvas = document.createElement("canvas");
+  const W = 1500, H = 460;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext("2d");
+
+  const grad = ctx.createLinearGradient(0, 0, W, H);
+  grad.addColorStop(0, "#E8F5E9");
+  grad.addColorStop(0.33, "#F3E5F5");
+  grad.addColorStop(0.66, "#FFF3E0");
+  grad.addColorStop(1, "#E0F7FA");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  // Title - shrink font size if it's too wide to fit, rather than letting
+  // it overflow the banner (variable names/labels vary a lot in length).
+  let titleSize = 84;
+  ctx.font = `bold ${titleSize}px Arial, sans-serif`;
+  while (ctx.measureText(varname).width > W - 80 && titleSize > 30) {
+    titleSize -= 4;
+    ctx.font = `bold ${titleSize}px Arial, sans-serif`;
+  }
+  ctx.fillStyle = "#2b004d";
+  ctx.fillText(varname, W / 2, H / 2 - 30);
+
+  let subSize = 34;
+  ctx.font = `bold ${subSize}px Arial, sans-serif`;
+  while (ctx.measureText(label).width > W - 120 && subSize > 16) {
+    subSize -= 2;
+    ctx.font = `bold ${subSize}px Arial, sans-serif`;
+  }
+  ctx.fillStyle = "#6a0dad";
+  ctx.fillText(label, W / 2, H / 2 + 55);
+
+  return canvas.toDataURL("image/png");
 }
 
 if (typeof module !== "undefined") {
