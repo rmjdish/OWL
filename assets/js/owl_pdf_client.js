@@ -315,7 +315,7 @@ function buildDocDefinition(pdfData, plotDataUri, pageUrl, bannerDataUri) {
       const { headerAndImage, stats } = buildDistSection(pdfData, plotDataUri);
       content.push(panelWrap(headerAndImage, "dist", true));
       if (stats.length) {
-        content.push(panelWrap(stats, "dist", false));
+        content.push(panelWrap(stats, "dist", true));
       }
     } else {
       content.push(panelWrap(s.build(), s.key, true));
