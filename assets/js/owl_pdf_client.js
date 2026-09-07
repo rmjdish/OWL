@@ -214,12 +214,13 @@ function buildValsSection(pdfData) {
 }
 
 function buildDistSection(pdfData, plotDataUri) {
-  const flow = [sectionHeader("Distribution", "dist")];
+  const headerAndImage = [sectionHeader("Distribution", "dist")];
   if (plotDataUri) {
-    flow.push({ image: plotDataUri, width: 470, margin: [0, 0, 0, 10] });
+    headerAndImage.push({ image: plotDataUri, width: 470, margin: [0, 0, 0, 10] });
   } else {
-    flow.push({ text: "No distribution data available for this variable.", italics: true, color: "#777777" });
+    headerAndImage.push({ text: "No distribution data available for this variable.", italics: true, color: "#777777" });
   }
+  const flow = [{ stack: headerAndImage, unbreakable: true }];
 
   const freqRows = pdfData.freq_rows || [];
   if (freqRows.length) {
