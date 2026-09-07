@@ -357,6 +357,16 @@ function _ensurePdfMakeLoaded() {
 async function downloadVariablePdf(varname, pageUrl) {
   await _ensurePdfMakeLoaded();
 
+  // A relative path (e.g. "/OWL/assets/variable_metadata/ht89u") resolves
+  // correctly as an <a href> in the live HTML page, since the browser
+  // resolves it against whatever page is currently open - but a PDF has
+  // no "current page" of its own, so a link embedded in one needs to be
+  // fully-qualified (including the domain) to work when clicked outside
+  // a browser tab. Resolved via the browser's own knowledge of the
+  // current origin, rather than a hardcoded domain string, so this stays
+  // correct even if the site is ever moved.
+  const absolutePageUrl = pageUrl ? new URL(pageUrl, window.location.href).href : null;
+
   const resp = await fetch(`${varname}.pdfdata.json`);
   if (!resp.ok) {
     alert("Could not load data for this variable's PDF - please try again.");
@@ -373,7 +383,7 @@ async function downloadVariablePdf(varname, pageUrl) {
   // canvas drawing is cheap enough that this isn't worth caching.
   const bannerDataUri = buildHeroBannerImage(pdfData.varname, pdfData.label);
 
-  const docDefinition = buildDocDefinition(pdfData, plotDataUri, pageUrl, bannerDataUri);
+  const docDefinition = buildDocDefinition(pdfData, plotDataUri, absolutePageUrl, bannerDataUri);
   pdfMake.createPdf(docDefinition).download(`${varname}.pdf`);
 }
 
