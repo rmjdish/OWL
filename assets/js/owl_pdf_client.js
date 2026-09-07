@@ -97,17 +97,21 @@ function solidHeaderTable(rows, widths, colorSet) {
   };
 }
 
-function panelWrap(contentArray, key) {
+function panelWrap(contentArray, key, forceUnbreakable) {
   const t = THEME[key];
+  const tableNode = {
+    table: { widths: ["*"], body: [[{ stack: contentArray, margin: [6, 6, 6, 6] }]] },
+    layout: {
+      fillColor: () => t.panelBg,
+      hLineWidth: () => 1.25, vLineWidth: () => 1.25,
+      hLineColor: () => t.panelBorder, vLineColor: () => t.panelBorder,
+    },
+  };
+  if (forceUnbreakable === false) {
+    return Object.assign({}, tableNode, { margin: [0, 0, 0, 14] });
+  }
   return {
-    stack: [{
-      table: { widths: ["*"], body: [[{ stack: contentArray, margin: [6, 6, 6, 6] }]] },
-      layout: {
-        fillColor: () => t.panelBg,
-        hLineWidth: () => 1.25, vLineWidth: () => 1.25,
-        hLineColor: () => t.panelBorder, vLineColor: () => t.panelBorder,
-      },
-    }],
+    stack: [tableNode],
     unbreakable: true,
     margin: [0, 0, 0, 14],
   };
@@ -238,11 +242,17 @@ function buildDistSection(pdfData, plotDataUri) {
       });
       flow.push({
         columns: [
-          styledTable(summaryRows, [78, 78], { header: true, headerFill: STAT_BOX.summary.bg, fillBox: STAT_BOX.summary.bg }),
-          styledTable(spreadRows, [78, 78], { header: true, headerFill: STAT_BOX.spread.bg, fillBox: STAT_BOX.spread.bg }),
-          styledTable(decileRows, [70, 78], { header: true, headerFill: STAT_BOX.deciles.bg, fillBox: STAT_BOX.deciles.bg }),
+          {
+            width: 220,
+            stack: [
+              styledTable(summaryRows, [110, 90], { header: true, headerFill: STAT_BOX.summary.bg, fillBox: STAT_BOX.summary.bg }),
+              { text: "", margin: [0, 6, 0, 0] },
+              styledTable(spreadRows, [110, 90], { header: true, headerFill: STAT_BOX.spread.bg, fillBox: STAT_BOX.spread.bg }),
+            ],
+          },
+          styledTable(decileRows, [90, 100], { header: true, headerFill: STAT_BOX.deciles.bg, fillBox: STAT_BOX.deciles.bg }),
         ],
-        columnGap: 12,
+        columnGap: 14,
         margin: [0, 0, 0, 8],
       });
     }
@@ -301,7 +311,7 @@ function buildDocDefinition(pdfData, plotDataUri, pageUrl, bannerDataUri) {
     const inner = s.build();
     const tocMarker = { text: s.name, tocItem: s.key, id: s.name, fontSize: 0.1, color: "white", margin: [0, 0, 0, 0] };
     content.push(tocMarker);
-    content.push(panelWrap(inner, s.key));
+    content.push(panelWrap(inner, s.key, s.key !== "dist"));
   });
 
   return {
