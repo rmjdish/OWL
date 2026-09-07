@@ -100,12 +100,15 @@ function solidHeaderTable(rows, widths, colorSet) {
 function panelWrap(contentArray, key) {
   const t = THEME[key];
   return {
-    table: { widths: ["*"], body: [[{ stack: contentArray, margin: [6, 6, 6, 6], unbreakable: true }]] },
-    layout: {
-      fillColor: () => t.panelBg,
-      hLineWidth: () => 1.25, vLineWidth: () => 1.25,
-      hLineColor: () => t.panelBorder, vLineColor: () => t.panelBorder,
-    },
+    stack: [{
+      table: { widths: ["*"], body: [[{ stack: contentArray, margin: [6, 6, 6, 6] }]] },
+      layout: {
+        fillColor: () => t.panelBg,
+        hLineWidth: () => 1.25, vLineWidth: () => 1.25,
+        hLineColor: () => t.panelBorder, vLineColor: () => t.panelBorder,
+      },
+    }],
+    unbreakable: true,
     margin: [0, 0, 0, 14],
   };
 }
@@ -209,7 +212,7 @@ function buildValsSection(pdfData) {
 function buildDistSection(pdfData, plotDataUri) {
   const flow = [sectionHeader("Distribution", "dist")];
   if (plotDataUri) {
-    flow.push({ image: plotDataUri, width: 495, margin: [0, 0, 0, 10] });
+    flow.push({ image: plotDataUri, width: 470, margin: [0, 0, 0, 10] });
   } else {
     flow.push({ text: "No distribution data available for this variable.", italics: true, color: "#777777" });
   }
@@ -258,7 +261,7 @@ function buildDistSection(pdfData, plotDataUri) {
 function buildCover(pdfData, pageUrl, bannerDataUri) {
   const flow = [];
   if (pageUrl) {
-    flow.push({ text: "< View this variable's live page", link: pageUrl, color: "#1D7A5F", fontSize: 10.5, margin: [0, 0, 0, 30] });
+    flow.push({ text: "\u00AB View this variable's live page", link: pageUrl, color: "#1D7A5F", fontSize: 10.5, margin: [0, 0, 0, 30] });
   } else {
     flow.push({ text: "", margin: [0, 0, 0, 55] });
   }
@@ -268,9 +271,9 @@ function buildCover(pdfData, pageUrl, bannerDataUri) {
   } else {
     flow.push({ text: pdfData.varname, bold: true, fontSize: 34, alignment: "center", color: "#2b004d", margin: [0, 0, 0, 4] });
     flow.push({ text: pdfData.label, bold: true, fontSize: 14, alignment: "center", color: "#6a0dad", margin: [0, 0, 0, 8] });
+    flow.push({ text: "Variable metadata, linked longitudinal variables, category memberships, value labels, and frequency distribution.",
+      alignment: "center", fontSize: 11.5, color: "#555555" });
   }
-  flow.push({ text: "Variable metadata, linked longitudinal variables, category memberships, value labels, and frequency distribution.",
-    alignment: "center", fontSize: 11.5, color: "#555555" });
   return flow;
 }
 
@@ -373,25 +376,46 @@ function buildHeroBannerImage(varname, label) {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  // Title - shrink font size if it's too wide to fit, rather than letting
-  // it overflow the banner (variable names/labels vary a lot in length).
-  let titleSize = 84;
+  let titleSize = 78;
   ctx.font = `bold ${titleSize}px Arial, sans-serif`;
   while (ctx.measureText(varname).width > W - 80 && titleSize > 30) {
     titleSize -= 4;
     ctx.font = `bold ${titleSize}px Arial, sans-serif`;
   }
   ctx.fillStyle = "#2b004d";
-  ctx.fillText(varname, W / 2, H / 2 - 30);
+  ctx.fillText(varname, W / 2, H / 2 - 80);
 
-  let subSize = 34;
+  let subSize = 32;
   ctx.font = `bold ${subSize}px Arial, sans-serif`;
   while (ctx.measureText(label).width > W - 120 && subSize > 16) {
     subSize -= 2;
     ctx.font = `bold ${subSize}px Arial, sans-serif`;
   }
   ctx.fillStyle = "#6a0dad";
-  ctx.fillText(label, W / 2, H / 2 + 55);
+  ctx.fillText(label, W / 2, H / 2);
+
+  // Description - wrapped across up to 2 lines, matching the Python
+  // cover's third line of text
+  const desc = "Variable metadata, linked longitudinal variables, category memberships, value labels, and frequency distribution.";
+  ctx.font = "26px Arial, sans-serif";
+  ctx.fillStyle = "#555555";
+  const words = desc.split(" ");
+  const maxLineWidth = W - 160;
+  let line1 = "", line2 = "", curLine = "";
+  const lines = [];
+  words.forEach((word) => {
+    const test = curLine ? curLine + " " + word : word;
+    if (ctx.measureText(test).width > maxLineWidth && curLine) {
+      lines.push(curLine);
+      curLine = word;
+    } else {
+      curLine = test;
+    }
+  });
+  if (curLine) lines.push(curLine);
+  lines.slice(0, 2).forEach((ln, i) => {
+    ctx.fillText(ln, W / 2, H / 2 + 75 + i * 34);
+  });
 
   return canvas.toDataURL("image/png");
 }
