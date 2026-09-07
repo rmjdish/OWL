@@ -220,15 +220,15 @@ function buildDistSection(pdfData, plotDataUri) {
   } else {
     headerAndImage.push({ text: "No distribution data available for this variable.", italics: true, color: "#777777" });
   }
-  const flow = [{ stack: headerAndImage, unbreakable: true }];
 
+  const stats = [];
   const freqRows = pdfData.freq_rows || [];
   if (freqRows.length) {
     let displayedN = null;
     if (pdfData.dist_type === "categorical") {
       const rows = [["Value", "Count", "Pct"]];
       freqRows.forEach((r) => (r[0] === "Displayed N" ? (displayedN = r[1]) : rows.push(r)));
-      if (rows.length > 1) flow.push(styledTable(rows, [180, 155, 155], { header: true, headerFill: STAT_BOX.summary.bg, fillBox: STAT_BOX.summary.bg }));
+      if (rows.length > 1) stats.push(styledTable(rows, [180, 155, 155], { header: true, headerFill: STAT_BOX.summary.bg, fillBox: STAT_BOX.summary.bg }));
     } else {
       const sizeRow = new Set(["series size", "series_size", "displayed n"]);
       const summaryItems = new Set(["minimum", "maximum", "range", "median", "iqr"]);
@@ -241,7 +241,7 @@ function buildDistSection(pdfData, plotDataUri) {
         else if (spreadItems.has(key)) spreadRows.push([item, roundStatValue(val)]);
         else decileRows.push([item.replace("Decile ", ""), roundStatValue(val)]);
       });
-      flow.push({
+      stats.push({
         columns: [
           {
             width: 220,
@@ -258,13 +258,13 @@ function buildDistSection(pdfData, plotDataUri) {
       });
     }
     if (displayedN !== null) {
-      flow.push(styledTable([["Displayed N", String(displayedN)]], [180, 315], { fillBox: STAT_BOX.displayedN.bg }));
+      stats.push(styledTable([["Displayed N", String(displayedN)]], [180, 315], { fillBox: STAT_BOX.displayedN.bg }));
     }
     if (pdfData.freq_note) {
-      flow.push({ text: pdfData.freq_note, italics: true, fontSize: 8.5, color: "#777777", margin: [0, 8, 0, 0] });
+      stats.push({ text: pdfData.freq_note, italics: true, fontSize: 8.5, color: "#777777", margin: [0, 8, 0, 0] });
     }
   }
-  return flow;
+  return { headerAndImage, stats };
 }
 
 // ── Cover + contents + full document assembly ───────────────────────────
@@ -309,10 +309,17 @@ function buildDocDefinition(pdfData, plotDataUri, pageUrl, bannerDataUri) {
   content.push({ text: "", pageBreak: "after" });
 
   sections.forEach((s) => {
-    const inner = s.build();
     const tocMarker = { text: s.name, tocItem: s.key, id: s.name, fontSize: 0.1, color: "white", margin: [0, 0, 0, 0] };
     content.push(tocMarker);
-    content.push(panelWrap(inner, s.key, s.key !== "dist"));
+    if (s.key === "dist") {
+      const { headerAndImage, stats } = buildDistSection(pdfData, plotDataUri);
+      content.push(panelWrap(headerAndImage, "dist", true));
+      if (stats.length) {
+        content.push(panelWrap(stats, "dist", false));
+      }
+    } else {
+      content.push(panelWrap(s.build(), s.key, true));
+    }
   });
 
   return {
