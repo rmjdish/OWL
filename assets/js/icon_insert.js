@@ -38,6 +38,7 @@
 	"the data dictionary":			"ti-book-2",
 	"study timeline":				"ti-hourglass",
 	"search by year":				"ti-calendar",
+	"uk llc":						"ti-link",
 	"search overview":				"ti-search",
 	"documentation hub":		"ti-versions",
     "search documentation":		"ti-compass",
