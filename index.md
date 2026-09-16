@@ -68,6 +68,7 @@ classes: home-page
             <li class="sb-sub"><a href="#da-overview" data-sec="sec-data-access" data-inner="da-overview">Overview</a></li>
             <li class="sb-sub"><a href="#da-platforms" data-sec="sec-data-access" data-inner="da-platforms">OWL, Showcase &amp; Condor</a></li>
             <li class="sb-sub"><a href="#da-vm" data-sec="sec-data-access" data-inner="da-vm">Variable Metadata Pages</a></li>
+            <li class="sb-sub"><a href="#da-ukllc" data-sec="sec-data-access" data-inner="da-ukllc">UK LLC</a></li>
             <li class="sb-sub"><a href="#da-mep" data-sec="sec-data-access" data-inner="da-mep">Metadata Enhancement Project</a></li>
           </ul>
         </div>
@@ -82,6 +83,7 @@ classes: home-page
             <li class="sb-sub"><a href="#search-pop" data-sec="sec-search" data-inner="search-pop">View Popular Variables</a></li>
             <li class="sb-sub"><a href="#search-long" data-sec="sec-search" data-inner="search-long">Longitudinal Search</a></li>
             <li class="sb-sub"><a href="#search-year" data-sec="sec-search" data-inner="search-year">Search by Year</a></li>
+            <li class="sb-sub"><a href="#search-ukllc" data-sec="sec-search" data-inner="search-ukllc">UK LLC Catalogue</a></li>
             <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
           </ul>
         </div>
@@ -253,7 +255,7 @@ classes: home-page
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
-              <p>The NSHD data sharing infrastructure is made up of four complementary platforms. <strong>OWL</strong> is where you discover and explore variables — no registration required. The <strong>NSHD Showcase</strong> presents participant counts and sweep-by-sweep distributions for the same 28,000 cleaned variables — also without registration. Built on the same platform as the UK Biobank Data Showcase, it will be immediately familiar to researchers with UK Biobank experience. <strong>Condor</strong> holds the full 35,000+ variable set and is where baskets are built, saved, and shared before a data request is submitted — registration is required. <strong>Skylark</strong> is the data access information and forms portal where the formal Data Access Request Form is submitted.</p>
+              <p>The NSHD data sharing infrastructure is made up of four complementary platforms, plus a fifth external route for linked data. <strong>OWL</strong> is where you discover and explore variables — no registration required. The <strong>NSHD Showcase</strong> presents participant counts and sweep-by-sweep distributions for the same 28,000 cleaned variables — also without registration. Built on the same platform as the UK Biobank Data Showcase, it will be immediately familiar to researchers with UK Biobank experience. <strong>Condor</strong> holds the full 35,000+ variable set and is where baskets are built, saved, and shared before a data request is submitted — registration is required. <strong>Skylark</strong> is the data access information and forms portal where the formal Data Access Request Form is submitted. Separately, <strong>UK LLC</strong> is a national Trusted Research Environment that links NSHD data to over 20 other UK longitudinal studies and NHS/administrative records, for researchers who need NSHD variables analysed alongside other cohorts rather than on their own.</p>
               <a class="inner-link" href="/OWL/docs/accessing-nshd-data/">Go to Accessing NSHD Data →</a>
             </div>
           </div>
@@ -282,6 +284,18 @@ classes: home-page
             </div>
           </div>
 
+          <div class="inner-item" id="da-ukllc">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-link" aria-hidden="true"></i></span>
+              <span class="inner-title">UK LLC</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Alongside Condor and Skylark, NSHD data can also be accessed via the <strong>UK Longitudinal Linkage Collaboration (UK LLC)</strong> — a national Trusted Research Environment that links NSHD data to more than 20 other UK longitudinal studies, plus NHS, education and other administrative records. NSHD datasets are deposited into UK LLC continuously; a full catalogue of what's been deposited so far, including the variables each dataset contains, is searchable from the <a href="/OWL/docs/search_methods/ukllc_catalogue">UK LLC Catalogue</a>. Use this route when your research needs NSHD variables analysed alongside other cohorts or linked records, rather than NSHD data on its own — accreditation and applications go through UK LLC directly, separately from Condor and Skylark.</p>
+              <a class="inner-link" href="/OWL/docs/accessing-nshd-data/ukllc/">Go to UK LLC →</a>
+            </div>
+          </div>
+
           <div class="inner-item" id="da-mep">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon"><i class="ti ti-sparkles" aria-hidden="true"></i></span>
@@ -306,7 +320,7 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>OWL gives you five different ways to find NSHD variables, each suited to a different kind of question — see the <a href="/OWL/docs/search_methods/search_overview/">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
+        <p>OWL gives you five different ways to find NSHD variables in its own dictionary, plus a sixth for checking what's been deposited into UK LLC — see the <a href="/OWL/docs/search_methods/search_overview/">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
         <div class="inner-accordion">
 
           <div class="inner-item" id="search-dd">
@@ -375,10 +389,23 @@ classes: home-page
             </div>
           </div>
 
+          <div class="inner-item" id="search-ukllc">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-link" aria-hidden="true"></i></span>
+              <span class="inner-title">6. UK LLC Catalogue</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The UK LLC Catalogue searches a different, smaller set of NSHD datasets: those deposited into the UK Longitudinal Linkage Collaboration for linked analysis alongside other cohorts and NHS/administrative records. It's a table of every deposited file, searchable by name, description, and keyword, with a dataset filter and sortable columns — opening a row shows the variables it contains and their labels.</p>
+              <p>Variables found here can be added to the OWL basket like any other search, for a standard Condor/Skylark request, or you can apply for UK LLC access directly if you need them linked to other cohorts or administrative data. Because deposits are continuous, it's worth checking back periodically for variables that aren't listed yet.</p>
+              <a class="inner-link" href="/OWL/docs/search_methods/ukllc_catalogue">Go to UK LLC Catalogue →</a>
+            </div>
+          </div>
+
           <div class="inner-item" id="search-global">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🌐</span>
-              <span class="inner-title">6. Global Site Search</span>
+              <span class="inner-title">7. Global Site Search</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
