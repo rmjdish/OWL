@@ -3,11 +3,15 @@
  *
  * Builds the "Download PDF" report entirely in the browser, on click -
  * no server-side PDF generation or pre-built PDF files. Fetches
- * {varname}.pdfdata.json (written by the pipeline alongside the HTML
- * page - see owl_extract_data_from_db.py's build_pdf_data()) for
- * everything except the plot image, which is pulled directly from the
- * page's own <img id="dist-plot-img"> (already a data-URI PNG, so no
- * need to re-fetch or regenerate it).
+ * {varname}.json (written by the pipeline - see owl_db_pipeline.py's
+ * run() and owl_extract_data_from_db.py's build_pdf_data()) and reads
+ * its "pdf" key for everything except the plot image, which is pulled
+ * directly from the page's own <img id="dist-plot-img"> (already a
+ * data-URI PNG, so no need to re-fetch or regenerate it). The variable
+ * page itself now draws its chart on a <canvas>, not an <img> - see
+ * variable_page.js, which keeps a hidden #dist-plot-img in sync with
+ * that canvas via toDataURL() specifically so this lookup keeps working
+ * unchanged.
  *
  * Colours are the exact same hex values as owl_pdf_report.py's THEME/
  * STAT_BOX/TL_COLOR/LV_COLOR - kept in sync manually; if either file's
@@ -367,12 +371,20 @@ async function downloadVariablePdf(varname, pageUrl) {
   // correct even if the site is ever moved.
   const absolutePageUrl = pageUrl ? new URL(pageUrl, window.location.href).href : null;
 
-  const resp = await fetch(`${varname}.pdfdata.json`);
+  // CHANGED (repo-size fix): {varname}.pdfdata.json no longer exists as
+  // its own file - owl_db_pipeline.py now writes ONE {varname}.json per
+  // variable, with this same data nested under its "pdf" key (alongside
+  // "page", the new data the shared variable.html/variable_page.js
+  // template renders, and the pre-existing sidecar fields used by the
+  // longitudinal comparison tool). Everything below this line is
+  // unchanged - build_pdf_data()'s return shape in
+  // owl_extract_data_from_db.py was not altered, only where it's found.
+  const resp = await fetch(`${varname}.json`);
   if (!resp.ok) {
     alert("Could not load data for this variable's PDF - please try again.");
     return;
   }
-  const pdfData = await resp.json();
+  const pdfData = (await resp.json()).pdf;
 
   const imgEl = document.getElementById("dist-plot-img");
   const plotDataUri = imgEl && imgEl.src && imgEl.src.startsWith("data:image") ? imgEl.src : null;
