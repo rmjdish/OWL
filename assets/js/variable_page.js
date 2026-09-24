@@ -365,10 +365,11 @@
     ctx.fillText(unitLabel, padL + plotW / 2, H - 8);
   }
 
-  function drawCategoricalChart(canvas, chart) {
+  function drawCategoricalChart(canvas, chart, label) {
     var bars = chart.bars, n = bars.length;
-    var rowH = 26, axisH = 26, padT = 14;
-    var chartH = Math.max(padT + n * rowH + axisH + 60, 220);
+    var titleTop = 34;                    // room for the chart title
+    var rowH = 34, axisH = 26, padT = titleTop + 16;
+    var chartH = Math.max(padT + n * rowH + axisH + 70, 260);
     var W = containerWidth(canvas, 620, 640);
     var H = chartH;
     var ctx = sizeCanvasCrisp(canvas, W, H);
@@ -381,6 +382,13 @@
     var tooLong = bars.some(function (b) { return (b.label || "").length > LABEL_CUTOFF; });
     var barsBottom = padT + n * rowH;
 
+    // Title, same treatment as the continuous chart's - this was missing
+    // entirely before.
+    ctx.fillStyle = PURPLE.edge;
+    ctx.font = "bold 13px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    wrapText(ctx, label || "", W / 2, 18, W - 40, 15);
+
     // x-axis gridlines + tick numbers, drawn first so bars sit on top -
     // matches the reference design (0 / 200 / 400 / ... style ticks
     // beneath the bars, not just a bare axis line).
@@ -392,22 +400,23 @@
       ctx.beginPath(); ctx.moveTo(tx, padT); ctx.lineTo(tx, barsBottom); ctx.stroke();
     });
 
+    // Bars - square corners (not rounded), with a bit more vertical
+    // breathing room between rows than before.
     ctx.font = "11px system-ui, sans-serif";
     bars.forEach(function (b, i) {
       var y = padT + i * rowH;
       var w = (b.count / maxCount) * plotW;
+      var barH = rowH - 12;
       ctx.fillStyle = shadeFor(i, n);
-      roundRect(ctx, padL, y, Math.max(w, 2), rowH - 8, 6);
-      ctx.fill();
+      ctx.fillRect(padL, y, Math.max(w, 2), barH);
       ctx.strokeStyle = PURPLE.edge; ctx.lineWidth = 0.8;
-      roundRect(ctx, padL, y, Math.max(w, 2), rowH - 8, 6);
-      ctx.stroke();
+      ctx.strokeRect(padL, y, Math.max(w, 2), barH);
       ctx.fillStyle = AXIS_TEXT; ctx.textAlign = "left";
-      ctx.fillText(String(b.count), padL + w + 6, y + rowH / 2 - 2);
+      ctx.fillText(String(b.count), padL + w + 6, y + barH / 2 + 4);
       ctx.textAlign = "right";
       var lbl = tooLong ? b.value : (b.label || b.value);
       if (lbl.length > 26) lbl = lbl.slice(0, 24) + "...";
-      ctx.fillText(lbl, padL - 8, y + rowH / 2 - 2);
+      ctx.fillText(lbl, padL - 8, y + barH / 2 + 4);
     });
 
     // x-axis line + tick labels, directly beneath the bars.
@@ -420,8 +429,9 @@
       ctx.fillText(String(Math.round(v)), tx, barsBottom + 15);
     });
 
-    // 100% stacked bar underneath
-    var stackY = barsBottom + 30, stackH = 22;
+    // 100% stacked bar underneath - given more breathing room below the
+    // axis than before, so it doesn't crowd the tick labels.
+    var stackY = barsBottom + 42, stackH = 22;
     var total = bars.reduce(function (s, b) { return s + b.count; }, 0) || 1;
     var x = padL;
     var stackW = W - padL - padR;
@@ -441,16 +451,6 @@
       ctx.fillStyle = PURPLE.edge; ctx.font = "italic 10px system-ui, sans-serif"; ctx.textAlign = "center";
       ctx.fillText("Category labels are too long to display here - see the stats table for the full text.", W / 2, H - 6);
     }
-  }
-
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
   }
 
   function wrapText(ctx, text, cx, y, maxWidth, lineHeight) {
@@ -542,13 +542,28 @@
       statsHtml = box("box-summary", "Summary", summary) + box("box-spread", "Spread", spread) + box("box-deciles", "Deciles", deciles);
       note = "Missing values and distribution outside 5th and 95th percentiles removed from both the plot above and the statistics above.";
     } else {
+      // Value -> label lookup, straight from the chart's own bar data
+      // (already resolved via build_distribution()'s _label_for() on the
+      // Python side) - NOT built by reformatting page.freq_rows itself,
+      // since freq_rows[i][0] has to stay the raw, unlabelled value for
+      // _build_sidecar()'s category_counts parsing (it does
+      // float(item_text) to look the label up FROM the value - a value
+      // already containing "— label" text would break that parse). This
+      // keeps the display-only "value — label" formatting entirely
+      // separate from that data contract.
+      var labelByValue = {};
+      if (page.chart && page.chart.bars) {
+        page.chart.bars.forEach(function (b) { labelByValue[String(b.value)] = b.label; });
+      }
       var hasPct = page.freq_rows.some(function (r) { return r.length > 2; });
       var rowsHtml = "";
       page.freq_rows.forEach(function (r) {
         var key = String(r[0]).toLowerCase();
         if (key === "series size" || key === "series_size" || key === "displayed n") { displayedN = r[1]; return; }
+        var lbl = labelByValue[String(r[0])];
+        var valueDisplay = lbl && lbl !== r[0] ? r[0] + " \u2014 " + lbl : r[0];
         var pctCell = hasPct && r[2] !== undefined ? "<td>" + esc(r[2]) + "</td>" : "";
-        rowsHtml += "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td>" + pctCell + "</tr>";
+        rowsHtml += "<tr><td>" + esc(valueDisplay) + "</td><td>" + esc(r[1]) + "</td>" + pctCell + "</tr>";
       });
       statsHtml =
         '<div class="fq-cat-box"><table class="fq-table" style="width:100%;"><tr><th style="width:40%">Value</th><th>Count</th>' +
@@ -582,7 +597,7 @@
       var canvas = document.getElementById(canvasId);
       if (!canvas || !page.chart) return;
       if (page.chart.type === "continuous") drawContinuousChart(canvas, page.chart, page.label);
-      else drawCategoricalChart(canvas, page.chart);
+      else drawCategoricalChart(canvas, page.chart, page.label);
 
       var pdfImg = document.getElementById("dist-plot-img");
       if (!pdfImg) {
