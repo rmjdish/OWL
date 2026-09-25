@@ -64,6 +64,20 @@
   }
 
   // ── Panel: Linked & Longitudinal ────────────────────────────────────────
+  // ── Trajectory page trigger, shared by the Distribution and Linked &
+  // Longitudinal panels - same URL from both, so both open the identical
+  // page. Real <a target="_blank">, not window.open(): bookmarkable,
+  // shareable, works with ctrl/cmd-click, not subject to popup blockers.
+  function trajectoryButtonHtml(page) {
+    if (!page.truly_longitudinal) return "";
+    var fid = page.truly_longitudinal.field_id;
+    var url = page.site_baseurl + "/assets/variable_metadata/trajectory.html?fid=" +
+      encodeURIComponent(fid) + "&via=" + encodeURIComponent(page.varname);
+    return '<div class="traj-btn-row"><a class="traj-btn" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+      '<i class="ti ti-timeline" aria-hidden="true"></i>View all sweeps' +
+      '<i class="ti ti-external-link" aria-hidden="true"></i></a></div>';
+  }
+
   function renderLinked(page) {
     var siteBase = page.site_baseurl;
     var longUrl = siteBase + "/docs/search_methods/longitudinal_variables/longitudinal-variables/";
@@ -157,7 +171,7 @@
         '<p style="color:#666;font-style:italic;margin:0;">No additional linked variables recorded.</p></div>';
     }
 
-    return '<div class="vm-panel" data-panel="linked">' + defBlock + tlBody + lvBody + "</div>";
+    return '<div class="vm-panel" data-panel="linked">' + trajectoryButtonHtml(page) + defBlock + tlBody + lvBody + "</div>";
   }
 
   // ── Panel: Documents ─────────────────────────────────────────────────
@@ -480,6 +494,11 @@
   }
 
   function renderDist(page, varname) {
+    // Computed once, reused in every return path below (including the
+    // "unavailable" ones) - this variable having no distribution of its
+    // own doesn't mean the rest of its Truly Longitudinal group doesn't.
+    var trajBtn = trajectoryButtonHtml(page);
+
     // Two independent, sometimes-overlapping reasons a variable has no
     // Distribution tab content: is_genomic/is_plot_excluded (on the
     // plot-exclusion list - deliberately suppressed even though the data
@@ -491,12 +510,12 @@
     // (Metadata/Linked/Documents/Categories/Value Labels) either way.
     if (page.is_genomic || page.is_plot_excluded || page.dist_type === "unavailable" || !page.dist_type) {
       return (
-        '<div class="vm-panel" data-panel="dist"><p style="font-size:14px;color:#555;font-style:italic;">' +
+        '<div class="vm-panel" data-panel="dist">' + trajBtn + '<p style="font-size:14px;color:#555;font-style:italic;">' +
         "Plots/Statistics are unavailable for this variable.</p></div>"
       );
     }
     if (!page.chart && (!page.freq_rows || !page.freq_rows.length)) {
-      return '<div class="vm-panel" data-panel="dist"><p style="font-size:14px;color:#555;font-style:italic;">Plots/Statistics are unavailable for this variable.</p></div>';
+      return '<div class="vm-panel" data-panel="dist">' + trajBtn + '<p style="font-size:14px;color:#555;font-style:italic;">Plots/Statistics are unavailable for this variable.</p></div>';
     }
 
     var isContinuous = page.dist_type === "continuous";
@@ -581,7 +600,7 @@
       esc(varname) + '_stats.csv"><i class="ti ti-download" aria-hidden="true"></i> Download statistics as CSV</a></div>';
 
     var html =
-      '<div class="vm-panel" data-panel="dist"><div class="dist-flex">' +
+      '<div class="vm-panel" data-panel="dist">' + trajBtn + '<div class="dist-flex">' +
       '<div class="dist-plot-col">' + plotHtml + unitsHtml + legendHtml + downloadPngHtml + "</div>" +
       '<div class="dist-stats-col">' + statsHtml + nBanner + statsDownloadHtml + "</div>" +
       "</div>" + '<p class="dist-note">' + note + "</p></div>";
