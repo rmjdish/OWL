@@ -147,12 +147,18 @@
 
   // Each card uses its own category set (sorted by count, descending) and
   // its own count-axis max - not aligned with other cards in the group.
+  // Same two elements as the main Distribution tab's categorical chart -
+  // bars with a real x/y axis, plus a 100%-stacked summary bar beneath -
+  // just sized down to fit a 2-up card.
   function drawCategoricalMini(canvas, chart) {
     var bars = chart.bars.slice().sort(function (a, b) { return b.count - a.count; });
     var n = bars.length;
     var maxCount = Math.max.apply(null, bars.map(function (b) { return b.count; }).concat([1]));
-    var rowH = 26, padT = 6, padB = 22;
-    var W = cardWidth(canvas), H = padT + n * rowH + padB;
+    var rowH = 26, padT = 6, axisGap = 20, stackGap = 14, stackH = 18, padB = 10;
+    var W = cardWidth(canvas);
+    var barsBottom = padT + n * rowH;
+    var stackY = barsBottom + axisGap + stackGap;
+    var H = stackY + stackH + padB;
     var ctx = sizeCanvas(canvas, W, H);
     ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
 
@@ -174,15 +180,35 @@
       if (lbl.length > 22) lbl = lbl.slice(0, 20) + "...";
       ctx.fillText(lbl, padL - 6, y + (rowH - 9) / 2 + 3);
     });
+
+    // x-axis (bottom) and y-axis (left) lines - both were missing before;
+    // the left line in particular is what makes this read as a real
+    // chart with two axes, not just a list of floating bars.
     ctx.strokeStyle = PURPLE.edge; ctx.lineWidth = 1;
-    var axisY = padT + n * rowH;
-    ctx.beginPath(); ctx.moveTo(padL, axisY); ctx.lineTo(W - padR, axisY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, barsBottom); ctx.lineTo(W - padR, barsBottom); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, barsBottom); ctx.stroke();
+
     var ticks = niceTicks(0, maxCount, 4);
     ctx.font = "9px system-ui, sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = AXIS_TEXT;
     ticks.forEach(function (v) {
       var tx = padL + (v / (maxCount || 1)) * plotW;
-      ctx.beginPath(); ctx.moveTo(tx, axisY); ctx.lineTo(tx, axisY + 3); ctx.stroke();
-      ctx.fillText(String(Math.round(v)), tx, axisY + 13);
+      ctx.beginPath(); ctx.moveTo(tx, barsBottom); ctx.lineTo(tx, barsBottom + 4); ctx.stroke();
+      ctx.fillText(String(Math.round(v)), tx, barsBottom + 14);
+    });
+
+    // 100% stacked summary bar beneath, same as the main Distribution tab.
+    var total = bars.reduce(function (s, b) { return s + b.count; }, 0) || 1;
+    var x = padL;
+    bars.forEach(function (b, i) {
+      var w = (b.count / total) * plotW;
+      ctx.fillStyle = shadeFor(i, n);
+      ctx.fillRect(x, stackY, w, stackH);
+      if (w > plotW * 0.08) {
+        ctx.fillStyle = i < n / 2 ? "#fff" : PURPLE.edge;
+        ctx.textAlign = "center"; ctx.font = "9px system-ui, sans-serif";
+        ctx.fillText(Math.round((b.count / total) * 100) + "%", x + w / 2, stackY + stackH / 2 + 3);
+      }
+      x += w;
     });
   }
 
