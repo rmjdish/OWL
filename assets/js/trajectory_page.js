@@ -86,13 +86,29 @@
   // Each card uses its OWN x/y scale, from its own chart's own bins -
   // deliberately not aligned with any other card in the group.
   function drawContinuousMini(canvas, chart, label) {
-    var W = cardWidth(canvas), H = Math.round(W * 0.54);
+    var W = cardWidth(canvas);
+    var titleLineH = 13;
+    var measureCtx = document.createElement("canvas").getContext("2d");
+    measureCtx.font = "bold 11px system-ui, sans-serif";
+    var titleLines = label ? wrapCanvasText(measureCtx, label, W - 20) : [];
+    var titleH = titleLines.length ? titleLines.length * titleLineH + 6 : 0;
+
+    var H = Math.round(W * 0.54) + titleH;
     var ctx = sizeCanvas(canvas, W, H);
     ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
 
+    // Title - the variable's own label, same text already shown as the
+    // card's HTML description on the live page, drawn INTO the canvas
+    // here too so it travels with the chart into the downloaded/
+    // composited image, not just the live DOM.
+    if (titleLines.length) {
+      ctx.fillStyle = PURPLE.edge; ctx.font = "bold 11px system-ui, sans-serif"; ctx.textAlign = "center";
+      titleLines.forEach(function (line, i) { ctx.fillText(line, W / 2, 12 + i * titleLineH); });
+    }
+
     var box = chart.boxplot, bins = chart.bins;
     var xMin = bins.edges[0], xMax = bins.edges[bins.edges.length - 1];
-    var padL = 42, padR = 14, padT = 8, padBottom = 30;
+    var padL = 42, padR = 14, padT = 8 + titleH, padBottom = 30;
     var boxH = 26, gap = 8;
     var plotW = W - padL - padR;
     var histTop = padT + boxH + gap;
@@ -149,18 +165,32 @@
   // its own count-axis max - not aligned with other cards in the group.
   // Same two elements as the main Distribution tab's categorical chart -
   // bars with a real x/y axis, plus a 100%-stacked summary bar beneath -
-  // just sized down to fit a 2-up card.
-  function drawCategoricalMini(canvas, chart) {
+  // just sized down to fit a 2-up card. label is drawn as a title, same
+  // treatment as the continuous chart - previously this chart had no
+  // label anywhere on the canvas at all, so it was lost the moment a
+  // reader downloaded or printed the image rather than viewing the live
+  // page (where the label is separate HTML text next to the canvas).
+  function drawCategoricalMini(canvas, chart, label) {
     var bars = chart.bars.slice().sort(function (a, b) { return b.count - a.count; });
     var n = bars.length;
     var maxCount = Math.max.apply(null, bars.map(function (b) { return b.count; }).concat([1]));
-    var rowH = 26, padT = 6, axisGap = 20, stackGap = 14, stackH = 18, padB = 10;
     var W = cardWidth(canvas);
+    var titleLineH = 13;
+    var measureCtx = document.createElement("canvas").getContext("2d");
+    measureCtx.font = "bold 11px system-ui, sans-serif";
+    var titleLines = label ? wrapCanvasText(measureCtx, label, W - 20) : [];
+    var titleH = titleLines.length ? titleLines.length * titleLineH + 6 : 0;
+    var rowH = 26, padT = 6 + titleH, axisGap = 20, stackGap = 14, stackH = 18, padB = 10;
     var barsBottom = padT + n * rowH;
     var stackY = barsBottom + axisGap + stackGap;
     var H = stackY + stackH + padB;
     var ctx = sizeCanvas(canvas, W, H);
     ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+
+    if (titleLines.length) {
+      ctx.fillStyle = PURPLE.edge; ctx.font = "bold 11px system-ui, sans-serif"; ctx.textAlign = "center";
+      titleLines.forEach(function (line, i) { ctx.fillText(line, W / 2, 12 + i * titleLineH); });
+    }
 
     var padL = Math.round(W * 0.28), padR = 40;
     var plotW = W - padL - padR;
@@ -380,7 +410,7 @@
         var canvas = document.getElementById("traj-canvas-" + idx);
         if (!canvas) return;
         if (pg.dist_type === "continuous") drawContinuousMini(canvas, pg.chart, pg.label);
-        else if (pg.dist_type === "categorical") drawCategoricalMini(canvas, pg.chart);
+        else if (pg.dist_type === "categorical") drawCategoricalMini(canvas, pg.chart, pg.label);
       });
       var csvBtn = document.getElementById("traj-dl-csv");
       if (csvBtn) csvBtn.addEventListener("click", function () { downloadTableCsv(refType, members, ok, categories, fid); });
