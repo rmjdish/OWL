@@ -290,8 +290,16 @@
       var col = i % cols, row = Math.floor(i / cols);
       var x = col * (cardW + gap * dpr), y = row * (cardH + labelH * dpr + gap * dpr);
       var head = c.closest(".traj-card").querySelector(".traj-card-head");
-      ctx.fillStyle = "#4A3F7A"; ctx.font = (12 * dpr) + "px system-ui, sans-serif";
-      ctx.fillText(head ? head.textContent.trim() : "", x, y + 14 * dpr);
+      var nameSpan = head ? head.querySelector("span:first-child") : null;
+      var nSpan = head ? head.querySelector(".n") : null;
+      ctx.font = (12 * dpr) + "px system-ui, sans-serif";
+      ctx.textAlign = "left"; ctx.fillStyle = "#4A3F7A";
+      ctx.fillText(nameSpan ? nameSpan.textContent.trim() : "", x, y + 14 * dpr);
+      if (nSpan) {
+        ctx.textAlign = "right"; ctx.fillStyle = "#8A7FB0";
+        ctx.fillText(nSpan.textContent.trim(), x + cardW, y + 14 * dpr);
+      }
+      ctx.textAlign = "left";
       ctx.drawImage(c, x, y + labelH * dpr);
     });
     // Same disclosure note the page itself shows, so it travels with the
@@ -465,16 +473,17 @@
         r.data.page.chart.bars.forEach(function (b) { map[b.value] = b; });
         return map;
       });
-      rowsHtml = categories.map(function (catVal) {
+      rowsHtml = categories.map(function (catVal, i) {
         var label = null;
         byVar.forEach(function (m) { if (m && m[catVal] && !label) label = m[catVal].label; });
         var cells = byVar.map(function (m) {
           var b = m && m[catVal];
           return b ? "<td>" + esc(b.count) + " (" + esc(b.pct) + "%)</td>" : '<td class="traj-missing">\u2014</td>';
         }).join("");
-        return "<tr><td>" + esc(catVal) + (label ? " \u2014 " + esc(label) : "") + "</td>" + cells + "</tr>";
+        var rowClass = i % 2 === 0 ? "traj-row-cat-a" : "traj-row-cat-b";
+        return '<tr class="' + rowClass + '"><td>' + esc(catVal) + (label ? " \u2014 " + esc(label) : "") + "</td>" + cells + "</tr>";
       }).join("");
-      rowsHtml += "<tr><td>Displayed N</td>" + byVar.map(function (m, i) {
+      rowsHtml += '<tr class="traj-row-cat-n"><td>Displayed N</td>' + byVar.map(function (m, i) {
         var r = ok.filter(function (x) { return x.varname === members[i].varname; })[0];
         var lk = r && r.data.page.dist_type === "categorical" ? freqLookup(r.data.page.freq_rows) : null;
         var n = lk && (lk["Displayed N"] || lk["Series Size"]);
@@ -484,8 +493,9 @@
       rowsHtml = '<tr><td colspan="' + (members.length + 1) + '" class="traj-missing">No statistics available for this group.</td></tr>';
     }
 
+    var tableClass = refType === "categorical" ? "traj-stats traj-stats-categorical" : "traj-stats";
     return '<p class="traj-stats-title">Merged statistics \u00b7 every value</p>' +
-      '<div class="traj-stats-wrap"><table class="traj-stats">' + header + rowsHtml + "</table></div>";
+      '<div class="traj-stats-wrap"><table class="' + tableClass + '">' + header + rowsHtml + "</table></div>";
   }
 
   function round4Str(v) {
