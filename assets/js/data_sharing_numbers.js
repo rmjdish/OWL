@@ -247,6 +247,23 @@
     }), caption);
   }
 
+  // Projects that have data but can not be timed (so nobody wonders why a figure is missing)
+  function leftOutNote(row) {
+    const before = row.excluded_before_approval || 0;
+    const noDate = row.excluded_no_approval_date || 0;
+    if (!before && !noDate) return "";
+    const parts = [];
+    if (before) parts.push(num(before) + " because their data was sent before they were approved");
+    if (noDate) parts.push(num(noDate) + " because they have no approval date");
+    return '<p class="dsn-note">Left out of these time figures: ' + parts.join(", and ") + " (of " + num(row.projects_with_data) + " projects with data).</p>";
+  }
+
+  function leftOutByYear() {
+    const parts = M.time_to_data.by_year.filter((r) => (r.excluded_before_approval || 0) + (r.excluded_no_approval_date || 0) > 0)
+      .map((r) => r.year + " (" + num((r.excluded_before_approval || 0) + (r.excluded_no_approval_date || 0)) + " of " + num(r.projects_with_data) + ")");
+    return parts.length ? '<p class="dsn-note">Projects left out because their data was sent before approval, or there is no approval date: ' + parts.join(", ") + ". A dash means no project that year could be timed.</p>" : "";
+  }
+
   function renderService() {
     const ap = rowFor(M.approval_times) || {};
     const td = rowFor(M.time_to_data) || {};
@@ -267,12 +284,13 @@
 
     return "<h3>Approval</h3><div class=\"dsn-tiles\">" + approvalTiles + "</div>" +
       "<h3>From approval to data</h3><div class=\"dsn-tiles\">" + dataTiles + "</div>" +
-      '<p class="dsn-note">' + esc(M.time_to_data.note || "") + "</p>" +
+      '<p class="dsn-note">' + esc(M.time_to_data.note || "") + "</p>" + leftOutNote(td) +
       "<h3>Trends by year</h3>" +
       '<p class="dsn-sub">Average days to approve an application</p>' +
       trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).average_days, "Average days to approve by year", (v) => String(Math.round(v))) +
       '<p class="dsn-sub">Median days from approval to first data</p>' +
       trendColumns((y) => ((byYear(M.time_to_data.by_year, y) || {}).from_approval || {}).median, "Median days from approval to first data by year", (v) => String(Math.round(v))) +
+      leftOutByYear() +
       '<p class="dsn-sub">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
       "<h3>Repeat requests</h3><div class=\"dsn-tiles\">" + repeatTiles + "</div>" +
@@ -302,7 +320,7 @@
     }
     return "<h3>Types of data requested</h3><p class=\"dsn-sub\">Share of applications asking for each type (number of projects in brackets)</p>" + barRows(typeItems) +
       "<h3>Topics</h3><p class=\"dsn-sub\">Projects asking for at least one variable in each topic</p>" + topicsHtml + yearsHtml +
-      '<p class="dsn-note">Topics and years of collection are counted by the year each basket was created.</p>';
+      '<p class="dsn-note">Topics and years of collection are counted by the year the data was sent.</p>';
   }
 
   function renderVariables() {
@@ -352,11 +370,11 @@
   function renderAbout() {
     return "<p>These figures come from the data sharing records and are updated whenever the data is refreshed. They cover applications from " + M.start_year + " onwards.</p>" +
       "<ul>" +
-      "<li><strong>Year of application</strong> is when the application was submitted. Most figures use it. Topics, collection years and variables use the year each basket was created.</li>" +
+      "<li><strong>Year of application</strong> is when the application was submitted. Most figures use it. Topics, collection years and variables use the year the data was sent.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
-      "<li><strong>Time from approval to first data</strong> is the number of days between a project being approved and its first basket being created.</li>" +
-      "<li><strong>Projects that came back for more</strong> are projects that created another basket well after their first (see the definition above).</li>" +
+      "<li><strong>Time from approval to first data</strong> is the number of days between a project being approved and its data first being sent.</li>" +
+      "<li><strong>Projects that came back for more</strong> are projects that were sent more data well after their first (see the definition above).</li>" +
       "<li>Variables added to every basket automatically are not counted.</li>" +
       "</ul>";
   }
