@@ -33,7 +33,7 @@
 (function () {
   "use strict";
 
-  const COLUMN_COUNT = 7; // expand, PID, date, applicant, title, summary, variables
+  const COLUMN_COUNT = 7; // expand, Project ID, date, applicant, title, summary, variables
 
   // Shown in place of the label for a requested variable that is not in the data
   // dictionary (so is not in OWL yet). These can not be added to the basket.
@@ -333,7 +333,7 @@
     thead.innerHTML =
       "<tr>" +
       '<th class="col-expand" title="Click a row to expand" aria-label="Expand row"></th>' +
-      sortHeader("PID", "pid", "col-pid") +
+      sortHeader("Project ID", "pid", "col-pid") +
       sortHeader("Date submitted", "date_submitted", "col-date") +
       sortHeader("Principal applicant", "principal_applicant", "col-applicant") +
       sortHeader("Title", "title", "col-title") +
@@ -689,7 +689,7 @@
       workbook,
       "Data sharing projects",
       [
-        { header: "PID", key: "pid", width: 14 },
+        { header: "Project ID", key: "pid", width: 14 },
         { header: "Date submitted", key: "date_submitted", width: 16 },
         { header: "Date approved", key: "date_approved", width: 16 },
         { header: "Principal applicant", key: "principal_applicant", width: 28 },
