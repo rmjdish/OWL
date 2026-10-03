@@ -332,7 +332,7 @@
 
     thead.innerHTML =
       "<tr>" +
-      '<th class="col-expand" title="Click a row to expand">Click to expand</th>' +
+      '<th class="col-expand" title="Click a row to expand" aria-label="Expand row"></th>' +
       sortHeader("PID", "pid", "col-pid") +
       sortHeader("Date submitted", "date_submitted", "col-date") +
       sortHeader("Principal applicant", "principal_applicant", "col-applicant") +
@@ -416,7 +416,10 @@
     return (
       '<div class="project-detail">' +
       (meta.length ? '<div class="project-detail-meta">' + meta.join("") + "</div>" : "") +
-      (p.summary ? '<p class="project-detail-summary">' + escapeHtml(p.summary) + "</p>" : "") +
+      (p.summary
+        ? '<div class="project-detail-heading">Project summary</div>' +
+          '<p class="project-detail-summary">' + escapeHtml(p.summary) + "</p>"
+        : "") +
       "</div>"
     );
   }
@@ -431,7 +434,8 @@
     if (!p.variable_list.length) {
       td.innerHTML =
         '<div class="variable-panel">' + detailHtml +
-        '<div class="empty-note">No variables are recorded for this project yet.</div></div>';
+        '<div class="empty-note">No variables are recorded for this project yet, or variables did not need to be ' +
+        "requested via Condor.</div></div>";
       tr.appendChild(td);
       return tr;
     }
