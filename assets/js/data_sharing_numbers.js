@@ -4,15 +4,17 @@
  * Fully client-side. On page load this fetches:
  *   1. metrics.json            (written by DataSharing_Metrics.py)  - required
  *   2. popular_vars_yr.json    (same script)                        - optional, for "most requested variables"
- *   3. the NSHD data dictionary JSON                                - optional, for variable labels
- * and fills the (empty) sections already in the page's HTML.
+ *   3. variable_requests.json  (same script)                        - optional, which variables each project had sent, by year
+ *   4. the NSHD data dictionary JSON                                - optional, for variable labels, topics and years of collection
+ * and fills the (empty) sections already in the page's HTML. Topics and collection years are worked out
+ * HERE, in the browser, by joining (3) to (4), so the Python script never needs the dictionary.
  *
  * The three paths are data-attributes on the page's wrapper element:
  *   <div class="page-topics page-data-sharing-numbers"
- *        data-metrics-url="..." data-popular-url="..." data-dictionary-url="...">
+ *        data-metrics-url="..." data-popular-url="..." data-requests-url="..." data-dictionary-url="...">
  *
  * Preview pages with no web server can set these globals instead (they take priority):
- *   window.DSN_METRICS_INLINE, window.DSN_POPULAR_INLINE, window.DSN_DICTIONARY_INLINE
+ *   window.DSN_METRICS_INLINE, window.DSN_POPULAR_INLINE, window.DSN_REQUESTS_INLINE, window.DSN_DICTIONARY_INLINE
  *
  * Year filter: "All years" or one year. Every figure comes straight from the JSON for that
  * year (nothing is added up from other years), so each number is exact.
@@ -28,7 +30,9 @@
 
   let M = null; // metrics.json
   let popular = []; // popular_vars_yr.json
-  let dict = new Map(); // lower-case variable name -> { name, label }
+  let dict = new Map(); // lower-case variable name -> { name, label, topic, years }
+  let requests = null; // variable_requests.json projects: [{ pid, by_year: { "2022": ["bmi"] } }]
+  const requestStatsCache = {}; // topic / collection-year counts, worked out once per chosen year
   let sel = "all"; // "all", or a year (number)
   let visibleLines = new Set(); // years shown on the trajectory chart
   let pickedVariable = ""; // variable chosen in the "requested together" picker
@@ -76,9 +80,56 @@
 
   function ukLabel(name) {
     const n = String(name).trim().toLowerCase();
-    if (["yes", "y", "true", "uk"].includes(n)) return "UK";
+    if (["yes", "y", "true", "uk", "inside the uk", "inside uk"].includes(n)) return "UK";
     if (["no", "n", "false", "non-uk", "outside uk", "outside the uk"].includes(n)) return "Outside the UK";
     return String(name);
+  }
+
+  // "Anthropometry [12]" -> "Anthropometry" (the dictionary's trailing [code] is dropped)
+  function cleanTopic(raw) {
+    return String(raw || "").replace(/\s*\[\d+\]\s*$/, "").trim();
+  }
+
+  // "1999, 2006" -> [1999, 2006]; anything that is not a plain year stays as text
+  function yearTokens(raw) {
+    return String(raw || "").split(/[;,\/|&]/).map((x) => x.trim()).filter((x) => x && x.toLowerCase() !== "nan")
+      .map((x) => (/^\d+$/.test(x) ? parseInt(x, 10) : x));
+  }
+
+  // Join each project's requested variables to the dictionary, in the browser.
+  // A project counts ONCE per topic / year of collection however many of its variables fall in it.
+  function requestStats() {
+    const key = String(sel);
+    if (requestStatsCache[key]) return requestStatsCache[key];
+    const topics = new Map();
+    const collection = new Map();
+    const notInDictionary = new Set();
+    const add = (map, name, pid, variable) => {
+      if (!map.has(name)) map.set(name, { projects: new Set(), variables: new Set() });
+      const entry = map.get(name);
+      entry.projects.add(pid);
+      entry.variables.add(variable);
+    };
+    requests.forEach((p) => {
+      const vars = new Set();
+      if (sel === "all") Object.keys(p.by_year).forEach((y) => p.by_year[y].forEach((v) => vars.add(v)));
+      else (p.by_year[key] || []).forEach((v) => vars.add(v));
+      vars.forEach((v) => {
+        const info = dict.get(v);
+        if (!info) { notInDictionary.add(v); return; }
+        if (info.topic) add(topics, info.topic, p.pid, v);
+        info.years.forEach((y) => add(collection, y, p.pid, v));
+      });
+    });
+    const toList = (map) => Array.from(map, ([name, e]) => ({ name, projects: e.projects.size, variables: e.variables.size }));
+    const result = {
+      topics: toList(topics).sort((a, b) => b.projects - a.projects || String(a.name).localeCompare(String(b.name))),
+      collection: toList(collection).sort((a, b) =>
+        typeof a.name === typeof b.name ? (a.name < b.name ? -1 : a.name > b.name ? 1 : 0) : typeof a.name === "number" ? -1 : 1),
+      notInDictionary: notInDictionary.size,
+    };
+    requestStatsCache[key] = result;
+    return result;
   }
 
   function varLink(name) {
@@ -118,6 +169,18 @@
         '<span class="dsn-col-lab">' + esc(i.label) + "</span></div>").join("") + "</div>";
   }
 
+  // The approval process changed just before this year (set in the YAML, passed in metrics.json)
+  const changeYear = () => (M && M.process_change_year) || 2023;
+
+  // A dagger marks time figures the process change affects: "All years", or a year from the change onwards
+  const dagger = () => (sel === "all" || sel >= changeYear() ? " †" : "");
+
+  function processNote() {
+    return '<p class="dsn-note">† The data sharing process changed just before ' + changeYear() +
+      ", allowing a quicker turnaround, so times from " + changeYear() + " onwards are not directly comparable with earlier years. " +
+      "The process will be explained in more detail later.</p>";
+  }
+
   function unavailable() {
     return '<p class="dsn-note">These figures are not available right now.</p>';
   }
@@ -136,24 +199,31 @@
       .concat(M.years.map((y) => '<button class="dsn-chip' + (sel === y ? " on" : "") + '" data-year="' + y + '">' + y + "</button>")).join("");
 
     const partial = M.end_year === new Date().getFullYear() ? " " + M.end_year + " is the year to date." : "";
+    const notInJay = sel === "all" ? sum(apps, (a) => a.not_in_jay) : (byYear(apps, sel) || {}).not_in_jay;
+    const notInJayNote = notInJay
+      ? " " + num(notInJay) + (notInJay === 1 ? " approved application is" : " approved applications are") +
+        " not in Jay yet (no basket built). " + (notInJay === 1 ? "It counts" : "They count") + " in the applications and approval figures, but have no institution, country or data."
+      : "";
     return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips + "</div>" +
       '<div class="dsn-tiles">' +
       tile("Applications", num(nApps)) +
       tile("Institutions", num(distinct(M.where.institutions))) +
       tile("Countries", num(distinct(M.where.countries))) +
-      tile("Average time to approve", days(ap.average_days)) +
-      tile("Approved within " + th + " days", pct(ap["percent_within_" + th]), num(ap["within_" + th]) + " of " + num(ap.approved) + " approved") +
+      tile("Average time to approve" + dagger(), days(ap.average_days)) +
+      tile("Approved within " + th + " days" + dagger(), pct(ap["percent_within_" + th]), num(ap["within_" + th]) + " of " + num(ap.approved) + " approved") +
       tile("Applications with data prepared", pct(prep.percent), num(prep.with_data) + " of " + num(prep.applications)) +
       "</div>" +
-      '<p class="dsn-note">Applications from ' + M.start_year + " onwards, counted by year of application." + partial +
-      (M.generated ? " Updated " + esc(formatDate(M.generated)) + "." : "") + "</p>";
+      '<p class="dsn-note">Applications from ' + M.start_year + " onwards, counted by year of application." + partial + notInJayNote +
+      (M.generated ? " Updated " + esc(formatDate(M.generated)) + "." : "") + "</p>" + processNote();
   }
 
-  function niceMax(v) {
-    if (v <= 5) return 5;
-    const p = Math.pow(10, Math.floor(Math.log10(v)));
-    const n = v / p;
-    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+  // The y axis tops out at 60 so the lines fill the chart. It only goes higher if a line would
+  // otherwise be cut off, in which case it rounds up to the next sensible step.
+  const AXIS_DEFAULT_MAX = 60;
+  function axisScale(v) {
+    if (v <= AXIS_DEFAULT_MAX) return { max: AXIS_DEFAULT_MAX, step: 10 };
+    const step = v <= 120 ? 20 : v <= 300 ? 50 : 100;
+    return { max: Math.ceil(v / step) * step, step };
   }
 
   function trajectorySvg() {
@@ -161,15 +231,15 @@
     if (!bm) return '<p class="dsn-note">The month-by-month view is not available right now.</p>';
     const W = 700, H = 300, m = { l: 46, r: 40, t: 16, b: 34 };
     const shown = M.years.filter((y) => visibleLines.has(y) && bm[String(y)]);
-    let maxY = 1;
-    shown.forEach((y) => bm[String(y)].cumulative.forEach((v) => { if (isNum(v) && v > maxY) maxY = v; }));
-    maxY = niceMax(maxY);
+    let dataMax = 0;
+    shown.forEach((yr) => bm[String(yr)].cumulative.forEach((v) => { if (isNum(v) && v > dataMax) dataMax = v; }));
+    const axis = axisScale(dataMax);
+    const maxY = axis.max;
     const x = (i) => m.l + ((W - m.l - m.r) * i) / 11;
     const y = (v) => H - m.b - ((H - m.t - m.b) * v) / maxY;
 
     let svg = '<svg class="dsn-svg" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Cumulative applications by month, one line per year">';
-    for (let g = 0; g <= 4; g++) {
-      const v = (maxY * g) / 4;
+    for (let v = 0; v <= maxY; v += axis.step) {
       svg += '<line class="grid" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y(v) + '" y2="' + y(v) + '"/>' +
         '<text class="tick" x="' + (m.l - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end">' + num(Math.round(v)) + "</text>";
     }
@@ -240,11 +310,26 @@
       "<h3>Top institutions</h3>" + topList(w.institutions, (r) => r.name, 10, (r) => r.country);
   }
 
-  function trendColumns(values, caption, format) {
+  function trendColumns(values, caption, format, marked) {
     return columnChart(M.years.map((y) => {
       const v = values(y);
-      return { label: String(y), value: isNum(v) ? v : 0, text: isNum(v) ? format(v) : "–", selected: sel !== "all" && y === sel };
+      return { label: String(y) + (marked && y >= changeYear() ? "†" : ""), value: isNum(v) ? v : 0,
+        text: isNum(v) ? format(v) : "–", selected: sel !== "all" && y === sel };
     }), caption);
+  }
+
+  // How soon after approval the first data went out
+  function soonAfterApproval(fromApproval) {
+    const b = fromApproval.bands;
+    if (!b) return "";
+    const bands = [["same_day", "On the day of approval"], ["days_1_7", "1 to 7 days later"], ["days_8_30", "8 to 30 days later"],
+      ["days_31_60", "31 to 60 days later"], ["over_60", "More than 60 days later"]];
+    const total = bands.reduce((s, x) => s + (b[x[0]] || 0), 0);
+    if (!total) return "";
+    const items = bands.map((x) => ({ label: x[1], value: b[x[0]] || 0, text: num(b[x[0]] || 0) + " (" + pct(((b[x[0]] || 0) / total) * 100) + ")" }));
+    const most = (b.same_day || 0) / total >= 0.5
+      ? '<p class="dsn-note">Most of these projects were sent their first data on the day they were approved, so the median time from approval is 0 days. The time from submission shows the full wait.</p>' : "";
+    return '<h3>How soon after approval is data sent?</h3><p class="dsn-sub">Projects, by the time between approval and the first data being sent</p>' + barRows(items) + most;
   }
 
   // Projects that have data but can not be timed (so nobody wonders why a figure is missing)
@@ -272,25 +357,29 @@
     const prep = prepared();
     const ths = M.approval_times.thresholds;
 
-    const approvalTiles = tile("Average time to approve", days(ap.average_days)) + tile("Median time to approve", days(ap.median_days)) +
-      ths.map((t) => tile("Approved within " + t + " days", pct(ap["percent_within_" + t]), num(ap["within_" + t]) + " of " + num(ap.approved))).join("");
+    const approvalTiles = tile("Average time to approve" + dagger(), days(ap.average_days)) + tile("Median time to approve" + dagger(), days(ap.median_days)) +
+      ths.map((t) => tile("Approved within " + t + " days" + dagger(), pct(ap["percent_within_" + t]), num(ap["within_" + t]) + " of " + num(ap.approved))).join("");
+    const fromSubmission = td.from_submission || {};
     const dataTiles = tile("Applications with data prepared", pct(prep.percent), num(prep.with_data) + " of " + num(prep.applications)) +
-      tile("Median time from approval to first data", days(fromApproval.median), "across " + num(fromApproval.n) + " projects") +
-      tile("Average time from approval to first data", days(fromApproval.average)) +
-      ths.slice(0, 1).map((t) => tile("Data within " + t + " days of approval", pct(fromApproval["percent_within_" + t]), num(fromApproval["within_" + t]) + " of " + num(fromApproval.n))).join("");
+      tile("Median time from approval to first data" + dagger(), days(fromApproval.median), "across " + num(fromApproval.n) + " projects") +
+      tile("Average time from approval to first data" + dagger(), days(fromApproval.average)) +
+      tile("Median time from submission to first data" + dagger(), days(fromSubmission.median), "the whole wait, from applying") +
+      ths.slice(0, 1).map((t) => tile("Data within " + t + " days of approval" + dagger(), pct(fromApproval["percent_within_" + t]), num(fromApproval["within_" + t]) + " of " + num(fromApproval.n))).join("");
     const repeatTiles = tile("Projects that came back for more", pct(rp.percent_returned), num(rp.returned) + " of " + num(rp.projects_with_data)) +
       tile("Median time until they came back", days(rp.median_days_to_return)) +
       tile("Projects with more than one basket", num(rp.with_multiple_baskets));
 
     return "<h3>Approval</h3><div class=\"dsn-tiles\">" + approvalTiles + "</div>" +
       "<h3>From approval to data</h3><div class=\"dsn-tiles\">" + dataTiles + "</div>" +
-      '<p class="dsn-note">' + esc(M.time_to_data.note || "") + "</p>" + leftOutNote(td) +
+      '<p class="dsn-note">' + esc(M.time_to_data.note || "") + "</p>" + leftOutNote(td) + soonAfterApproval(fromApproval) +
       "<h3>Trends by year</h3>" +
       '<p class="dsn-sub">Average days to approve an application</p>' +
-      trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).average_days, "Average days to approve by year", (v) => String(Math.round(v))) +
+      trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).average_days, "Average days to approve by year", (v) => String(Math.round(v)), true) +
       '<p class="dsn-sub">Median days from approval to first data</p>' +
-      trendColumns((y) => ((byYear(M.time_to_data.by_year, y) || {}).from_approval || {}).median, "Median days from approval to first data by year", (v) => String(Math.round(v))) +
-      leftOutByYear() +
+      trendColumns((y) => ((byYear(M.time_to_data.by_year, y) || {}).from_approval || {}).median, "Median days from approval to first data by year", (v) => String(Math.round(v)), true) +
+      '<p class="dsn-sub">Median days from submission to first data</p>' +
+      trendColumns((y) => ((byYear(M.time_to_data.by_year, y) || {}).from_submission || {}).median, "Median days from submission to first data by year", (v) => String(Math.round(v)), true) +
+      leftOutByYear() + processNote() +
       '<p class="dsn-sub">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
       "<h3>Repeat requests</h3><div class=\"dsn-tiles\">" + repeatTiles + "</div>" +
@@ -307,19 +396,18 @@
       return { label: esc(t.type), value: cell.percent || 0, text: pct(cell.percent) + " (" + num(cell.projects) + ")" };
     });
 
-    let topicsHtml = '<p class="dsn-note">Topic figures are not available right now.</p>';
+    let topicsHtml = '<p class="dsn-note">Topic figures need the data dictionary and the variable request file, which are not available right now.</p>';
     let yearsHtml = "";
-    const ty = M.topics_and_years;
-    if (ty) {
-      const topics = ty.topics.map((t) => ({ label: esc(t.topic), value: sel === "all" ? t.projects : t.by_year[key] || 0 }))
-        .filter((t) => t.value > 0).sort((a, b) => b.value - a.value).slice(0, 12);
-      topicsHtml = barRows(topics);
-      const years = ty.collection_years.map((c) => ({ label: esc(c.collection_year), value: sel === "all" ? c.projects : c.by_year[key] || 0 }))
-        .filter((c) => c.value > 0);
-      yearsHtml = "<h3>Years of data collection</h3><p class=\"dsn-sub\">Projects asking for at least one variable from each year of collection</p>" + barRows(years);
+    let unmatchedNote = "";
+    if (requests && dict.size) {
+      const st = requestStats();
+      topicsHtml = barRows(st.topics.slice(0, 12).map((x) => ({ label: esc(x.name), value: x.projects })));
+      yearsHtml = "<h3>Years of data collection</h3><p class=\"dsn-sub\">Projects asking for at least one variable from each year of collection</p>" +
+        barRows(st.collection.map((x) => ({ label: esc(x.name), value: x.projects })));
+      if (st.notInDictionary) unmatchedNote = '<p class="dsn-note">' + num(st.notInDictionary) + (st.notInDictionary === 1 ? " requested variable is" : " requested variables are") + " not in the data dictionary yet, so are not counted in topics or years of collection.</p>";
     }
     return "<h3>Types of data requested</h3><p class=\"dsn-sub\">Share of applications asking for each type (number of projects in brackets)</p>" + barRows(typeItems) +
-      "<h3>Topics</h3><p class=\"dsn-sub\">Projects asking for at least one variable in each topic</p>" + topicsHtml + yearsHtml +
+      "<h3>Topics</h3><p class=\"dsn-sub\">Projects asking for at least one variable in each topic</p>" + topicsHtml + yearsHtml + unmatchedNote +
       '<p class="dsn-note">Topics and years of collection are counted by the year the data was sent.</p>';
   }
 
@@ -370,11 +458,14 @@
   function renderAbout() {
     return "<p>These figures come from the data sharing records and are updated whenever the data is refreshed. They cover applications from " + M.start_year + " onwards.</p>" +
       "<ul>" +
+      "<li><strong>Approved but not in Jay yet:</strong> an application can be approved before any basket is built, so it is not in Jay. It still counts in the application and approval figures, using its SharePoint request and decision times. It has no institution, country or UK flag, and no data figures.</li>" +
       "<li><strong>Year of application</strong> is when the application was submitted. Most figures use it. Topics, collection years and variables use the year the data was sent.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
       "<li><strong>Time from approval to first data</strong> is the number of days between a project being approved and its data first being sent.</li>" +
-      "<li><strong>Projects that came back for more</strong> are projects that were sent more data well after their first (see the definition above).</li>" +
+      "<li><strong>Projects that came back for more</strong> are projects that were sent more data more than " + ((M.repeat_requests && M.repeat_requests.gap_days) || 7) + " days after their first.</li>" +
+      "<li><strong>Dates:</strong> where a project is logged in the SharePoint request log, its request and decision times are used for the time to approve. Otherwise the dates held in Jay are used.</li>" +
+      "<li><strong>†</strong> The data sharing process changed just before " + changeYear() + ", allowing a quicker turnaround, so times from " + changeYear() + " onwards are not directly comparable with earlier years. The process will be explained in more detail later.</li>" +
       "<li>Variables added to every basket automatically are not counted.</li>" +
       "</ul>";
   }
@@ -479,13 +570,20 @@
       metricsP,
       optional(window.DSN_POPULAR_INLINE, "popularUrl", "data-popular-url", "popular variables JSON"),
       optional(window.DSN_DICTIONARY_INLINE, "dictionaryUrl", "data-dictionary-url", "dictionary JSON"),
-    ]).then(([metrics, pop, dictionary]) => {
+      optional(window.DSN_REQUESTS_INLINE, "requestsUrl", "data-requests-url", "variable requests JSON"),
+    ]).then(([metrics, pop, dictionary, reqs]) => {
       if (!metrics || !Array.isArray(metrics.years) || !metrics.applications) throw new Error("the metrics file is missing its main sections");
       M = metrics;
       popular = Array.isArray(pop) ? pop : [];
+      requests = reqs && Array.isArray(reqs.projects) ? reqs.projects : null;
       (Array.isArray(dictionary) ? dictionary : []).forEach((rec) => {
         const name = rec && rec["NSHD Variable Name"];
-        if (name && !dict.has(String(name).toLowerCase())) dict.set(String(name).toLowerCase(), { name: String(name), label: rec["Variable Label"] || "" });
+        if (name && !dict.has(String(name).toLowerCase())) {
+          dict.set(String(name).toLowerCase(), {
+            name: String(name), label: rec["Variable Label"] || "",
+            topic: cleanTopic(rec["Topic"]), years: yearTokens(rec["Year of collection"]),
+          });
+        }
       });
       // Start with the most recent three years on the "through the year" chart
       M.years.filter((y) => M.applications.by_year.some((r) => r.year === y && r.applications > 0)).slice(-3).forEach((y) => visibleLines.add(y));
