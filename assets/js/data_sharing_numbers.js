@@ -49,7 +49,7 @@
   const isNum = (n) => n !== null && n !== undefined && !isNaN(n);
   const num = (n) => (isNum(n) ? nf.format(n) : "–");
   const pct = (n) => (isNum(n) ? Number(n).toFixed(1).replace(/\.0$/, "") + "%" : "–");
-  const days = (n) => (isNum(n) ? (Number.isInteger(n) ? nf.format(n) : Number(n).toFixed(1)) + " days" : "–");
+  const days = (n) => (isNum(n) ? (Number.isInteger(n) ? nf.format(n) : Number(n).toFixed(1)) + (n === 1 ? " day" : " days") : "–");
   const sum = (list, fn) => list.reduce((t, x) => t + (fn(x) || 0), 0);
   const byYear = (list, y) => (list || []).find((r) => r.year === y);
 
@@ -209,7 +209,7 @@
       tile("Applications", num(nApps)) +
       tile("Institutions", num(distinct(M.where.institutions))) +
       tile("Countries", num(distinct(M.where.countries))) +
-      tile("Average time to approve" + dagger(), days(ap.average_days)) +
+      tile("Median time to approve" + dagger(), days(ap.median_days)) +
       tile("Approved within " + th + " days" + dagger(), pct(ap["percent_within_" + th]), num(ap["within_" + th]) + " of " + num(ap.approved) + " approved") +
       tile("Applications with data prepared", pct(prep.percent), num(prep.with_data) + " of " + num(prep.applications)) +
       "</div>" +
@@ -318,68 +318,91 @@
     }), caption);
   }
 
-  // How soon after approval the first data went out
-  function soonAfterApproval(fromApproval) {
-    const b = fromApproval.bands;
-    if (!b) return "";
-    const bands = [["same_day", "On the day of approval"], ["days_1_7", "1 to 7 days later"], ["days_8_30", "8 to 30 days later"],
-      ["days_31_60", "31 to 60 days later"], ["over_60", "More than 60 days later"]];
-    const total = bands.reduce((s, x) => s + (b[x[0]] || 0), 0);
-    if (!total) return "";
-    const items = bands.map((x) => ({ label: x[1], value: b[x[0]] || 0, text: num(b[x[0]] || 0) + " (" + pct(((b[x[0]] || 0) / total) * 100) + ")" }));
-    const most = (b.same_day || 0) / total >= 0.5
-      ? '<p class="dsn-note">Most of these projects were sent their first data on the day they were approved, so the median time from approval is 0 days. The time from submission shows the full wait.</p>' : "";
-    return '<h3>How soon after approval is data sent?</h3><p class="dsn-sub">Projects, by the time between approval and the first data being sent</p>' + barRows(items) + most;
-  }
+  // Baskets built (Jay datasets) and their turnaround (the baskets matched to a Planner request)
+  function basketBlock() {
+    const S = M.basket_stats;
+    const B = M.basket_turnaround;
+    const heading = "<h3>Baskets and data turnaround</h3>";
+    if (!S || !S.available) return heading + '<p class="dsn-note">Basket figures are not available right now.</p>';
+    const per = S.period;
+    const tot = S.totals;
+    const hasPlanner = !!S.planner_available;
+    const row = sel === "all" ? S.overall : byYear(S.by_year, sel) || {};
+    const periodNote = '<p class="dsn-note"><strong>Periods.</strong> Baskets built are counted from ' + per.baskets_from +
+      " using the Jay datasets, by the year the data was sent. " +
+      (hasPlanner
+        ? "Turnaround is the time from a basket request coming in to the request being completed. The request dates come from Planner, which started in 2022 (the first request is " +
+          esc(formatDate(per.turnaround_from)) + "), so turnaround only covers baskets that were requested through Planner: it is available from then on, and for fewer baskets than are built."
+        : "Turnaround is not available because there is no Planner export.") + "</p>";
 
-  // Projects that have data but can not be timed (so nobody wonders why a figure is missing)
-  function leftOutNote(row) {
-    const before = row.excluded_before_approval || 0;
-    const noDate = row.excluded_no_approval_date || 0;
-    if (!before && !noDate) return "";
-    const parts = [];
-    if (before) parts.push(num(before) + " because their data was sent before they were approved");
-    if (noDate) parts.push(num(noDate) + " because they have no approval date");
-    return '<p class="dsn-note">Left out of these time figures: ' + parts.join(", and ") + " (of " + num(row.projects_with_data) + " projects with data).</p>";
-  }
+    let tiles = tile("Baskets built", num(row.built), sel === "all" ? per.baskets_from + " to " + per.baskets_to : "in " + sel) +
+      tile("Projects with baskets", num(row.projects));
+    if (hasPlanner) {
+      tiles += tile("Baskets requested through Planner", num(row.matched), pct(row.percent_matched) + " of those built") +
+        tile("Median turnaround", days(row.median_days), "across " + num(row.in_turnaround) + " baskets") +
+        tile("Turned around on the same day", pct(row.same_day_percent)) +
+        S.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))).join("");
+    }
+    if (sel === "all" && S.per_project && isNum(S.per_project.median_baskets_per_project)) {
+      tiles += tile("Median baskets per project", num(S.per_project.median_baskets_per_project), "the most is " + num(S.per_project.max_baskets_per_project));
+    }
+    const noTurn = hasPlanner && sel !== "all" && !row.in_turnaround
+      ? '<p class="dsn-note">None of the baskets built in ' + sel + " has a Planner request with usable dates, so there is no turnaround figure for this year.</p>" : "";
 
-  function leftOutByYear() {
-    const parts = M.time_to_data.by_year.filter((r) => (r.excluded_before_approval || 0) + (r.excluded_no_approval_date || 0) > 0)
-      .map((r) => r.year + " (" + num((r.excluded_before_approval || 0) + (r.excluded_no_approval_date || 0)) + " of " + num(r.projects_with_data) + ")");
-    return parts.length ? '<p class="dsn-note">Projects left out because their data was sent before approval, or there is no approval date: ' + parts.join(", ") + ". A dash means no project that year could be timed.</p>" : "";
+    // when the first basket request came in, compared with the application (Planner requests linked to applications)
+    let timing = "";
+    if (B && B.available) {
+      const tm = sel === "all" ? B.request_timing.overall : byYear(B.request_timing.by_year, sel) || {};
+      const total = (tm.with_application || 0) + (tm.days_2_7 || 0) + (tm.days_8_30 || 0) + (tm.over_30 || 0);
+      const bands = [["with_application", "With the application (same or next day)"], ["days_2_7", "2 to 7 days later"],
+        ["days_8_30", "8 to 30 days later"], ["over_30", "More than 30 days later"]];
+      if (total) {
+        timing = '<p class="dsn-sub">When the first basket request came in, after the application (Planner requests)</p>' +
+          '<div class="dsn-tiles">' + tile("Median time from application to first basket request", days(tm.median_days_after_application), "across " + num(tm.applications) + " applications") + "</div>" +
+          barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: num(tm[x[0]] || 0) + " (" + pct(((tm[x[0]] || 0) / total) * 100) + ")" })));
+      }
+    }
+
+    const notBuilt = tot.jay_baskets_dated - tot.matched;
+    const lag = S.lag_vs_date_sent || {};
+    const notes = '<p class="dsn-note">' +
+      (hasPlanner
+        ? num(tot.matched) + " of the " + num(tot.jay_baskets_dated) + " baskets built have a basket request in Planner; " + num(notBuilt) +
+          " do not (older baskets, or the request did not list the basket id). " +
+          (tot.planner_only ? num(tot.planner_only) + " basket ids named in Planner are not in the Jay datasets. " : "") +
+          (isNum(lag.median_days) ? "The date Planner shows a request completed is a median of " + days(Math.abs(lag.median_days)) + " from the date the data was sent in Jay (" + pct(lag.percent_within_1_day) + " within a day). " : "")
+        : "") +
+      (tot.jay_baskets_no_date ? num(tot.jay_baskets_no_date) + " baskets have no date sent, so are not in the yearly counts. " : "") +
+      "Each basket counts once; a basket named in more than one request uses the completed request closest to the date it was sent. All times are medians, because a few very slow requests would skew an average.</p>";
+    return heading + periodNote + '<div class="dsn-tiles">' + tiles + "</div>" + noTurn + timing + notes;
   }
 
   function renderService() {
     const ap = rowFor(M.approval_times) || {};
-    const td = rowFor(M.time_to_data) || {};
-    const fromApproval = td.from_approval || {};
     const rp = rowFor(M.repeat_requests) || {};
-    const prep = prepared();
     const ths = M.approval_times.thresholds;
+    const S = M.basket_stats;
 
-    const approvalTiles = tile("Average time to approve" + dagger(), days(ap.average_days)) + tile("Median time to approve" + dagger(), days(ap.median_days)) +
-      ths.map((t) => tile("Approved within " + t + " days" + dagger(), pct(ap["percent_within_" + t]), num(ap["within_" + t]) + " of " + num(ap.approved))).join("");
-    const fromSubmission = td.from_submission || {};
-    const dataTiles = tile("Applications with data prepared", pct(prep.percent), num(prep.with_data) + " of " + num(prep.applications)) +
-      tile("Median time from approval to first data" + dagger(), days(fromApproval.median), "across " + num(fromApproval.n) + " projects") +
-      tile("Average time from approval to first data" + dagger(), days(fromApproval.average)) +
-      tile("Median time from submission to first data" + dagger(), days(fromSubmission.median), "the whole wait, from applying") +
-      ths.slice(0, 1).map((t) => tile("Data within " + t + " days of approval" + dagger(), pct(fromApproval["percent_within_" + t]), num(fromApproval["within_" + t]) + " of " + num(fromApproval.n))).join("");
+    const approvalTiles = tile("Median time to approve" + dagger(), days(ap.median_days), "across " + num(ap.approved) + " approved") +
+      ths.map((n) => tile("Approved within " + n + " days" + dagger(), pct(ap["percent_within_" + n]), num(ap["within_" + n]) + " of " + num(ap.approved))).join("");
     const repeatTiles = tile("Projects that came back for more", pct(rp.percent_returned), num(rp.returned) + " of " + num(rp.projects_with_data)) +
       tile("Median time until they came back", days(rp.median_days_to_return)) +
       tile("Projects with more than one basket", num(rp.with_multiple_baskets));
 
     return "<h3>Approval</h3><div class=\"dsn-tiles\">" + approvalTiles + "</div>" +
-      "<h3>From approval to data</h3><div class=\"dsn-tiles\">" + dataTiles + "</div>" +
-      '<p class="dsn-note">' + esc(M.time_to_data.note || "") + "</p>" + leftOutNote(td) + soonAfterApproval(fromApproval) +
+      '<p class="dsn-note">Time to approve runs from the application to the decision. All times are medians.</p>' +
+      basketBlock() +
       "<h3>Trends by year</h3>" +
-      '<p class="dsn-sub">Average days to approve an application</p>' +
-      trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).average_days, "Average days to approve by year", (v) => String(Math.round(v)), true) +
-      '<p class="dsn-sub">Median days from approval to first data</p>' +
-      trendColumns((y) => ((byYear(M.time_to_data.by_year, y) || {}).from_approval || {}).median, "Median days from approval to first data by year", (v) => String(Math.round(v)), true) +
-      '<p class="dsn-sub">Median days from submission to first data</p>' +
-      trendColumns((y) => ((byYear(M.time_to_data.by_year, y) || {}).from_submission || {}).median, "Median days from submission to first data by year", (v) => String(Math.round(v)), true) +
-      leftOutByYear() + processNote() +
+      '<p class="dsn-sub">Median days to approve an application</p>' +
+      trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).median_days, "Median days to approve by year", (v) => String(Math.round(v)), true) + processNote() +
+      (S && S.available
+        ? '<p class="dsn-sub">Baskets built each year (Jay datasets, from ' + S.period.baskets_from + ")</p>" +
+          trendColumns((y) => (byYear(S.by_year, y) || {}).built, "Baskets built by year", (v) => num(v))
+        : "") +
+      (S && S.planner_available
+        ? '<p class="dsn-sub">Median days from basket request to completion (baskets requested through Planner, from ' + String(S.period.turnaround_from).slice(0, 4) + ")</p>" +
+          trendColumns((y) => (byYear(S.by_year, y) || {}).median_days, "Median turnaround by year of the basket", (v) => String(Math.round(v)))
+        : "") +
       '<p class="dsn-sub">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
       "<h3>Repeat requests</h3><div class=\"dsn-tiles\">" + repeatTiles + "</div>" +
@@ -424,8 +447,7 @@
     // Size of requests
     const vp = rowFor(M.variables_per_project) || {};
     const bands = M.variables_per_project.size_band_names.map((n) => ({ label: esc(n + " variables"), value: (vp.size_bands || {})[n] || 0 }));
-    const sizeHtml = '<div class="dsn-tiles">' + tile("Average per project", isNum(vp.average) ? Number(vp.average).toFixed(0) : "–") +
-      tile("Median per project", isNum(vp.median) ? Number(vp.median).toFixed(0) : "–") + tile("Largest request", num(vp.max)) + "</div>" + barRows(bands);
+    const sizeHtml = '<div class="dsn-tiles">' + tile("Median per project", isNum(vp.median) ? Number(vp.median).toFixed(0) : "–") + tile("Largest request", num(vp.max)) + "</div>" + barRows(bands);
 
     // Requested together
     const b = M.bundles;
@@ -460,9 +482,12 @@
       "<ul>" +
       "<li><strong>Approved but not in Jay yet:</strong> an application can be approved before any basket is built, so it is not in Jay. It still counts in the application and approval figures, using its SharePoint request and decision times. It has no institution, country or UK flag, and no data figures.</li>" +
       "<li><strong>Year of application</strong> is when the application was submitted. Most figures use it. Topics, collection years and variables use the year the data was sent.</li>" +
+      "<li><strong>Medians:</strong> every time is a median (the middle value), not an average, because a few very slow cases would pull an average up.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
+      "<li><strong>Baskets built</strong> are the baskets in the Jay datasets, counted by the year the data was sent, from 2021. A basket counts once.</li>" +
+      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed. The request dates come from Planner, so it only covers baskets whose id is named in a Planner request: that is from 2022, and fewer baskets than are built. Baskets are matched to Planner by basket id. A basket named in more than one request uses the completed request closest to the date it was sent.</li>" +
+      "<li><strong>When the first basket request comes in</strong> uses the Planner requests that can be linked to an application (by its Form ID or share name), and measures from the application.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
-      "<li><strong>Time from approval to first data</strong> is the number of days between a project being approved and its data first being sent.</li>" +
       "<li><strong>Projects that came back for more</strong> are projects that were sent more data more than " + ((M.repeat_requests && M.repeat_requests.gap_days) || 7) + " days after their first.</li>" +
       "<li><strong>Dates:</strong> where a project is logged in the SharePoint request log, its request and decision times are used for the time to approve. Otherwise the dates held in Jay are used.</li>" +
       "<li><strong>†</strong> The data sharing process changed just before " + changeYear() + ", allowing a quicker turnaround, so times from " + changeYear() + " onwards are not directly comparable with earlier years. The process will be explained in more detail later.</li>" +
