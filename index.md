@@ -106,7 +106,7 @@ classes: home-page
         <div class="sb-subgroup">
           <ul class="sb-subgroup-inner">
             <li class="sb-sub"><a href="#ds-overview" data-sec="sec-data-sharing" data-inner="ds-overview">Data Sharing</a></li>
-            <li class="sb-sub"><a href="#ds-numbers" data-sec="sec-data-sharing" data-inner="ds-numbers">Data Sharing in Numbers</a></li>
+            <li class="sb-sub"><a href="#ds-numbers" data-sec="sec-data-sharing" data-inner="ds-numbers">Metrics and Trends</a></li>
           </ul>
         </div>
       </li>
@@ -331,7 +331,7 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>OWL gives you five different ways to find NSHD variables in its own dictionary, plus a sixth for checking what's been deposited into UK LLC, and a seventh for finding variables through projects that have already been approved — see the <a href="/OWL/docs/search_methods/search_overview/">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
+        <p>OWL gives you seven different ways to find NSHD variables: five in its own dictionary, a sixth for checking what's been deposited into UK LLC, and a seventh for finding variables through projects that have already been approved. The search bar at the top of every page is there too, for jumping straight to any page — see the <a href="/OWL/docs/search_methods/search_overview/">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
         <div class="inner-accordion">
 
           <div class="inner-item" id="search-dd">
@@ -523,13 +523,13 @@ classes: home-page
           <div class="inner-item" id="ds-numbers">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon"><i class="ti ti-chart-line" aria-hidden="true"></i></span>
-              <span class="inner-title">Data Sharing in Numbers</span>
+              <span class="inner-title">Metrics and Trends</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
               <p>A year-by-year picture of data sharing since 2021: how many applications are made and where they come from, how long approval takes, how many baskets are sent and how quickly requests are turned around, and what researchers ask for — the most requested variables, the topics and years of data collection they cover, and the variables that are requested together. All times are medians.</p>
               <p>Choose one or more years to see the figures for just those years, and hover over a bar to see the numbers behind a percentage. Each figure is explained on the page, including why some are based on a smaller number of applications than others.</p>
-              <a class="inner-link" href="/OWL/docs/data_sharing/numbers">Go to Data Sharing in Numbers →</a>
+              <a class="inner-link" href="/OWL/docs/data_sharing/numbers">Go to Metrics and Trends →</a>
             </div>
           </div>
 

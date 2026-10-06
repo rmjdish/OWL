@@ -1,5 +1,5 @@
 /* data_sharing_numbers.js
- * Data Sharing in Numbers page: a dashboard of data sharing figures from 2021 onwards.
+ * Metrics and Trends page: a dashboard of data sharing figures from 2021 onwards.
  *
  * Fully client-side. On page load this fetches:
  *   1. metrics.json            (written by DataSharing_Metrics.py)  - required
@@ -617,7 +617,7 @@
     try {
       target.innerHTML = fn();
     } catch (err) {
-      console.error("[Data Sharing in Numbers] Section " + id + " failed:", err);
+      console.error("[Metrics and Trends] Section " + id + " failed:", err);
       target.innerHTML = unavailable();
     }
   }
@@ -691,7 +691,7 @@
     let url;
     try { url = resolveUrl(datasetKey, attrName); } catch (e) { return Promise.resolve(null); }
     return fetchJson(url, label).catch((err) => {
-      console.warn("[Data Sharing in Numbers] " + label + " not loaded; carrying on without it.", err);
+      console.warn("[Metrics and Trends] " + label + " not loaded; carrying on without it.", err);
       return null;
     });
   }
