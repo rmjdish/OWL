@@ -210,11 +210,16 @@
     const step = (n, label, sub) => '<div class="dsn-step"><div class="dsn-step-n">' + num(n) + '</div><div class="dsn-step-l">' + esc(label) + "</div>" +
       (sub ? '<div class="dsn-step-s">' + esc(sub) + "</div>" : "") + "</div>";
     const arrow = '<div class="dsn-step-arrow" aria-hidden="true">&rarr;</div>';
-    const ladder = (title, sub, steps) => '<div class="dsn-ladder"><div class="dsn-ladder-title">' + esc(title) + "<span>" + esc(sub) + '</span></div><div class="dsn-ladder-steps">' + steps + "</div></div>";
+    const ladder = (title, sub, steps, foot) => '<div class="dsn-ladder"><div class="dsn-ladder-title">' + esc(title) + "<span>" + esc(sub) + '</span></div><div class="dsn-ladder-steps">' + steps + "</div>" +
+      (foot ? '<div class="dsn-ladder-foot">' + foot + "</div>" : "") + "</div>";
+    const notAsked = Math.max((nApps || 0) - (prep.with_data || 0), 0);
 
     const appLadder = ladder("Applications", "counted by the year they applied",
       step(nApps, "Approved applications") + arrow +
-      step(prep.with_data, "Asked for data", nApps ? pct(prep.percent) + " of approved applications. Each had at least one basket sent." : "There are no approved applications for this period."));
+      step(prep.with_data, "Asked for data", nApps ? pct(prep.percent) + " of approved applications. Each had at least one basket sent." : "There are no approved applications for this period."),
+      notAsked ? "<strong>" + num(notAsked) + " approved " + (notAsked === 1 ? "application has" : "applications have") + " not asked for data.</strong> " + (notAsked === 1
+        ? "It either has not yet finalised its variables request, or it already held the data it needed and did not need to request it."
+        : "They either have not yet finalised their variables request, or they already held the data they needed and did not need to request it.") : "");
 
     let basketLadder;
     if (sRow) {
@@ -234,8 +239,7 @@
     const explain = '<p class="dsn-note"><strong>Applications</strong> are counted by the year they applied and <strong>baskets</strong> by the year they were sent, so the two ladders cover different sets. ' +
       "An application <em>asked for data</em> if it had at least one basket sent." +
       (B ? " A basket has a <em>turnaround time</em> only if it was requested through the current request process, which records when a request comes in and when it is completed. " +
-        "That process started in 2022, so baskets sent before then, or outside it, have no request time to measure from." +
-        (bRow && bRow.baskets_without_data ? " A further " + num(bRow.baskets_without_data) + " baskets were requested through the process but have not been sent, so they are in the turnaround figures but not in the number of baskets sent." : "")
+        "That process started in 2022, so baskets sent before then, or outside it, have no request time to measure from."
         : "") + "</p>";
 
     const ap = rowFor(M.approval_times) || {};
@@ -251,8 +255,7 @@
     ];
     if (B) {
       rows.push(["First basket request", num(tm.applications) + " applications", "Only applications whose baskets were requested through the current request process, and linked to a project counted in these figures."]);
-      rows.push(["Turnaround time", num(bRow && bRow.baskets) + " baskets", "Only baskets requested through the current request process, completed, and linked to a project counted in these figures." +
-        (bRow && bRow.baskets_without_data ? " This includes " + num(bRow.baskets_without_data) + " baskets that were requested but have not been sent, so it is more than the baskets sent that have a turnaround time above." : "")]);
+      rows.push(["Turnaround time", num(bRow && bRow.baskets) + " baskets", "Only baskets sent through Jay that were also requested through the current request process, completed, and linked to a project counted in these figures."]);
     }
     const table = '<p class="dsn-sub">Why some figures use a smaller number</p>' +
       '<table class="dsn-numbers-table"><thead><tr><th>Figure</th><th>Based on</th><th>Why it is smaller</th></tr></thead><tbody>' +
@@ -415,7 +418,7 @@
     const src = B.source;
     html += '<p class="dsn-note"><strong>Why turnaround is only for baskets requested through Planner.</strong> Basket requests flow through Power Automate, which allows the request and completion times to be logged in SharePoint and Planner. That is what lets turnaround be measured, so it covers baskets requested this way, from 2022 (the first request is ' +
       esc(formatDate(src.first_request)) + "), and not earlier baskets or baskets made outside the process. Turnaround is the time from a basket request coming in to the request being completed. " +
-      "A basket is only included if it is linked to a project that is counted in these figures, checked against Jay.</p>";
+      "Only baskets that are matched to a basket in Jay, and linked to a project that is counted in these figures, are included.</p>";
     if (sel !== "all" && sel < src.first_year) {
       return html + '<p class="dsn-note">Planner has no basket requests for ' + sel + ".</p>";
     }
@@ -423,15 +426,14 @@
     const tiles = tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects") +
       tile("Median turnaround", days(row.median_days), "from the request coming in to completion") +
       tile("Turned around on the same day", pct(row.same_day_percent)) +
-      B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))).join("") +
-      tile("Baskets with data in Jay", num(row.baskets_with_data), pct(row.baskets ? (row.baskets_with_data / row.baskets) * 100 : null) + " of the baskets") +
-      tile("Baskets without data in Jay", num(row.baskets_without_data), "requested, but not in the Jay datasets");
+      B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))).join("");
     const lo = row.left_out || {};
-    const leftOut = lo.total
-      ? " " + num(lo.total) + " completed requests were left out because they are not linked to a project counted in these figures (" +
-        [lo.not_linked_to_a_project ? num(lo.not_linked_to_a_project) + " not linked to any project" : "",
-         lo.project_not_in_the_metrics ? num(lo.project_not_in_the_metrics) + " linked to a project outside these figures" : "",
-         lo.project_conflict_planner_vs_jay ? num(lo.project_conflict_planner_vs_jay) + " where Planner and Jay disagree on the project" : ""].filter(Boolean).join(", ") + ")."
+    const projectOut = (lo.project_not_in_the_metrics || 0) + (lo.project_conflict_planner_vs_jay || 0) + (lo.not_linked_to_a_project || 0);
+    const leftOut = projectOut
+      ? " " + num(projectOut) + " completed " + (projectOut === 1 ? "request" : "requests") + " for baskets in Jay " + (projectOut === 1 ? "was" : "were") + " left out because the project is not counted in these figures or could not be confirmed (" +
+        [lo.project_not_in_the_metrics ? num(lo.project_not_in_the_metrics) + " linked to a project outside these figures" : "",
+         lo.project_conflict_planner_vs_jay ? num(lo.project_conflict_planner_vs_jay) + " where Planner and Jay disagree on the project" : "",
+         lo.not_linked_to_a_project ? num(lo.not_linked_to_a_project) + " not linked to any project" : ""].filter(Boolean).join(", ") + ")."
       : "";
 
     // when the first basket request came in, compared with the application (Planner requests linked to applications)
@@ -445,7 +447,6 @@
         barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: num(tm[x[0]] || 0) + " (" + pct(((tm[x[0]] || 0) / total) * 100) + ")" })))
       : "";
     const notes = '<p class="dsn-note">Each request counts once, however many baskets it names. ' +
-      (row.requests_without_basket_id ? num(row.requests_without_basket_id) + " of the requests name no basket id, so cannot be flagged with or without data. " : "") +
       (row.open ? num(row.open) + " requests are still open and are not in the turnaround. " : "") + leftOut.trim() +
       " All times are medians, because a few very slow requests would skew an average.</p>";
     return html + '<div class="dsn-tiles">' + tiles + "</div>" + notes + timing;
@@ -560,7 +561,8 @@
       "<li><strong>Medians:</strong> every time is a median (the middle value), not an average, because a few very slow cases would pull an average up.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
       "<li><strong>Baskets per year</strong> counts every basket once, in the year its data was sent, from 2021. Every basket is sent through Jay, which holds the record of it, so a basket that is only named on an application and was never sent is not counted. Only baskets of projects counted in these figures are included.</li>" +
-      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed, for every basket requested through Planner. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022. A basket is only included if it is linked to a project that is counted in these figures: the project comes from the Planner request and, where the basket is in Jay, from Jay, and the two must agree. Requests still open are not included.</li>" +
+      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022. Only baskets that are matched to a basket in Jay are included, and each must be linked to a project that is counted in these figures: the project comes from the Planner request and from Jay, and the two must agree. Requests still open are not included.</li>" +
+      "<li><strong>Asked for data</strong> means an application had at least one basket sent. An approved application that has not asked for data either has not yet finalised its variables request, or already held the data it needed and did not need to request it.</li>" +
       "<li><strong>When the first basket request comes in</strong> uses the Planner requests that can be linked to an application (by its Form ID or share name), and measures from the application.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
       "<li><strong>Projects that came back for more</strong> are projects that were sent more data more than " + ((M.repeat_requests && M.repeat_requests.gap_days) || 7) + " days after their first.</li>" +
