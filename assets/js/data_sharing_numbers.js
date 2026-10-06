@@ -124,6 +124,7 @@
     const topics = new Map();
     const collection = new Map();
     const notInDictionary = new Set();
+    const withVars = new Set();   // projects with at least one requested variable in the chosen years
     const add = (map, name, pid, variable) => {
       if (!map.has(name)) map.set(name, { projects: new Set(), variables: new Set() });
       const entry = map.get(name);
@@ -134,6 +135,7 @@
       const vars = new Set();
       if (isAll()) Object.keys(p.by_year).forEach((y) => p.by_year[y].forEach((v) => vars.add(v)));
       else sel.forEach((y) => (p.by_year[String(y)] || []).forEach((v) => vars.add(v)));
+      if (vars.size) withVars.add(p.pid);
       vars.forEach((v) => {
         const info = dict.get(v);
         if (!info) { notInDictionary.add(v); return; }
@@ -147,6 +149,7 @@
       collection: toList(collection).sort((a, b) =>
         typeof a.name === typeof b.name ? (a.name < b.name ? -1 : a.name > b.name ? 1 : 0) : typeof a.name === "number" ? -1 : 1),
       notInDictionary: notInDictionary.size,
+      projectCount: withVars.size,
     };
     requestStatsCache[key] = result;
     return result;
@@ -168,11 +171,15 @@
   }
 
   // Horizontal bars. items: [{ label (HTML), value, text (optional display text) }]
+  // "12 (8.5%)" and, for hovering, "12 out of 141 projects"
+  const withPct = (n, total) => num(n) + (total > 0 ? " (" + pct((n / total) * 100) + ")" : "");
+  const outOf = (n, total, what) => (total > 0 ? num(n) + " out of " + num(total) + " " + what : "");
+
   function barRows(items) {
     if (!items.length) return '<p class="dsn-note">Nothing to show for this selection.</p>';
     const max = Math.max(1, ...items.map((i) => i.value || 0));
     return '<div class="dsn-bars">' + items.map((i) =>
-      '<div class="dsn-bar-row"><span class="dsn-bar-label">' + i.label + '</span>' +
+      '<div class="dsn-bar-row"' + (i.title ? ' title="' + esc(i.title) + '"' : "") + '><span class="dsn-bar-label">' + i.label + '</span>' +
       '<span class="dsn-bar-track"><i style="width:' + Math.round(((i.value || 0) / max) * 100) + '%"></i></span>' +
       '<span class="dsn-bar-val">' + (i.text !== undefined ? i.text : num(i.value)) + "</span></div>").join("") + "</div>";
   }
@@ -364,11 +371,11 @@
       lineLegend() + trajectorySvg();
   }
 
-  function topList(rows, nameFn, n, extraFn) {
+  function topList(rows, nameFn, n, extraFn, total) {
     const items = rows.map((r) => ({ r, value: valueOf(r) })).filter((x) => x.value > 0).sort((a, b) => b.value - a.value);
     const shown = items.slice(0, n).map((x) => ({
       label: esc(nameFn(x.r)) + (extraFn && extraFn(x.r) ? '<span class="dsn-var-label">' + esc(extraFn(x.r)) + "</span>" : ""),
-      value: x.value,
+      value: x.value, text: total > 0 ? withPct(x.value, total) : undefined, title: outOf(x.value, total, "applications"),
     }));
     const rest = items.length - shown.length;
     return barRows(shown) + (rest > 0 ? '<p class="dsn-note">and ' + num(rest) + " more.</p>" : "");
@@ -384,8 +391,8 @@
         '<div class="dsn-split-legend">' + uk.map((x, i) => '<span><u class="seg' + i + '"></u>' + esc(x.name) + " " + pct((x.value / total) * 100) + " (" + num(x.value) + ")</span>").join("") + "</div>"
       : '<p class="dsn-note">Nothing to show for this selection.</p>';
     return "<h3>Inside and outside the UK</h3>" + split +
-      "<h3>Top countries</h3>" + topList(w.countries, (r) => r.name, 10) +
-      "<h3>Top institutions</h3>" + topList(w.institutions, (r) => r.name, 10, (r) => r.country);
+      "<h3>Top countries</h3>" + topList(w.countries, (r) => r.name, 10, null, total) +
+      "<h3>Top institutions</h3>" + topList(w.institutions, (r) => r.name, 10, (r) => r.country, total);
   }
 
   // A year with no figure is drawn as a hatched "none" placeholder, not a bar of nothing, and (when emptyNote is given) explained underneath
@@ -458,7 +465,7 @@
     const timing = total
       ? '<p class="dsn-sub">When the first basket request came in, after the application</p>' +
         '<div class="dsn-tiles">' + tile("Median time from application to first basket request", days(tm.median_days_after_application), "across " + num(tm.applications) + " applications") + "</div>" +
-        barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: num(tm[x[0]] || 0) + " (" + pct(((tm[x[0]] || 0) / total) * 100) + ")" })))
+        barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: withPct(tm[x[0]] || 0, total), title: outOf(tm[x[0]] || 0, total, "applications with a linked first basket request") })))
       : "";
     const notes = '<p class="dsn-note">Each request counts once, however many baskets it names. ' +
       (row.manual_requests ? num(row.manual_requests) + (row.manual_requests === 1 ? " request uses" : " requests use") + " a request date found in emails (" + num(row.manual_baskets) + (row.manual_baskets === 1 ? " basket" : " baskets") + "). " : "") +
@@ -516,7 +523,7 @@
     const typeItems = types.map((t) => {
       const n = isAll() ? t.projects : sum(sel, (y) => (t.by_year[String(y)] || {}).projects || 0);
       const cell = isAll() ? { projects: t.projects, percent: t.percent } : { projects: n, percent: jayApps ? Math.round((n / jayApps) * 1000) / 10 : null };
-      return { label: esc(t.type), value: cell.percent || 0, text: pct(cell.percent) + " (" + num(cell.projects) + ")" };
+      return { label: esc(t.type), value: cell.percent || 0, text: pct(cell.percent) + " (" + num(cell.projects) + ")", title: outOf(cell.projects, jayApps, "applications in Jay") };
     });
 
     let topicsHtml = '<p class="dsn-note">Topic figures need the data dictionary and the variable request file, which are not available right now.</p>';
@@ -524,9 +531,9 @@
     let unmatchedNote = "";
     if (requests && dict.size) {
       const st = requestStats();
-      topicsHtml = barRows(st.topics.slice(0, 12).map((x) => ({ label: esc(x.name), value: x.projects })));
+      topicsHtml = barRows(st.topics.slice(0, 12).map((x) => ({ label: esc(x.name), value: x.projects, text: withPct(x.projects, st.projectCount), title: outOf(x.projects, st.projectCount, "projects that requested variables") })));
       yearsHtml = fold("years", "Years of data collection", "<p class=\"dsn-sub\">Projects asking for at least one variable from each year of collection</p>" +
-        barRows(st.collection.map((x) => ({ label: esc(x.name), value: x.projects }))));
+        barRows(st.collection.map((x) => ({ label: esc(x.name), value: x.projects, text: withPct(x.projects, st.projectCount), title: outOf(x.projects, st.projectCount, "projects that requested variables") }))));
       if (st.notInDictionary) unmatchedNote = '<p class="dsn-note">' + num(st.notInDictionary) + (st.notInDictionary === 1 ? " requested variable is" : " requested variables are") + " not in the data dictionary yet, so are not counted in topics or years of collection.</p>";
     }
     return "<h3>Types of special data requested</h3><p class=\"dsn-sub\">Share of applications asking for each type (number of projects in brackets)</p>" + barRows(typeItems) +
@@ -537,16 +544,19 @@
   function renderVariables() {
     // Most requested variables (popular_vars_yr.json)
     let popHtml = '<p class="dsn-note">The most requested variables are not available right now.</p>';
+    // a project counts once for each year it requested variables in, which is how the popular list is counted too
+    const popBase = requests ? sum(requests, (p) => (isAll() ? Object.keys(p.by_year) : sel.map(String)).filter((y) => (p.by_year[y] || []).length).length) : 0;
     if (popular && popular.length) {
       const items = popular.map((p) => ({ name: p.name, value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
         .filter((p) => p.value > 0).sort((a, b) => b.value - a.value).slice(0, 10)
-        .map((p) => ({ label: varLink(p.name), value: p.value }));
+        .map((p) => ({ label: varLink(p.name), value: p.value, text: withPct(p.value, popBase), title: outOf(p.value, popBase, "project-years with variables requested") }));
       popHtml = barRows(items);
     }
 
     // Size of requests
     const vp = rowFor(M.variables_per_project) || {};
-    const bands = M.variables_per_project.size_band_names.map((n) => ({ label: esc(n + " variables"), value: (vp.size_bands || {})[n] || 0 }));
+    const bandTotal = sum(M.variables_per_project.size_band_names, (n) => (vp.size_bands || {})[n] || 0);
+    const bands = M.variables_per_project.size_band_names.map((n) => ({ label: esc(n + " variables"), value: (vp.size_bands || {})[n] || 0, text: withPct((vp.size_bands || {})[n] || 0, bandTotal), title: outOf((vp.size_bands || {})[n] || 0, bandTotal, "projects") }));
     const sizeHtml = '<div class="dsn-tiles">' + tile("Median per project", isNum(vp.median) ? Number(vp.median).toFixed(0) : "–") + tile("Largest request", num(vp.max)) + "</div>" + barRows(bands);
 
     // Requested together
@@ -555,15 +565,18 @@
     if (b) {
       const pairs = b.top_pairs.slice(0, 10).map((p) => ({
         label: varLink(p.a) + '<span class="dsn-plus"> + </span>' + varLink(p.b), value: p.projects,
-        text: num(p.projects) + " projects",
+        text: withPct(p.projects, b.projects) + " projects", title: outOf(p.projects, b.projects, "projects (all years)"),
       }));
       const names = Object.keys(b.also_requested || {}).sort((x, y) => x.localeCompare(y));
-      const options = '<option value="">Choose a variable...</option>' + names.map((n) => '<option value="' + esc(n) + '"' + (n === pickedVariable ? " selected" : "") + ">" + esc(n) + "</option>").join("");
+      const options = '<option value="">Choose a variable...</option>' + names.map((n) => {
+        const info = dict.get(String(n).toLowerCase());
+        return '<option value="' + esc(n) + '"' + (n === pickedVariable ? " selected" : "") + ">" + esc(n) + (info && info.label ? " \u2013 " + esc(info.label) : "") + "</option>";
+      }).join("");
       let partners = "";
       if (pickedVariable && b.also_requested[pickedVariable]) {
         partners = '<div class="dsn-bars">' + b.also_requested[pickedVariable].map((p) =>
-          '<div class="dsn-bar-row"><span class="dsn-bar-label">' + varLink(p.name) + '</span><span class="dsn-bar-track"><i style="width:' + Math.min(100, p.percent_of_projects_with_variable) + '%"></i></span>' +
-          '<span class="dsn-bar-val">' + pct(p.percent_of_projects_with_variable) + "</span></div>").join("") + "</div>" +
+          '<div class="dsn-bar-row"' + (isNum(p.projects_with_variable) ? ' title="' + esc(outOf(p.projects_together, p.projects_with_variable, "projects that asked for " + pickedVariable + " also asked for " + p.name)) + '"' : "") + '><span class="dsn-bar-label">' + varLink(p.name) + '</span><span class="dsn-bar-track"><i style="width:' + Math.min(100, p.percent_of_projects_with_variable) + '%"></i></span>' +
+          '<span class="dsn-bar-val">' + (isNum(p.projects_together) ? num(p.projects_together) + " (" + pct(p.percent_of_projects_with_variable) + ")" : pct(p.percent_of_projects_with_variable)) + "</span></div>").join("") + "</div>" +
           '<p class="dsn-note">Share of projects asking for ' + esc(pickedVariable) + " that also asked for each variable.</p>";
       }
       togetherHtml = '<p class="dsn-sub">Pairs of variables requested together most often, across all years</p>' + barRows(pairs) +
