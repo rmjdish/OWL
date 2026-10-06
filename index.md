@@ -504,7 +504,7 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>NSHD shares its data with researchers around the world, and every application is for a specific project and a specific set of variables. This section explains how to apply and what happens afterwards, and reports on the numbers behind data sharing. See the <a href="/OWL/docs/data_sharing/">Data Sharing</a> page to get started. To see the projects that have already been approved, use <a href="/OWL/docs/search_methods/projects">Discover Projects</a> under Search Methods.</p>
+        <p>NSHD shares its data with researchers around the world, and every application is for a specific project and a specific set of variables. This section explains how to apply and what happens afterwards, and reports on the numbers behind data sharing. See the <a href="/OWL/docs/data_sharing/">Data Sharing</a> page to get started. To see the projects that have already been approved, use <a href="/OWL/docs/search_methods/discover-projects">Discover Projects</a> under Search Methods.</p>
         <div class="inner-accordion">
 
           <div class="inner-item" id="ds-overview">
