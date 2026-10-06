@@ -39,13 +39,15 @@
 	"study timeline":				"ti-hourglass",
 	"search by year":				"ti-calendar",
 	"uk llc":						"ti-link",
-   "discover projects": 			"ti-compass",
+    "discover projects": 			"ti-compass",
 	"search overview":				"ti-search",
 	"documentation hub":		"ti-versions",
     "search documentation":		"ti-compass",
     "writing documentation for owl":		"ti-file-pencil",
 	"create documentation":		"ti-forms",
 	"using doc builder":		"ti-forms",
+	"data sharing":		"ti-share",
+	"data sharing in numbers":		"ti-chart",
 	"faqs":						"ti-help-circle",
 
 

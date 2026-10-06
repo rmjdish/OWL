@@ -84,6 +84,7 @@ classes: home-page
             <li class="sb-sub"><a href="#search-long" data-sec="sec-search" data-inner="search-long">Longitudinal Search</a></li>
             <li class="sb-sub"><a href="#search-year" data-sec="sec-search" data-inner="search-year">Search by Year</a></li>
             <li class="sb-sub"><a href="#search-ukllc" data-sec="sec-search" data-inner="search-ukllc">UK LLC Catalogue</a></li>
+            <li class="sb-sub"><a href="#search-projects" data-sec="sec-search" data-inner="search-projects">Discover Projects</a></li>
             <li class="sb-sub"><a href="#search-global" data-sec="sec-search" data-inner="search-global">Global Site Search</a></li>
           </ul>
         </div>
@@ -105,7 +106,6 @@ classes: home-page
         <div class="sb-subgroup">
           <ul class="sb-subgroup-inner">
             <li class="sb-sub"><a href="#ds-overview" data-sec="sec-data-sharing" data-inner="ds-overview">Data Sharing</a></li>
-            <li class="sb-sub"><a href="#ds-projects" data-sec="sec-data-sharing" data-inner="ds-projects">Discover Projects</a></li>
             <li class="sb-sub"><a href="#ds-numbers" data-sec="sec-data-sharing" data-inner="ds-numbers">Data Sharing in Numbers</a></li>
           </ul>
         </div>
@@ -331,7 +331,7 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>OWL gives you five different ways to find NSHD variables in its own dictionary, plus a sixth for checking what's been deposited into UK LLC — see the <a href="/OWL/docs/search_methods/search_overview/">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
+        <p>OWL gives you five different ways to find NSHD variables in its own dictionary, plus a sixth for checking what's been deposited into UK LLC, and a seventh for finding variables through projects that have already been approved — see the <a href="/OWL/docs/search_methods/search_overview/">Search Overview</a> page for more detail on how each one works and the advantages of using it over the others.</p>
         <div class="inner-accordion">
 
           <div class="inner-item" id="search-dd">
@@ -413,10 +413,23 @@ classes: home-page
             </div>
           </div>
 
+          <div class="inner-item" id="search-projects">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-compass" aria-hidden="true"></i></span>
+              <span class="inner-title">7. Discover Projects</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Discover Projects searches by what other researchers have actually asked for. Every approved project is listed with its title, a short summary and the variables it requested, so you can see how the data has been used, check whether work like yours has been done before, and find the variables researchers choose for a particular kind of question.</p>
+              <p>Variables from any project can be added straight to your own basket, so a project that looks like yours can be a ready-made starting point for your variable list before you build and finalise your basket in Condor.</p>
+              <a class="inner-link" href="/OWL/docs/search_methods/projects">Go to Discover Projects →</a>
+            </div>
+          </div>
+
           <div class="inner-item" id="search-global">
             <button class="inner-trigger" aria-expanded="false">
               <span class="inner-icon">🌐</span>
-              <span class="inner-title">7. Global Site Search</span>
+              <span class="inner-title">8. Global Site Search</span>
               <span class="inner-chevron">▾</span>
             </button>
             <div class="inner-body">
@@ -491,7 +504,7 @@ classes: home-page
         <span class="sec-chevron">▾</span>
       </button>
       <div class="sec-body">
-        <p>NSHD shares its data with researchers around the world, and every application is for a specific project and a specific set of variables. This section explains how to apply and what happens afterwards, and shows how the data has been used — the projects that have been approved, the variables they asked for, and the numbers behind data sharing. See the <a href="/OWL/docs/data_sharing/">Data Sharing</a> page to get started.</p>
+        <p>NSHD shares its data with researchers around the world, and every application is for a specific project and a specific set of variables. This section explains how to apply and what happens afterwards, and reports on the numbers behind data sharing. See the <a href="/OWL/docs/data_sharing/">Data Sharing</a> page to get started. To see the projects that have already been approved, use <a href="/OWL/docs/search_methods/projects">Discover Projects</a> under Search Methods.</p>
         <div class="inner-accordion">
 
           <div class="inner-item" id="ds-overview">
@@ -504,19 +517,6 @@ classes: home-page
               <p>The starting point for anyone who wants to use NSHD data. It sets out how to apply in six steps — choosing your variables on OWL, Condor or the data dictionary, completing the data dictionary, finalising and saving your basket in Condor to get a basket ID, submitting the data request form on Skylark, the review by NSHD, and receiving your data through the UCL Data Safe Haven — with links straight to the two Skylark forms.</p>
               <p>It also explains, in plain terms, what happens after you apply: how your request is logged and passed to the data sharing committee, the confidentiality forms you will be sent to complete, how a basket is linked to your project using your application form ID, and how the automated process introduced in 2022 and NSHD's internal project records system keep everything up to date without you having to chase.</p>
               <a class="inner-link" href="/OWL/docs/data_sharing/">Go to Data Sharing →</a>
-            </div>
-          </div>
-
-          <div class="inner-item" id="ds-projects">
-            <button class="inner-trigger" aria-expanded="false">
-              <span class="inner-icon"><i class="ti ti-compass" aria-hidden="true"></i></span>
-              <span class="inner-title">Discover Projects</span>
-              <span class="inner-chevron">▾</span>
-            </button>
-            <div class="inner-body">
-              <p>Every approved project is listed here with its title, a short summary and the variables it asked for. It is a quick way to see how other researchers have used the data, to check whether work like yours has been done before, and to find variables that are commonly used together for a particular kind of question.</p>
-              <p>Variables from any project can be added straight to your own basket, so a project that looks like yours can be a ready-made starting point for your variable list before you build and finalise your basket in Condor.</p>
-              <a class="inner-link" href="/OWL/docs/search_methods/projects">Go to Discover Projects →</a>
             </div>
           </div>
 
