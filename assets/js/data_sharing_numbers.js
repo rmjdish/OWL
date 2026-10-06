@@ -58,7 +58,10 @@
   const isAll = () => sel.length === 0 || (!!M && sel.length >= M.years.length);
   const picked = () => (isAll() ? (M ? M.years.slice() : []) : sel.slice());   // the years in play
   const chosen = (y) => !isAll() && sel.includes(y);                             // is this year highlighted?
-  const selKey = () => sel.join(",");                                            // "2021,2023": how metrics.json names a combination
+  const selKey = () => sel.join(",");
+  // Planner (the request process) started in planner_first_year; with manual dates some requests are earlier (first_year is the earliest of any)
+  const plannerYear = (B) => (B && B.source && (B.source.planner_first_year || B.source.first_year)) || null;
+  const manualDates = (B) => !!(B && B.source && B.source.manual_dates);                                            // "2021,2023": how metrics.json names a combination
   function selLabel() {
     if (isAll()) return "all years";
     if (sel.length === 1) return String(sel[0]);
@@ -247,8 +250,11 @@
               (bRow && bRow.in_turnaround ? ". Measured from " + num(bRow.in_turnaround) + " requests, for " + num(bRow.projects) + " projects." : "."))
            : step(null, "With a turnaround time", "Not available right now.")),
         B && noTurn ? "<strong>" + num(noTurn) + " " + (noTurn === 1 ? "basket sent has" : "baskets sent have") + " no turnaround time.</strong> " +
-          "A basket has a turnaround time only if it was requested through the current request process, which records when a request comes in and when it is completed. " +
-          "That process started in 2022, so baskets sent before then, or outside it, have no request time to measure from." : "");
+          (manualDates(B)
+            ? "A basket has a turnaround time if it was requested through the current request process, which records when a request comes in and when it is completed (it started in " + plannerYear(B) +
+              "), or if the request date was found in emails. The other baskets have no request time to measure from."
+            : "A basket has a turnaround time only if it was requested through the current request process, which records when a request comes in and when it is completed. " +
+              "That process started in " + plannerYear(B) + ", so baskets sent before then, or outside it, have no request time to measure from.") : "");
     } else {
       basketLadder = ladder("Baskets", "counted by the year they were sent", '<div class="dsn-step"><div class="dsn-step-l">Basket figures are not available right now.</div></div>');
     }
@@ -417,11 +423,16 @@
     html += "<h3>Basket turnaround</h3>";
     if (!B || !B.available) return html + '<p class="dsn-note">Turnaround figures are not available right now.</p>';
     const src = B.source;
-    html += '<p class="dsn-note"><strong>Why turnaround is only for baskets requested through Planner.</strong> Basket requests flow through Power Automate, which allows the request and completion times to be logged in SharePoint and Planner. That is what lets turnaround be measured, so it covers baskets requested this way, from 2022 (the first request is ' +
-      esc(formatDate(src.first_request)) + "), and not earlier baskets or baskets made outside the process. Turnaround is the time from a basket request coming in to the request being completed. " +
+    const manualOn = manualDates(B);
+    html += '<p class="dsn-note"><strong>' + (manualOn ? "Where turnaround comes from." : "Why turnaround is only for baskets requested through Planner.") + "</strong> " +
+      "Basket requests flow through Power Automate, which allows the request and completion times to be logged in SharePoint and Planner. That is what lets turnaround be measured, so it covers baskets requested this way, from " +
+      plannerYear(B) + " (the first request is " + esc(formatDate(src.first_request)) + ")" +
+      (manualOn ? ". For some baskets sent before then, or made outside the process, the request date was found in emails and entered by hand, and turnaround for those runs from that date to the date the data was sent. "
+                : ", and not earlier baskets or baskets made outside the process. ") +
+      "Turnaround is the time from a basket request coming in to the request being completed. " +
       "Only baskets that are matched to a basket in Jay, and linked to a project that is counted in these figures, are included.</p>";
     if (!isAll() && sel.every((y) => y < src.first_year)) {
-      return html + '<p class="dsn-note">Planner has no basket requests for ' + selLabel() + ".</p>";
+      return html + '<p class="dsn-note">' + (manualOn ? "No basket request dates are recorded for " : "Planner has no basket requests for ") + selLabel() + ".</p>";
     }
     const row = rowFor(B) || {};
     const tileList = [tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects"),
@@ -448,6 +459,7 @@
         barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: num(tm[x[0]] || 0) + " (" + pct(((tm[x[0]] || 0) / total) * 100) + ")" })))
       : "";
     const notes = '<p class="dsn-note">Each request counts once, however many baskets it names. ' +
+      (row.manual_requests ? num(row.manual_requests) + (row.manual_requests === 1 ? " request uses" : " requests use") + " a request date found in emails (" + num(row.manual_baskets) + (row.manual_baskets === 1 ? " basket" : " baskets") + "). " : "") +
       (row.open ? num(row.open) + " requests are still open and are not in the turnaround. " : "") + leftOut.trim() +
       " All times are medians, because a few very slow requests would skew an average.</p>";
     return html + '<div class="dsn-tiles dsn-tiles-one-line" style="--dsn-cols:' + tileList.length + '">' + tileList.join("") + "</div>" + notes + timing;
@@ -477,10 +489,13 @@
           trendColumns((y) => (byYear(S.by_year, y) || {}).baskets, "Baskets per year", (v) => num(v))
         : "") +
       (B && B.available
-        ? '<p class="dsn-sub">Median days from basket request to completion (every basket requested through Planner, from ' + String(B.source.first_year) + ")</p>" +
+        ? '<p class="dsn-sub">Median days from basket request to completion (' + (manualDates(B)
+            ? "every basket requested through Planner, from " + plannerYear(B) + ", and baskets whose request date was found in emails"
+            : "every basket requested through Planner, from " + plannerYear(B)) + ")</p>" +
           trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v) => String(Math.round(v)), false, (ys) => {
-            const early = ys.filter((y) => y < B.source.first_year), later = ys.filter((y) => y >= B.source.first_year);
-            return (early.length ? "<strong>" + early.join(", ") + ":</strong> no baskets have a turnaround time, because the request process started in " + B.source.first_year + ". " : "") +
+            const early = ys.filter((y) => y < plannerYear(B)), later = ys.filter((y) => y >= plannerYear(B));
+            return (early.length ? "<strong>" + early.join(", ") + ":</strong> no baskets have a turnaround time, because the request process started in " + plannerYear(B) +
+              (manualDates(B) ? " and no request dates from emails are recorded for " + (early.length === 1 ? "it" : "them") : "") + ". " : "") +
               (later.length ? "<strong>" + later.join(", ") + ":</strong> no completed requests yet. " : "");
           })
         : "") +
@@ -568,7 +583,7 @@
       "<li><strong>Medians:</strong> every time is a median (the middle value), not an average, because a few very slow cases would pull an average up.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
       "<li><strong>Baskets per year</strong> counts every basket once, in the year its data was sent, from 2021. Every basket is sent through Jay, which holds the record of it, so a basket that is only named on an application and was never sent is not counted. Only baskets of projects counted in these figures are included.</li>" +
-      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022. Only baskets that are matched to a basket in Jay are included, and each must be linked to a project that is counted in these figures: the project comes from the Planner request and from Jay, and the two must agree. Requests still open are not included.</li>" +
+      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022." + (manualDates(M.basket_turnaround) ? " For some baskets sent before then, or made outside the process, the request date was found in emails and entered by hand; turnaround for those runs from that date to the date the data was sent." : "") + " Only baskets that are matched to a basket in Jay are included, and each must be linked to a project that is counted in these figures: the project comes from the Planner request and from Jay, and the two must agree. Requests still open are not included.</li>" +
       "<li><strong>Asked for data</strong> means an application had at least one basket sent. An approved application that has not asked for data either has not yet finalised its variables request, or already held the data it needed and did not need to request it.</li>" +
       "<li><strong>When the first basket request comes in</strong> uses the Planner requests that can be linked to an application (by its Form ID or share name), and measures from the application.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
