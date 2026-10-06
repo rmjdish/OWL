@@ -318,63 +318,70 @@
     }), caption);
   }
 
-  // Baskets built (Jay datasets) and their turnaround (the baskets matched to a Planner request)
+  // Baskets per year (Jay + SharePoint), then the turnaround of every basket requested through Planner
   function basketBlock() {
     const S = M.basket_stats;
     const B = M.basket_turnaround;
-    const heading = "<h3>Baskets and data turnaround</h3>";
-    if (!S || !S.available) return heading + '<p class="dsn-note">Basket figures are not available right now.</p>';
-    const per = S.period;
-    const tot = S.totals;
-    const hasPlanner = !!S.planner_available;
-    const row = sel === "all" ? S.overall : byYear(S.by_year, sel) || {};
-    const periodNote = '<p class="dsn-note"><strong>Periods.</strong> Baskets built are counted from ' + per.baskets_from +
-      " using the Jay datasets, by the year the data was sent. " +
-      (hasPlanner
-        ? "Turnaround is the time from a basket request coming in to the request being completed. The request dates come from Planner, which started in 2022 (the first request is " +
-          esc(formatDate(per.turnaround_from)) + "), so turnaround only covers baskets that were requested through Planner: it is available from then on, and for fewer baskets than are built."
-        : "Turnaround is not available because there is no Planner export.") + "</p>";
+    let html = "<h3>Baskets and data turnaround</h3>";
 
-    let tiles = tile("Baskets built", num(row.built), sel === "all" ? per.baskets_from + " to " + per.baskets_to : "in " + sel) +
-      tile("Projects with baskets", num(row.projects));
-    if (hasPlanner) {
-      tiles += tile("Baskets requested through Planner", num(row.matched), pct(row.percent_matched) + " of those built") +
-        tile("Median turnaround", days(row.median_days), "across " + num(row.in_turnaround) + " baskets") +
-        tile("Turned around on the same day", pct(row.same_day_percent)) +
-        S.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))).join("");
+    // ---- baskets per year ----
+    if (S && S.available) {
+      const per = S.period;
+      const row = sel === "all" ? S.overall : byYear(S.by_year, sel) || {};
+      const tiles = tile("Baskets", num(row.baskets), sel === "all" ? per.baskets_from + " to " + per.baskets_to : "in " + sel) +
+        tile("In Jay, by date sent", num(row.jay)) +
+        tile("Only on SharePoint, by " + per.sharepoint_date + " date", num(row.sharepoint_only)) +
+        (sel === "all" && isNum(row.projects) ? tile("Projects with baskets", num(row.projects)) : "");
+      html += '<p class="dsn-note"><strong>Baskets per year.</strong> Every basket counts once, from ' + per.baskets_from +
+        ": by the date it was sent in Jay or, if it is only on an approved SharePoint application and not in Jay, by the SharePoint " + esc(per.sharepoint_date) +
+        " date." + (per.projects_in_metrics_only ? " Only baskets of projects counted in these figures are included." : "") + "</p>" +
+        '<div class="dsn-tiles">' + tiles + "</div>" +
+        (S.totals && S.totals.left_out_project_not_in_metrics
+          ? '<p class="dsn-note">' + num(S.totals.left_out_project_not_in_metrics) + " baskets were left out because their project is not counted in these figures.</p>" : "");
+    } else {
+      html += '<p class="dsn-note">Baskets per year are not available right now.</p>';
     }
-    if (sel === "all" && S.per_project && isNum(S.per_project.median_baskets_per_project)) {
-      tiles += tile("Median baskets per project", num(S.per_project.median_baskets_per_project), "the most is " + num(S.per_project.max_baskets_per_project));
+
+    // ---- turnaround, for every basket requested through Planner ----
+    html += '<p class="dsn-sub">Basket turnaround</p>';
+    if (!B || !B.available) return html + '<p class="dsn-note">Turnaround figures are not available right now.</p>';
+    const src = B.source;
+    html += '<p class="dsn-note"><strong>Why turnaround is only for baskets requested through Planner.</strong> Basket requests flow through Power Automate, which allows the request and completion times to be logged in SharePoint and Planner. That is what lets turnaround be measured, so it covers baskets requested this way, from 2022 (the first request is ' +
+      esc(formatDate(src.first_request)) + "), and not earlier baskets or baskets made outside the process. Turnaround is the time from a basket request coming in to the request being completed. " +
+      "A basket is only included if it is linked to a project that is counted in these figures, checked against Jay.</p>";
+    if (sel !== "all" && sel < src.first_year) {
+      return html + '<p class="dsn-note">Planner has no basket requests for ' + sel + ".</p>";
     }
-    const noTurn = hasPlanner && sel !== "all" && !row.in_turnaround
-      ? '<p class="dsn-note">None of the baskets built in ' + sel + " has a Planner request with usable dates, so there is no turnaround figure for this year.</p>" : "";
+    const row = sel === "all" ? B.overall : byYear(B.by_year, sel) || {};
+    const tiles = tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects") +
+      tile("Median turnaround", days(row.median_days), "from the request coming in to completion") +
+      tile("Turned around on the same day", pct(row.same_day_percent)) +
+      B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))).join("") +
+      tile("Baskets with data in Jay", num(row.baskets_with_data), pct(row.baskets ? (row.baskets_with_data / row.baskets) * 100 : null) + " of the baskets") +
+      tile("Baskets without data in Jay", num(row.baskets_without_data), "requested, but not in the Jay datasets");
+    const lo = row.left_out || {};
+    const leftOut = lo.total
+      ? " " + num(lo.total) + " completed requests were left out because they are not linked to a project counted in these figures (" +
+        [lo.not_linked_to_a_project ? num(lo.not_linked_to_a_project) + " not linked to any project" : "",
+         lo.project_not_in_the_metrics ? num(lo.project_not_in_the_metrics) + " linked to a project outside these figures" : "",
+         lo.project_conflict_planner_vs_jay ? num(lo.project_conflict_planner_vs_jay) + " where Planner and Jay disagree on the project" : ""].filter(Boolean).join(", ") + ")."
+      : "";
 
     // when the first basket request came in, compared with the application (Planner requests linked to applications)
-    let timing = "";
-    if (B && B.available) {
-      const tm = sel === "all" ? B.request_timing.overall : byYear(B.request_timing.by_year, sel) || {};
-      const total = (tm.with_application || 0) + (tm.days_2_7 || 0) + (tm.days_8_30 || 0) + (tm.over_30 || 0);
-      const bands = [["with_application", "With the application (same or next day)"], ["days_2_7", "2 to 7 days later"],
-        ["days_8_30", "8 to 30 days later"], ["over_30", "More than 30 days later"]];
-      if (total) {
-        timing = '<p class="dsn-sub">When the first basket request came in, after the application (Planner requests)</p>' +
-          '<div class="dsn-tiles">' + tile("Median time from application to first basket request", days(tm.median_days_after_application), "across " + num(tm.applications) + " applications") + "</div>" +
-          barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: num(tm[x[0]] || 0) + " (" + pct(((tm[x[0]] || 0) / total) * 100) + ")" })));
-      }
-    }
-
-    const notBuilt = tot.jay_baskets_dated - tot.matched;
-    const lag = S.lag_vs_date_sent || {};
-    const notes = '<p class="dsn-note">' +
-      (hasPlanner
-        ? num(tot.matched) + " of the " + num(tot.jay_baskets_dated) + " baskets built have a basket request in Planner; " + num(notBuilt) +
-          " do not (older baskets, or the request did not list the basket id). " +
-          (tot.planner_only ? num(tot.planner_only) + " basket ids named in Planner are not in the Jay datasets. " : "") +
-          (isNum(lag.median_days) ? "The date Planner shows a request completed is a median of " + days(Math.abs(lag.median_days)) + " from the date the data was sent in Jay (" + pct(lag.percent_within_1_day) + " within a day). " : "")
-        : "") +
-      (tot.jay_baskets_no_date ? num(tot.jay_baskets_no_date) + " baskets have no date sent, so are not in the yearly counts. " : "") +
-      "Each basket counts once; a basket named in more than one request uses the completed request closest to the date it was sent. All times are medians, because a few very slow requests would skew an average.</p>";
-    return heading + periodNote + '<div class="dsn-tiles">' + tiles + "</div>" + noTurn + timing + notes;
+    const tm = sel === "all" ? B.request_timing.overall : byYear(B.request_timing.by_year, sel) || {};
+    const total = (tm.with_application || 0) + (tm.days_2_7 || 0) + (tm.days_8_30 || 0) + (tm.over_30 || 0);
+    const bands = [["with_application", "With the application (same or next day)"], ["days_2_7", "2 to 7 days later"],
+      ["days_8_30", "8 to 30 days later"], ["over_30", "More than 30 days later"]];
+    const timing = total
+      ? '<p class="dsn-sub">When the first basket request came in, after the application</p>' +
+        '<div class="dsn-tiles">' + tile("Median time from application to first basket request", days(tm.median_days_after_application), "across " + num(tm.applications) + " applications") + "</div>" +
+        barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: num(tm[x[0]] || 0) + " (" + pct(((tm[x[0]] || 0) / total) * 100) + ")" })))
+      : "";
+    const notes = '<p class="dsn-note">Each request counts once, however many baskets it names. ' +
+      (row.requests_without_basket_id ? num(row.requests_without_basket_id) + " of the requests name no basket id, so cannot be flagged with or without data. " : "") +
+      (row.open ? num(row.open) + " requests are still open and are not in the turnaround. " : "") + leftOut.trim() +
+      " All times are medians, because a few very slow requests would skew an average.</p>";
+    return html + '<div class="dsn-tiles">' + tiles + "</div>" + notes + timing;
   }
 
   function renderService() {
@@ -382,6 +389,7 @@
     const rp = rowFor(M.repeat_requests) || {};
     const ths = M.approval_times.thresholds;
     const S = M.basket_stats;
+    const B = M.basket_turnaround;
 
     const approvalTiles = tile("Median time to approve" + dagger(), days(ap.median_days), "across " + num(ap.approved) + " approved") +
       ths.map((n) => tile("Approved within " + n + " days" + dagger(), pct(ap["percent_within_" + n]), num(ap["within_" + n]) + " of " + num(ap.approved))).join("");
@@ -396,12 +404,12 @@
       '<p class="dsn-sub">Median days to approve an application</p>' +
       trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).median_days, "Median days to approve by year", (v) => String(Math.round(v)), true) + processNote() +
       (S && S.available
-        ? '<p class="dsn-sub">Baskets built each year (Jay datasets, from ' + S.period.baskets_from + ")</p>" +
-          trendColumns((y) => (byYear(S.by_year, y) || {}).built, "Baskets built by year", (v) => num(v))
+        ? '<p class="dsn-sub">Baskets per year (Jay and SharePoint, from ' + S.period.baskets_from + ")</p>" +
+          trendColumns((y) => (byYear(S.by_year, y) || {}).baskets, "Baskets per year", (v) => num(v))
         : "") +
-      (S && S.planner_available
-        ? '<p class="dsn-sub">Median days from basket request to completion (baskets requested through Planner, from ' + String(S.period.turnaround_from).slice(0, 4) + ")</p>" +
-          trendColumns((y) => (byYear(S.by_year, y) || {}).median_days, "Median turnaround by year of the basket", (v) => String(Math.round(v)))
+      (B && B.available
+        ? '<p class="dsn-sub">Median days from basket request to completion (every basket requested through Planner, from ' + String(B.source.first_year) + ")</p>" +
+          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v) => String(Math.round(v)))
         : "") +
       '<p class="dsn-sub">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
@@ -484,8 +492,8 @@
       "<li><strong>Year of application</strong> is when the application was submitted. Most figures use it. Topics, collection years and variables use the year the data was sent.</li>" +
       "<li><strong>Medians:</strong> every time is a median (the middle value), not an average, because a few very slow cases would pull an average up.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
-      "<li><strong>Baskets built</strong> are the baskets in the Jay datasets, counted by the year the data was sent, from 2021. A basket counts once.</li>" +
-      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed. The request dates come from Planner, so it only covers baskets whose id is named in a Planner request: that is from 2022, and fewer baskets than are built. Baskets are matched to Planner by basket id. A basket named in more than one request uses the completed request closest to the date it was sent.</li>" +
+      "<li><strong>Baskets per year</strong> counts every basket once, from 2021: by the date it was sent in Jay or, if it is only on an approved SharePoint application and not in Jay, by the SharePoint approval date. Only baskets of projects counted in these figures are included.</li>" +
+      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed, for every basket requested through Planner. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022. A basket is only included if it is linked to a project that is counted in these figures: the project comes from the Planner request and, where the basket is in Jay, from Jay, and the two must agree. Requests still open are not included.</li>" +
       "<li><strong>When the first basket request comes in</strong> uses the Planner requests that can be linked to an application (by its Form ID or share name), and measures from the application.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
       "<li><strong>Projects that came back for more</strong> are projects that were sent more data more than " + ((M.repeat_requests && M.repeat_requests.gap_days) || 7) + " days after their first.</li>" +
