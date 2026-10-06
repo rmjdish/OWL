@@ -422,7 +422,7 @@ classes: home-page
             <div class="inner-body">
               <p>Discover Projects searches by what other researchers have actually asked for. Every approved project is listed with its title, a short summary and the variables it requested, so you can see how the data has been used, check whether work like yours has been done before, and find the variables researchers choose for a particular kind of question.</p>
               <p>Variables from any project can be added straight to your own basket, so a project that looks like yours can be a ready-made starting point for your variable list before you build and finalise your basket in Condor.</p>
-              <a class="inner-link" href="/OWL/docs/search_methods/projects">Go to Discover Projects →</a>
+              <a class="inner-link" href="/OWL/docs/search_methods/discover-projects">Go to Discover Projects →</a>
             </div>
           </div>
 
@@ -529,7 +529,7 @@ classes: home-page
             <div class="inner-body">
               <p>A year-by-year picture of data sharing since 2021: how many applications are made and where they come from, how long approval takes, how many baskets are sent and how quickly requests are turned around, and what researchers ask for — the most requested variables, the topics and years of data collection they cover, and the variables that are requested together. All times are medians.</p>
               <p>Choose one or more years to see the figures for just those years, and hover over a bar to see the numbers behind a percentage. Each figure is explained on the page, including why some are based on a smaller number of applications than others.</p>
-              <a class="inner-link" href="/OWL/docs/data_sharing/numbers">Go to Metrics and Trends →</a>
+              <a class="inner-link" href="/OWL/docs/data_sharing/metrics">Go to Metrics and Trends →</a>
             </div>
           </div>
 

@@ -47,7 +47,7 @@
 	"create documentation":		"ti-forms",
 	"using doc builder":		"ti-forms",
 	"data sharing":		"ti-share",
-	"metrics":		"ti-chart",
+	"metrics":		"ti-chart-histogram",
 	"faqs":						"ti-help-circle",
 
 
