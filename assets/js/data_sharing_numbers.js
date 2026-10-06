@@ -190,7 +190,7 @@
     const anySelected = items.some((i) => i.selected);
     return '<div class="dsn-cols' + (anySelected ? " has-selection" : "") + '" role="img" aria-label="' + esc(caption) + '">' +
       items.map((i) =>
-        '<div class="dsn-col' + (i.selected ? " is-selected" : "") + (i.partial ? " is-partial" : "") + (i.empty ? " is-empty" : "") + '">' +
+        '<div class="dsn-col' + (i.selected ? " is-selected" : "") + (i.partial ? " is-partial" : "") + (i.empty ? " is-empty" : "") + '"' + (i.title ? ' title="' + esc(i.title) + '"' : "") + '>' +
         '<span class="dsn-col-val">' + (i.text !== undefined ? i.text : num(i.value)) + "</span>" +
         (i.empty ? '<i class="dsn-col-none" title="No figure for this year"></i>'
                  : '<i style="height:' + Math.max(2, Math.round(((i.value || 0) / max) * 150)) + 'px"></i>') +
@@ -396,13 +396,13 @@
   }
 
   // A year with no figure is drawn as a hatched "none" placeholder, not a bar of nothing, and (when emptyNote is given) explained underneath
-  function trendColumns(values, caption, format, marked, emptyNote) {
+  function trendColumns(values, caption, format, marked, emptyNote, hover) {
     const empties = [];
     const html = columnChart(M.years.map((y) => {
       const v = values(y);
       if (!isNum(v)) empties.push(y);
       return { label: String(y) + (marked && y >= changeYear() ? "†" : ""), value: isNum(v) ? v : 0,
-        text: isNum(v) ? format(v) : "none", empty: !isNum(v), selected: chosen(y) };
+        text: isNum(v) ? format(v) : "none", empty: !isNum(v), selected: chosen(y), title: hover ? hover(y, v) : "" };
     }), caption);
     return html + (empties.length && emptyNote ? '<p class="dsn-note dsn-empty-note">' + emptyNote(empties) + "</p>" : "");
   }
@@ -506,7 +506,13 @@
             return (early.length ? "<strong>" + early.join(", ") + ":</strong> no baskets have a turnaround time, because the request process started in " + plannerYear(B) +
               (manualDates(B) ? " and no request dates from emails are recorded for " + (early.length === 1 ? "it" : "them") : "") + ". " : "") +
               (later.length ? "<strong>" + later.join(", ") + ":</strong> no completed requests yet. " : "");
-          })
+          }, (y, v) => {
+            const r = byYear(B.by_year, y) || {};
+            if (!isNum(v)) return "No baskets with a turnaround time for requests made in " + y;
+            return num(r.baskets) + (r.baskets === 1 ? " basket" : " baskets") + " in this median (requests made in " + y + ")" +
+              (r.manual_baskets ? ", " + num(r.manual_baskets) + " with a request date found in emails" : "");
+          }) +
+          '<p class="dsn-note">Hover over a bar to see how many baskets its median is based on. These numbers are smaller than the Baskets per year chart above. That chart counts every basket sent through Jay, by the year its data was sent. A turnaround time can only be worked out for a basket whose request came in through the request process (from ' + plannerYear(B) + ')' + (manualDates(B) ? " or whose request date was found in emails" : "") + " and has been completed, and this chart groups those baskets by the year the request came in, not the year the data was sent.</p>"
         : "") +
       '<p class="dsn-sub dsn-chart-title">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
