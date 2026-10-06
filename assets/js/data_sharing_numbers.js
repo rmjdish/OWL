@@ -33,7 +33,7 @@
   let dict = new Map(); // lower-case variable name -> { name, label, topic, years }
   let requests = null; // variable_requests.json projects: [{ pid, by_year: { "2022": ["bmi"] } }]
   const requestStatsCache = {}; // topic / collection-year counts, worked out once per chosen year
-  let sel = "all"; // "all", or a year (number)
+  let sel = []; // the years chosen: [] means every year; otherwise a sorted list of one or more years
   let visibleLines = new Set(); // years shown on the trajectory chart
   let pickedVariable = ""; // variable chosen in the "requested together" picker
 
@@ -53,26 +53,41 @@
   const sum = (list, fn) => list.reduce((t, x) => t + (fn(x) || 0), 0);
   const byYear = (list, y) => (list || []).find((r) => r.year === y);
 
+  // ---------- the chosen years ----------
+  // sel is [] for "All years" (choosing every year one by one also counts as all years), else a sorted list of one or more years.
+  const isAll = () => sel.length === 0 || (!!M && sel.length >= M.years.length);
+  const picked = () => (isAll() ? (M ? M.years.slice() : []) : sel.slice());   // the years in play
+  const chosen = (y) => !isAll() && sel.includes(y);                             // is this year highlighted?
+  const selKey = () => sel.join(",");                                            // "2021,2023": how metrics.json names a combination
+  function selLabel() {
+    if (isAll()) return "all years";
+    if (sel.length === 1) return String(sel[0]);
+    return sel.slice(0, -1).join(", ") + " and " + sel[sel.length - 1];
+  }
+
   function formatDate(text) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(text || ""));
     if (!m) return "";
     return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
   }
 
-  // The row of figures for the chosen year (or the overall row for "All years")
+  // The row of figures for the chosen years: the overall row for "All years", the year's row for one year, and for several years
+  // the combination worked out by the script (a median over several years cannot be built from each year's median)
   function rowFor(block) {
     if (!block) return null;
-    return sel === "all" ? block.overall : byYear(block.by_year, sel);
+    if (isAll()) return block.overall;
+    if (sel.length === 1) return byYear(block.by_year, sel[0]);
+    return (block.by_set || {})[selKey()] || null;
   }
 
   // A row from a {name, total, by_year:{year: n}} list, for the chosen year
   function valueOf(row) {
-    return sel === "all" ? row.total : row.by_year[String(sel)] || 0;
+    return isAll() ? row.total : sum(sel, (y) => row.by_year[String(y)] || 0);
   }
 
   function prepared() {
     const rows = M.data_prepared.by_year;
-    const use = sel === "all" ? rows : rows.filter((r) => r.year === sel);
+    const use = rows.filter((r) => picked().includes(r.year));
     const apps = sum(use, (r) => r.applications);
     const withData = sum(use, (r) => r.with_data);
     return { applications: apps, with_data: withData, percent: apps ? (withData / apps) * 100 : null };
@@ -99,7 +114,7 @@
   // Join each project's requested variables to the dictionary, in the browser.
   // A project counts ONCE per topic / year of collection however many of its variables fall in it.
   function requestStats() {
-    const key = String(sel);
+    const key = isAll() ? "all" : selKey();
     if (requestStatsCache[key]) return requestStatsCache[key];
     const topics = new Map();
     const collection = new Map();
@@ -112,8 +127,8 @@
     };
     requests.forEach((p) => {
       const vars = new Set();
-      if (sel === "all") Object.keys(p.by_year).forEach((y) => p.by_year[y].forEach((v) => vars.add(v)));
-      else (p.by_year[key] || []).forEach((v) => vars.add(v));
+      if (isAll()) Object.keys(p.by_year).forEach((y) => p.by_year[y].forEach((v) => vars.add(v)));
+      else sel.forEach((y) => (p.by_year[String(y)] || []).forEach((v) => vars.add(v)));
       vars.forEach((v) => {
         const info = dict.get(v);
         if (!info) { notInDictionary.add(v); return; }
@@ -163,9 +178,10 @@
     const anySelected = items.some((i) => i.selected);
     return '<div class="dsn-cols' + (anySelected ? " has-selection" : "") + '" role="img" aria-label="' + esc(caption) + '">' +
       items.map((i) =>
-        '<div class="dsn-col' + (i.selected ? " is-selected" : "") + (i.partial ? " is-partial" : "") + '">' +
+        '<div class="dsn-col' + (i.selected ? " is-selected" : "") + (i.partial ? " is-partial" : "") + (i.empty ? " is-empty" : "") + '">' +
         '<span class="dsn-col-val">' + (i.text !== undefined ? i.text : num(i.value)) + "</span>" +
-        '<i style="height:' + Math.max(2, Math.round(((i.value || 0) / max) * 150)) + 'px"></i>' +
+        (i.empty ? '<i class="dsn-col-none" title="No figure for this year"></i>'
+                 : '<i style="height:' + Math.max(2, Math.round(((i.value || 0) / max) * 150)) + 'px"></i>') +
         '<span class="dsn-col-lab">' + esc(i.label) + "</span></div>").join("") + "</div>";
   }
 
@@ -173,7 +189,7 @@
   const changeYear = () => (M && M.process_change_year) || 2023;
 
   // A dagger marks time figures the process change affects: "All years", or a year from the change onwards
-  const dagger = () => (sel === "all" || sel >= changeYear() ? " †" : "");
+  const dagger = () => (isAll() || sel.some((y) => y >= changeYear()) ? " †" : "");
 
   function processNote() {
     return '<p class="dsn-note">† The data sharing process changed just before ' + changeYear() +
@@ -189,21 +205,22 @@
 
   // The year filter: at the very top of the page, because it controls everything below it
   function renderFilter() {
-    const chips = ['<button class="dsn-chip' + (sel === "all" ? " on" : "") + '" data-year="all">All years</button>']
-      .concat(M.years.map((y) => '<button class="dsn-chip' + (sel === y ? " on" : "") + '" data-year="' + y + '">' + y + "</button>")).join("");
-    return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips + "</div>";
+    const chips = ['<button type="button" class="dsn-chip' + (isAll() ? " on" : "") + '" data-year="all" aria-pressed="' + isAll() + '">All years</button>']
+      .concat(M.years.map((y) => '<button type="button" class="dsn-chip' + (chosen(y) ? " on" : "") + '" data-year="' + y + '" aria-pressed="' + chosen(y) + '">' + y + "</button>")).join("");
+    return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips +
+      '<span class="dsn-filter-hint">Choose one or more years</span></div>';
   }
 
   // How many are behind each figure: two ladders (applications, baskets), and why some figures rest on fewer
   function renderNumbers() {
     const apps = M.applications.by_year;
-    const nApps = sel === "all" ? sum(apps, (a) => a.applications) : (byYear(apps, sel) || {}).applications;
+    const nApps = sum(apps.filter((a) => picked().includes(a.year)), (a) => a.applications);
     const prep = prepared();
     const S = M.basket_stats && M.basket_stats.available ? M.basket_stats : null;
     const B = M.basket_turnaround && M.basket_turnaround.available ? M.basket_turnaround : null;
-    const sRow = S ? (sel === "all" ? S.overall : byYear(S.by_year, sel) || {}) : null;
-    const bRow = B ? (sel === "all" ? B.overall : byYear(B.by_year, sel) || {}) : null;
-    const which = sel === "all" ? "all years" : String(sel);
+    const sRow = S ? rowFor(S) || {} : null;
+    const bRow = B ? rowFor(B) || {} : null;
+    const which = selLabel();
 
     const step = (n, label, sub) => '<div class="dsn-step"><div class="dsn-step-n">' + num(n) + '</div><div class="dsn-step-l">' + esc(label) + "</div>" +
       (sub ? '<div class="dsn-step-s">' + esc(sub) + "</div>" : "") + "</div>";
@@ -246,14 +263,14 @@
 
   function renderOverview() {
     const apps = M.applications.by_year;
-    const nApps = sel === "all" ? sum(apps, (a) => a.applications) : (byYear(apps, sel) || {}).applications;
+    const nApps = sum(apps.filter((a) => picked().includes(a.year)), (a) => a.applications);
     const distinct = (rows) => rows.filter((r) => valueOf(r) > 0).length;
     const ap = rowFor(M.approval_times) || {};
     const th = M.approval_times.thresholds[0];
     const prep = prepared();
 
     const partial = M.end_year === new Date().getFullYear() ? " " + M.end_year + " is the year to date." : "";
-    const notInJay = sel === "all" ? sum(apps, (a) => a.not_in_jay) : (byYear(apps, sel) || {}).not_in_jay;
+    const notInJay = sum(apps.filter((a) => picked().includes(a.year)), (a) => a.not_in_jay);
     const notInJayNote = notInJay
       ? " " + num(notInJay) + (notInJay === 1 ? " approved application is" : " approved applications are") +
         " not in Jay yet (no basket built). " + (notInJay === 1 ? "It counts" : "They count") + " in the applications and approval figures, but have no institution, country or data."
@@ -304,8 +321,8 @@
       const pts = [];
       bm[String(yr)].cumulative.forEach((v, i) => { if (isNum(v)) pts.push([x(i), y(v), v]); });
       if (!pts.length) return;
-      const width = sel === "all" ? 2.5 : yr === sel ? 4 : 1.8;
-      const faded = sel !== "all" && yr !== sel ? ' opacity="0.55"' : "";
+      const width = isAll() ? 2.5 : chosen(yr) ? 4 : 1.8;
+      const faded = !isAll() && !chosen(yr) ? ' opacity="0.55"' : "";
       svg += '<path d="' + pts.map((p, k) => (k ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ") + '" fill="none" stroke="' +
         LINE_COLOURS[idx % LINE_COLOURS.length] + '" stroke-width="' + width + '" stroke-dasharray="' + LINE_DASHES[idx % LINE_DASHES.length] +
         '" stroke-linejoin="round" stroke-linecap="round"' + faded + "/>";
@@ -330,7 +347,7 @@
     const nowYear = new Date().getFullYear();
     const cols = M.applications.by_year.map((r) => ({
       label: r.year + (r.year === nowYear ? "*" : ""), value: r.applications,
-      selected: sel !== "all" && r.year === sel, partial: r.year === nowYear,
+      selected: chosen(r.year), partial: r.year === nowYear,
     }));
     return "<h3>Applications each year</h3>" +
       columnChart(cols, "Applications per year: " + M.applications.by_year.map((r) => r.year + " " + r.applications).join(", ")) +
@@ -363,25 +380,29 @@
       "<h3>Top institutions</h3>" + topList(w.institutions, (r) => r.name, 10, (r) => r.country);
   }
 
-  function trendColumns(values, caption, format, marked) {
-    return columnChart(M.years.map((y) => {
+  // A year with no figure is drawn as a hatched "none" placeholder, not a bar of nothing, and (when emptyNote is given) explained underneath
+  function trendColumns(values, caption, format, marked, emptyNote) {
+    const empties = [];
+    const html = columnChart(M.years.map((y) => {
       const v = values(y);
+      if (!isNum(v)) empties.push(y);
       return { label: String(y) + (marked && y >= changeYear() ? "†" : ""), value: isNum(v) ? v : 0,
-        text: isNum(v) ? format(v) : "–", selected: sel !== "all" && y === sel };
+        text: isNum(v) ? format(v) : "none", empty: !isNum(v), selected: chosen(y) };
     }), caption);
+    return html + (empties.length && emptyNote ? '<p class="dsn-note dsn-empty-note">' + emptyNote(empties) + "</p>" : "");
   }
 
   // Baskets per year (Jay + SharePoint), then the turnaround of every basket requested through Planner
   function basketBlock() {
     const S = M.basket_stats;
     const B = M.basket_turnaround;
-    let html = "<h3>Baskets and data turnaround</h3>";
+    let html = "<h3>Baskets</h3>";
 
     // ---- baskets per year ----
     if (S && S.available) {
       const per = S.period;
-      const row = sel === "all" ? S.overall : byYear(S.by_year, sel) || {};
-      const tiles = tile("Baskets", num(row.baskets), sel === "all" ? per.baskets_from + " to " + per.baskets_to : "in " + sel) +
+      const row = rowFor(S) || {};
+      const tiles = tile("Baskets", num(row.baskets), isAll() ? per.baskets_from + " to " + per.baskets_to : "in " + selLabel()) +
         (isNum(row.projects) ? tile("Projects with baskets", num(row.projects)) : "");
       html += '<p class="dsn-note"><strong>Baskets per year.</strong> Every basket is sent through Jay, which holds the record of it. Each basket counts once, in the year its data was sent, from ' +
         per.baskets_from + "." + (per.projects_in_metrics_only ? " Only baskets of projects counted in these figures are included." : "") + "</p>" +
@@ -393,16 +414,16 @@
     }
 
     // ---- turnaround, for every basket requested through Planner ----
-    html += '<p class="dsn-sub">Basket turnaround</p>';
+    html += "<h3>Basket turnaround</h3>";
     if (!B || !B.available) return html + '<p class="dsn-note">Turnaround figures are not available right now.</p>';
     const src = B.source;
     html += '<p class="dsn-note"><strong>Why turnaround is only for baskets requested through Planner.</strong> Basket requests flow through Power Automate, which allows the request and completion times to be logged in SharePoint and Planner. That is what lets turnaround be measured, so it covers baskets requested this way, from 2022 (the first request is ' +
       esc(formatDate(src.first_request)) + "), and not earlier baskets or baskets made outside the process. Turnaround is the time from a basket request coming in to the request being completed. " +
       "Only baskets that are matched to a basket in Jay, and linked to a project that is counted in these figures, are included.</p>";
-    if (sel !== "all" && sel < src.first_year) {
-      return html + '<p class="dsn-note">Planner has no basket requests for ' + sel + ".</p>";
+    if (!isAll() && sel.every((y) => y < src.first_year)) {
+      return html + '<p class="dsn-note">Planner has no basket requests for ' + selLabel() + ".</p>";
     }
-    const row = sel === "all" ? B.overall : byYear(B.by_year, sel) || {};
+    const row = rowFor(B) || {};
     const tileList = [tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects"),
       tile("Median turnaround", days(row.median_days), "from the request coming in to completion"),
       tile("Turned around on the same day", pct(row.same_day_percent))]
@@ -417,7 +438,7 @@
       : "";
 
     // when the first basket request came in, compared with the application (Planner requests linked to applications)
-    const tm = sel === "all" ? B.request_timing.overall : byYear(B.request_timing.by_year, sel) || {};
+    const tm = rowFor(B.request_timing) || {};
     const total = (tm.with_application || 0) + (tm.days_2_7 || 0) + (tm.days_8_30 || 0) + (tm.over_30 || 0);
     const bands = [["with_application", "With the application (same or next day)"], ["days_2_7", "2 to 7 days later"],
       ["days_8_30", "8 to 30 days later"], ["over_30", "More than 30 days later"]];
@@ -457,7 +478,11 @@
         : "") +
       (B && B.available
         ? '<p class="dsn-sub">Median days from basket request to completion (every basket requested through Planner, from ' + String(B.source.first_year) + ")</p>" +
-          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v) => String(Math.round(v)))
+          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v) => String(Math.round(v)), false, (ys) => {
+            const early = ys.filter((y) => y < B.source.first_year), later = ys.filter((y) => y >= B.source.first_year);
+            return (early.length ? "<strong>" + early.join(", ") + ":</strong> no baskets have a turnaround time, because the request process started in " + B.source.first_year + ". " : "") +
+              (later.length ? "<strong>" + later.join(", ") + ":</strong> no completed requests yet. " : "");
+          })
         : "") +
       '<p class="dsn-sub">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
@@ -468,10 +493,12 @@
   }
 
   function renderRequests() {
-    const key = String(sel);
     const types = (M.data_types && M.data_types.types) || [];
+    // projects in the chosen years that are in Jay (the data types are only known for those): applications less those not in Jay yet
+    const jayApps = sum(M.applications.by_year.filter((a) => picked().includes(a.year)), (a) => a.applications - (a.not_in_jay || 0));
     const typeItems = types.map((t) => {
-      const cell = sel === "all" ? { projects: t.projects, percent: t.percent } : t.by_year[key] || { projects: 0, percent: null };
+      const n = isAll() ? t.projects : sum(sel, (y) => (t.by_year[String(y)] || {}).projects || 0);
+      const cell = isAll() ? { projects: t.projects, percent: t.percent } : { projects: n, percent: jayApps ? Math.round((n / jayApps) * 1000) / 10 : null };
       return { label: esc(t.type), value: cell.percent || 0, text: pct(cell.percent) + " (" + num(cell.projects) + ")" };
     });
 
@@ -494,7 +521,7 @@
     // Most requested variables (popular_vars_yr.json)
     let popHtml = '<p class="dsn-note">The most requested variables are not available right now.</p>';
     if (popular && popular.length) {
-      const items = popular.map((p) => ({ name: p.name, value: sel === "all" ? p.total : (p.counts || {})[String(sel)] || 0 }))
+      const items = popular.map((p) => ({ name: p.name, value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
         .filter((p) => p.value > 0).sort((a, b) => b.value - a.value).slice(0, 10)
         .map((p) => ({ label: varLink(p.name), value: p.value }));
       popHtml = barRows(items);
@@ -528,7 +555,7 @@
         '<p class="dsn-note">' + esc(b.note || "") + " Pairs requested by fewer than " + num(b.min_projects) + " projects are not shown.</p>";
     }
 
-    return "<h3>Most requested variables</h3><p class=\"dsn-sub\">Number of projects requesting each variable" + (sel === "all" ? ", added up across years" : "") + "</p>" + popHtml +
+    return "<h3>Most requested variables</h3><p class=\"dsn-sub\">Number of projects requesting each variable" + (isAll() || sel.length > 1 ? ", added up across years" : "") + "</p>" + popHtml +
       "<h3>How many variables projects ask for</h3>" + sizeHtml +
       "<h3>Variables requested together</h3>" + togetherHtml;
   }
@@ -581,8 +608,13 @@
     root().addEventListener("click", (e) => {
       const yearBtn = e.target.closest("[data-year]");
       if (yearBtn) {
-        sel = yearBtn.dataset.year === "all" ? "all" : parseInt(yearBtn.dataset.year, 10);
-        if (sel !== "all") visibleLines.add(sel); // make sure the chosen year is on the chart
+        if (yearBtn.dataset.year === "all") sel = [];
+        else {
+          const y = parseInt(yearBtn.dataset.year, 10);
+          sel = sel.includes(y) ? sel.filter((x) => x !== y) : sel.concat(y).sort((a, b) => a - b);   // click a year to add it, click again to remove it
+          if (sel.length >= M.years.length) sel = [];                                                 // every year chosen = all years
+          if (sel.includes(y)) visibleLines.add(y); // make sure a year just chosen is on the chart
+        }
         renderAll();
         return;
       }
