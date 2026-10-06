@@ -100,6 +100,17 @@ classes: home-page
         </div>
       </li>
 
+      <li class="sb-parent" data-sec="sec-data-sharing">
+        <a href="#sec-data-sharing" data-sec="sec-data-sharing"><span class="sb-caret">▸</span>🤝 Data Sharing</a>
+        <div class="sb-subgroup">
+          <ul class="sb-subgroup-inner">
+            <li class="sb-sub"><a href="#ds-overview" data-sec="sec-data-sharing" data-inner="ds-overview">Data Sharing</a></li>
+            <li class="sb-sub"><a href="#ds-projects" data-sec="sec-data-sharing" data-inner="ds-projects">Discover Projects</a></li>
+            <li class="sb-sub"><a href="#ds-numbers" data-sec="sec-data-sharing" data-inner="ds-numbers">Data Sharing in Numbers</a></li>
+          </ul>
+        </div>
+      </li>
+
       <li><a href="#sec-access" data-sec="sec-access"><span class="sb-spacer"></span>🔐 Access &amp; Permissions</a></li>
     </ul>
   </div>
@@ -465,6 +476,60 @@ classes: home-page
               <p>Every document is automatically checked against the data dictionary, so if it names real variables you'll see them listed on the page — high-confidence matches with a checkbox ready to tick, lower-confidence ones flagged separately for a second look — and can add them straight to your basket without leaving the page.</p>
               <p>Writing documentation rather than reading it? <strong>Create Documentation Online</strong> lets you build a topsheet and its accompanying document directly in the browser, with a live preview of how it'll look once published, and <strong>Page Proof</strong> checks a document you've already written in Word for common formatting mistakes before you send it in.</p>
               <a class="inner-link" href="/OWL/docs/documentation/">Go to Documentation →</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- DATA SHARING -->
+    <div class="sec-row" id="sec-data-sharing">
+      <button class="sec-trigger" aria-expanded="false">
+        <span class="sec-icon"><i class="ti ti-share" aria-hidden="true"></i></span>
+        <span class="sec-title">Data Sharing</span>
+        <span class="sec-chevron">▾</span>
+      </button>
+      <div class="sec-body">
+        <p>NSHD shares its data with researchers around the world, and every application is for a specific project and a specific set of variables. This section explains how to apply and what happens afterwards, and shows how the data has been used — the projects that have been approved, the variables they asked for, and the numbers behind data sharing. See the <a href="/OWL/docs/data_sharing/">Data Sharing</a> page to get started.</p>
+        <div class="inner-accordion">
+
+          <div class="inner-item" id="ds-overview">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-share" aria-hidden="true"></i></span>
+              <span class="inner-title">Data Sharing</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>The starting point for anyone who wants to use NSHD data. It sets out how to apply in six steps — choosing your variables on OWL, Condor or the data dictionary, completing the data dictionary, finalising and saving your basket in Condor to get a basket ID, submitting the data request form on Skylark, the review by NSHD, and receiving your data through the UCL Data Safe Haven — with links straight to the two Skylark forms.</p>
+              <p>It also explains, in plain terms, what happens after you apply: how your request is logged and passed to the data sharing committee, the confidentiality forms you will be sent to complete, how a basket is linked to your project using your application form ID, and how the automated process introduced in 2022 and NSHD's internal project records system keep everything up to date without you having to chase.</p>
+              <a class="inner-link" href="/OWL/docs/data_sharing/">Go to Data Sharing →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="ds-projects">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-compass" aria-hidden="true"></i></span>
+              <span class="inner-title">Discover Projects</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>Every approved project is listed here with its title, a short summary and the variables it asked for. It is a quick way to see how other researchers have used the data, to check whether work like yours has been done before, and to find variables that are commonly used together for a particular kind of question.</p>
+              <p>Variables from any project can be added straight to your own basket, so a project that looks like yours can be a ready-made starting point for your variable list before you build and finalise your basket in Condor.</p>
+              <a class="inner-link" href="/OWL/docs/search_methods/projects">Go to Discover Projects →</a>
+            </div>
+          </div>
+
+          <div class="inner-item" id="ds-numbers">
+            <button class="inner-trigger" aria-expanded="false">
+              <span class="inner-icon"><i class="ti ti-chart-line" aria-hidden="true"></i></span>
+              <span class="inner-title">Data Sharing in Numbers</span>
+              <span class="inner-chevron">▾</span>
+            </button>
+            <div class="inner-body">
+              <p>A year-by-year picture of data sharing since 2021: how many applications are made and where they come from, how long approval takes, how many baskets are sent and how quickly requests are turned around, and what researchers ask for — the most requested variables, the topics and years of data collection they cover, and the variables that are requested together. All times are medians.</p>
+              <p>Choose one or more years to see the figures for just those years, and hover over a bar to see the numbers behind a percentage. Each figure is explained on the page, including why some are based on a smaller number of applications than others.</p>
+              <a class="inner-link" href="/OWL/docs/data_sharing/numbers">Go to Data Sharing in Numbers →</a>
             </div>
           </div>
 
