@@ -567,7 +567,7 @@
       togetherHtml = '<p class="dsn-sub">Pairs of variables requested together most often, across all years</p>' + barRows(pairs) +
         '<p class="dsn-sub" style="margin-top:18px;">What else do projects ask for with a variable?</p>' +
         '<select id="dsn-pick" class="dsn-select" aria-label="Choose a variable">' + options + "</select>" + partners +
-        '<p class="dsn-note">' + esc(b.note || "") + " Pairs requested by fewer than " + num(b.min_projects) + " projects are not shown.</p>";
+        '<p class="dsn-note">Each pair is counted once for every project that asked for both variables, however many baskets it sent. Very popular variables will often appear together simply because each is popular. Pairs requested by fewer than ' + num(b.min_projects) + " projects are not shown.</p>";
     }
 
     return "<h3>Most requested variables</h3><p class=\"dsn-sub\">Number of projects requesting each variable" + (isAll() || sel.length > 1 ? ", added up across years" : "") + "</p>" + popHtml +
