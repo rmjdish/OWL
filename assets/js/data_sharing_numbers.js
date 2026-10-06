@@ -187,6 +187,80 @@
 
   // ---------- sections ----------
 
+  // The year filter: at the very top of the page, because it controls everything below it
+  function renderFilter() {
+    const chips = ['<button class="dsn-chip' + (sel === "all" ? " on" : "") + '" data-year="all">All years</button>']
+      .concat(M.years.map((y) => '<button class="dsn-chip' + (sel === y ? " on" : "") + '" data-year="' + y + '">' + y + "</button>")).join("");
+    return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips + "</div>";
+  }
+
+  // How many are behind each figure: two ladders (applications, baskets), and why some figures rest on fewer
+  function renderNumbers() {
+    const apps = M.applications.by_year;
+    const nApps = sel === "all" ? sum(apps, (a) => a.applications) : (byYear(apps, sel) || {}).applications;
+    const notInJay = (sel === "all" ? sum(apps, (a) => a.not_in_jay) : (byYear(apps, sel) || {}).not_in_jay) || 0;
+    const inJay = (nApps || 0) - notInJay;
+    const prep = prepared();
+    const S = M.basket_stats && M.basket_stats.available ? M.basket_stats : null;
+    const B = M.basket_turnaround && M.basket_turnaround.available ? M.basket_turnaround : null;
+    const sRow = S ? (sel === "all" ? S.overall : byYear(S.by_year, sel) || {}) : null;
+    const bRow = B ? (sel === "all" ? B.overall : byYear(B.by_year, sel) || {}) : null;
+    const which = sel === "all" ? "all years" : String(sel);
+
+    const step = (n, label, sub) => '<div class="dsn-step"><div class="dsn-step-n">' + num(n) + '</div><div class="dsn-step-l">' + esc(label) + "</div>" +
+      (sub ? '<div class="dsn-step-s">' + esc(sub) + "</div>" : "") + "</div>";
+    const arrow = '<div class="dsn-step-arrow" aria-hidden="true">&rarr;</div>';
+    const ladder = (title, sub, steps) => '<div class="dsn-ladder"><div class="dsn-ladder-title">' + esc(title) + "<span>" + esc(sub) + '</span></div><div class="dsn-ladder-steps">' + steps + "</div></div>";
+
+    const appLadder = ladder("Applications", "counted by the year they applied",
+      step(nApps, "Approved applications") + arrow +
+      step(prep.with_data, "Asked for data", nApps ? pct(prep.percent) + " of approved applications. Each had at least one basket sent." : "There are no approved applications for this period."));
+
+    let basketLadder;
+    if (sRow) {
+      const sent = sRow.baskets || 0;
+      const withTurn = sRow.with_turnaround || 0;
+      basketLadder = ladder("Baskets", "counted by the year they were sent",
+        step(sent, "Baskets sent") + arrow +
+        (B ? step(withTurn, "With a turnaround time", pct(sent ? (withTurn / sent) * 100 : null) + " of baskets sent" +
+              (bRow && bRow.in_turnaround ? ". Measured from " + num(bRow.in_turnaround) + " requests, for " + num(bRow.projects) + " projects." : "."))
+           : step(null, "With a turnaround time", "Not available right now.")));
+    } else {
+      basketLadder = ladder("Baskets", "counted by the year they were sent", '<div class="dsn-step"><div class="dsn-step-l">Basket figures are not available right now.</div></div>');
+    }
+
+    const intro = '<p class="dsn-note">Not every figure on this page is based on every application. Some things are only known for part of the picture, so the number behind each figure changes. ' +
+      "These are the numbers at each step for <strong>" + esc(which) + "</strong>, so you can see how much each figure rests on.</p>";
+    const explain = '<p class="dsn-note"><strong>Applications</strong> are counted by the year they applied and <strong>baskets</strong> by the year they were sent, so the two ladders cover different sets. ' +
+      "An application <em>asked for data</em> if it had at least one basket sent." +
+      (B ? " A basket has a <em>turnaround time</em> only if it was requested through the current request process, which records when a request comes in and when it is completed. " +
+        "That process started in 2022, so baskets sent before then, or outside it, have no request time to measure from." +
+        (bRow && bRow.baskets_without_data ? " A further " + num(bRow.baskets_without_data) + " baskets were requested through the process but have not been sent, so they are in the turnaround figures but not in the number of baskets sent." : "")
+        : "") + "</p>";
+
+    const ap = rowFor(M.approval_times) || {};
+    const vp = rowFor(M.variables_per_project) || {};
+    const rp = rowFor(M.repeat_requests) || {};
+    const tm = B ? (sel === "all" ? B.request_timing.overall : byYear(B.request_timing.by_year, sel) || {}) : {};
+    const rows = [
+      ["Institutions, countries, UK and data types", num(inJay) + " applications",
+        "Approved applications that are not in Jay yet have no institution, country or data type recorded" + (notInJay ? " (" + num(notInJay) + " of them here)." : ".")],
+      ["Time to approve", num(ap.approved) + " applications", "Only applications with an approval recorded can be timed."],
+      ["Variables, bundles and topics", num(vp.projects) + " applications", "Variables are only recorded once data has been sent, so they cover the applications that asked for data."],
+      ["Repeat requests", num(rp.projects_with_data) + " applications", "A repeat needs data to have been sent at least once."],
+    ];
+    if (B) {
+      rows.push(["First basket request", num(tm.applications) + " applications", "Only applications whose baskets were requested through the current request process, and linked to a project counted in these figures."]);
+      rows.push(["Turnaround time", num(bRow && bRow.baskets) + " baskets", "Only baskets requested through the current request process, completed, and linked to a project counted in these figures." +
+        (bRow && bRow.baskets_without_data ? " This includes " + num(bRow.baskets_without_data) + " baskets that were requested but have not been sent, so it is more than the baskets sent that have a turnaround time above." : "")]);
+    }
+    const table = '<p class="dsn-sub">Why some figures use a smaller number</p>' +
+      '<table class="dsn-numbers-table"><thead><tr><th>Figure</th><th>Based on</th><th>Why it is smaller</th></tr></thead><tbody>' +
+      rows.map((r) => "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td><td>" + esc(r[2]) + "</td></tr>").join("") + "</tbody></table>" +
+      '<p class="dsn-note">Where a figure is based on fewer than all of them, the number behind it is shown beside the figure.</p>';
+    return intro + '<div class="dsn-ladders">' + appLadder + basketLadder + "</div>" + explain + table;
+  }
+
   function renderOverview() {
     const apps = M.applications.by_year;
     const nApps = sel === "all" ? sum(apps, (a) => a.applications) : (byYear(apps, sel) || {}).applications;
@@ -195,17 +269,13 @@
     const th = M.approval_times.thresholds[0];
     const prep = prepared();
 
-    const chips = ['<button class="dsn-chip' + (sel === "all" ? " on" : "") + '" data-year="all">All years</button>']
-      .concat(M.years.map((y) => '<button class="dsn-chip' + (sel === y ? " on" : "") + '" data-year="' + y + '">' + y + "</button>")).join("");
-
     const partial = M.end_year === new Date().getFullYear() ? " " + M.end_year + " is the year to date." : "";
     const notInJay = sel === "all" ? sum(apps, (a) => a.not_in_jay) : (byYear(apps, sel) || {}).not_in_jay;
     const notInJayNote = notInJay
       ? " " + num(notInJay) + (notInJay === 1 ? " approved application is" : " approved applications are") +
         " not in Jay yet (no basket built). " + (notInJay === 1 ? "It counts" : "They count") + " in the applications and approval figures, but have no institution, country or data."
       : "";
-    return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips + "</div>" +
-      '<div class="dsn-tiles">' +
+    return '<div class="dsn-tiles">' +
       tile("Applications", num(nApps)) +
       tile("Institutions", num(distinct(M.where.institutions))) +
       tile("Countries", num(distinct(M.where.countries))) +
@@ -514,6 +584,8 @@
   }
 
   function renderAll() {
+    safely("dsn-filter", renderFilter);
+    safely("dsn-numbers", renderNumbers);
     safely("dsn-overview", renderOverview);
     safely("dsn-applications", renderApplications);
     safely("dsn-who", renderWho);
