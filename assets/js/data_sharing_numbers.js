@@ -35,6 +35,8 @@
   const requestStatsCache = {}; // topic / collection-year counts, worked out once per chosen year
   let sel = []; // the years chosen: [] means every year; otherwise a sorted list of one or more years
   let visibleLines = new Set(); // years shown on the trajectory chart
+  const openFolds = new Set(); // which collapsible blocks are open (they start closed, and stay as the person left them when the page redraws)
+  const fold = (key, title, inner) => '<details class="dsn-fold" data-fold="' + key + '"' + (openFolds.has(key) ? " open" : "") + '><summary>' + title + "</summary>" + inner + "</details>";
   let pickedVariable = ""; // variable chosen in the "requested together" picker
 
   const nf = new Intl.NumberFormat("en-GB");
@@ -482,14 +484,14 @@
       '<p class="dsn-note">Time to approve runs from the application to the decision. All times are medians.</p>' +
       basketBlock() +
       "<h3>Trends by year</h3>" +
-      '<p class="dsn-sub">Median days to approve an application</p>' +
+      '<p class="dsn-sub dsn-chart-title">Median days to approve an application</p>' +
       trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).median_days, "Median days to approve by year", (v) => String(Math.round(v)), true) + processNote() +
       (S && S.available
-        ? '<p class="dsn-sub">Baskets per year (date sent in Jay, from ' + S.period.baskets_from + ")</p>" +
+        ? '<p class="dsn-sub dsn-chart-title">Baskets per year (date sent in Jay, from ' + S.period.baskets_from + ")</p>" +
           trendColumns((y) => (byYear(S.by_year, y) || {}).baskets, "Baskets per year", (v) => num(v))
         : "") +
       (B && B.available
-        ? '<p class="dsn-sub">Median days from basket request to completion (' + (manualDates(B)
+        ? '<p class="dsn-sub dsn-chart-title">Median days from basket request to completion (' + (manualDates(B)
             ? "every basket requested through Planner, from " + plannerYear(B) + ", and baskets whose request date was found in emails"
             : "every basket requested through Planner, from " + plannerYear(B)) + ")</p>" +
           trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v) => String(Math.round(v)), false, (ys) => {
@@ -499,7 +501,7 @@
               (later.length ? "<strong>" + later.join(", ") + ":</strong> no completed requests yet. " : "");
           })
         : "") +
-      '<p class="dsn-sub">Applications with data prepared (%)</p>' +
+      '<p class="dsn-sub dsn-chart-title">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
       "<h3>Repeat requests</h3><div class=\"dsn-tiles\">" + repeatTiles + "</div>" +
       '<p class="dsn-note">' + esc(M.repeat_requests.definition || "") + "</p>" +
@@ -523,12 +525,12 @@
     if (requests && dict.size) {
       const st = requestStats();
       topicsHtml = barRows(st.topics.slice(0, 12).map((x) => ({ label: esc(x.name), value: x.projects })));
-      yearsHtml = "<h3>Years of data collection</h3><p class=\"dsn-sub\">Projects asking for at least one variable from each year of collection</p>" +
-        barRows(st.collection.map((x) => ({ label: esc(x.name), value: x.projects })));
+      yearsHtml = fold("years", "Years of data collection", "<p class=\"dsn-sub\">Projects asking for at least one variable from each year of collection</p>" +
+        barRows(st.collection.map((x) => ({ label: esc(x.name), value: x.projects }))));
       if (st.notInDictionary) unmatchedNote = '<p class="dsn-note">' + num(st.notInDictionary) + (st.notInDictionary === 1 ? " requested variable is" : " requested variables are") + " not in the data dictionary yet, so are not counted in topics or years of collection.</p>";
     }
     return "<h3>Types of special data requested</h3><p class=\"dsn-sub\">Share of applications asking for each type (number of projects in brackets)</p>" + barRows(typeItems) +
-      "<h3>Topics</h3><p class=\"dsn-sub\">Projects asking for at least one variable in each topic</p>" + topicsHtml + yearsHtml + unmatchedNote +
+      fold("topics", "Topics", "<p class=\"dsn-sub\">Projects asking for at least one variable in each topic</p>" + topicsHtml) + yearsHtml + unmatchedNote +
       '<p class="dsn-note">Topics and years of collection are counted by the year the data was sent.</p>';
   }
 
@@ -572,7 +574,7 @@
 
     return "<h3>Most requested variables</h3><p class=\"dsn-sub\">Number of projects requesting each variable" + (isAll() || sel.length > 1 ? ", added up across years" : "") + "</p>" + popHtml +
       "<h3>How many variables projects ask for</h3>" + sizeHtml +
-      "<h3>Variables requested together</h3>" + togetherHtml;
+      fold("together", "Variables requested together", togetherHtml);
   }
 
   function renderAbout() {
@@ -641,6 +643,10 @@
         safely("dsn-applications", renderApplications);
       }
     });
+    root().addEventListener("toggle", (e) => {        // 'toggle' does not bubble, so listen in the capture phase
+      const d = e.target;
+      if (d && d.classList && d.classList.contains("dsn-fold")) { if (d.open) openFolds.add(d.dataset.fold); else openFolds.delete(d.dataset.fold); }
+    }, true);
     root().addEventListener("change", (e) => {
       if (e.target.id === "dsn-pick") {
         pickedVariable = e.target.value;
