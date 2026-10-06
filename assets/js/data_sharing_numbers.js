@@ -329,12 +329,9 @@
       const per = S.period;
       const row = sel === "all" ? S.overall : byYear(S.by_year, sel) || {};
       const tiles = tile("Baskets", num(row.baskets), sel === "all" ? per.baskets_from + " to " + per.baskets_to : "in " + sel) +
-        tile("In Jay, by date sent", num(row.jay)) +
-        tile("Only on SharePoint, by " + per.sharepoint_date + " date", num(row.sharepoint_only)) +
-        (sel === "all" && isNum(row.projects) ? tile("Projects with baskets", num(row.projects)) : "");
-      html += '<p class="dsn-note"><strong>Baskets per year.</strong> Every basket counts once, from ' + per.baskets_from +
-        ": by the date it was sent in Jay or, if it is only on an approved SharePoint application and not in Jay, by the SharePoint " + esc(per.sharepoint_date) +
-        " date." + (per.projects_in_metrics_only ? " Only baskets of projects counted in these figures are included." : "") + "</p>" +
+        (isNum(row.projects) ? tile("Projects with baskets", num(row.projects)) : "");
+      html += '<p class="dsn-note"><strong>Baskets per year.</strong> Every basket is sent through Jay, which holds the record of it. Each basket counts once, in the year its data was sent, from ' +
+        per.baskets_from + "." + (per.projects_in_metrics_only ? " Only baskets of projects counted in these figures are included." : "") + "</p>" +
         '<div class="dsn-tiles">' + tiles + "</div>" +
         (S.totals && S.totals.left_out_project_not_in_metrics
           ? '<p class="dsn-note">' + num(S.totals.left_out_project_not_in_metrics) + " baskets were left out because their project is not counted in these figures.</p>" : "");
@@ -404,7 +401,7 @@
       '<p class="dsn-sub">Median days to approve an application</p>' +
       trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).median_days, "Median days to approve by year", (v) => String(Math.round(v)), true) + processNote() +
       (S && S.available
-        ? '<p class="dsn-sub">Baskets per year (Jay and SharePoint, from ' + S.period.baskets_from + ")</p>" +
+        ? '<p class="dsn-sub">Baskets per year (date sent in Jay, from ' + S.period.baskets_from + ")</p>" +
           trendColumns((y) => (byYear(S.by_year, y) || {}).baskets, "Baskets per year", (v) => num(v))
         : "") +
       (B && B.available
@@ -492,7 +489,7 @@
       "<li><strong>Year of application</strong> is when the application was submitted. Most figures use it. Topics, collection years and variables use the year the data was sent.</li>" +
       "<li><strong>Medians:</strong> every time is a median (the middle value), not an average, because a few very slow cases would pull an average up.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
-      "<li><strong>Baskets per year</strong> counts every basket once, from 2021: by the date it was sent in Jay or, if it is only on an approved SharePoint application and not in Jay, by the SharePoint approval date. Only baskets of projects counted in these figures are included.</li>" +
+      "<li><strong>Baskets per year</strong> counts every basket once, in the year its data was sent, from 2021. Every basket is sent through Jay, which holds the record of it, so a basket that is only named on an application and was never sent is not counted. Only baskets of projects counted in these figures are included.</li>" +
       "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed, for every basket requested through Planner. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022. A basket is only included if it is linked to a project that is counted in these figures: the project comes from the Planner request and, where the basket is in Jay, from Jay, and the two must agree. Requests still open are not included.</li>" +
       "<li><strong>When the first basket request comes in</strong> uses the Planner requests that can be linked to an application (by its Form ID or share name), and measures from the application.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
