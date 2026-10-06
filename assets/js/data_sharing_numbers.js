@@ -198,8 +198,6 @@
   function renderNumbers() {
     const apps = M.applications.by_year;
     const nApps = sel === "all" ? sum(apps, (a) => a.applications) : (byYear(apps, sel) || {}).applications;
-    const notInJay = (sel === "all" ? sum(apps, (a) => a.not_in_jay) : (byYear(apps, sel) || {}).not_in_jay) || 0;
-    const inJay = (nApps || 0) - notInJay;
     const prep = prepared();
     const S = M.basket_stats && M.basket_stats.available ? M.basket_stats : null;
     const B = M.basket_turnaround && M.basket_turnaround.available ? M.basket_turnaround : null;
@@ -225,11 +223,15 @@
     if (sRow) {
       const sent = sRow.baskets || 0;
       const withTurn = sRow.with_turnaround || 0;
+      const noTurn = Math.max(sent - withTurn, 0);
       basketLadder = ladder("Baskets", "counted by the year they were sent",
         step(sent, "Baskets sent") + arrow +
         (B ? step(withTurn, "With a turnaround time", pct(sent ? (withTurn / sent) * 100 : null) + " of baskets sent" +
               (bRow && bRow.in_turnaround ? ". Measured from " + num(bRow.in_turnaround) + " requests, for " + num(bRow.projects) + " projects." : "."))
-           : step(null, "With a turnaround time", "Not available right now.")));
+           : step(null, "With a turnaround time", "Not available right now.")),
+        B && noTurn ? "<strong>" + num(noTurn) + " " + (noTurn === 1 ? "basket sent has" : "baskets sent have") + " no turnaround time.</strong> " +
+          "A basket has a turnaround time only if it was requested through the current request process, which records when a request comes in and when it is completed. " +
+          "That process started in 2022, so baskets sent before then, or outside it, have no request time to measure from." : "");
     } else {
       basketLadder = ladder("Baskets", "counted by the year they were sent", '<div class="dsn-step"><div class="dsn-step-l">Basket figures are not available right now.</div></div>');
     }
@@ -237,31 +239,9 @@
     const intro = '<p class="dsn-note">Not every figure on this page is based on every application. Some things are only known for part of the picture, so the number behind each figure changes. ' +
       "These are the numbers at each step for <strong>" + esc(which) + "</strong>, so you can see how much each figure rests on.</p>";
     const explain = '<p class="dsn-note"><strong>Applications</strong> are counted by the year they applied and <strong>baskets</strong> by the year they were sent, so the two ladders cover different sets. ' +
-      "An application <em>asked for data</em> if it had at least one basket sent." +
-      (B ? " A basket has a <em>turnaround time</em> only if it was requested through the current request process, which records when a request comes in and when it is completed. " +
-        "That process started in 2022, so baskets sent before then, or outside it, have no request time to measure from."
-        : "") + "</p>";
+      "An application <em>asked for data</em> if it had at least one basket sent.</p>";
 
-    const ap = rowFor(M.approval_times) || {};
-    const vp = rowFor(M.variables_per_project) || {};
-    const rp = rowFor(M.repeat_requests) || {};
-    const tm = B ? (sel === "all" ? B.request_timing.overall : byYear(B.request_timing.by_year, sel) || {}) : {};
-    const rows = [
-      ["Institutions, countries, UK and data types", num(inJay) + " applications",
-        "Approved applications that are not in Jay yet have no institution, country or data type recorded" + (notInJay ? " (" + num(notInJay) + " of them here)." : ".")],
-      ["Time to approve", num(ap.approved) + " applications", "Only applications with an approval recorded can be timed."],
-      ["Variables, bundles and topics", num(vp.projects) + " applications", "Variables are only recorded once data has been sent, so they cover the applications that asked for data."],
-      ["Repeat requests", num(rp.projects_with_data) + " applications", "A repeat needs data to have been sent at least once."],
-    ];
-    if (B) {
-      rows.push(["First basket request", num(tm.applications) + " applications", "Only applications whose baskets were requested through the current request process, and linked to a project counted in these figures."]);
-      rows.push(["Turnaround time", num(bRow && bRow.baskets) + " baskets", "Only baskets sent through Jay that were also requested through the current request process, completed, and linked to a project counted in these figures."]);
-    }
-    const table = '<p class="dsn-sub">Why some figures use a smaller number</p>' +
-      '<table class="dsn-numbers-table"><thead><tr><th>Figure</th><th>Based on</th><th>Why it is smaller</th></tr></thead><tbody>' +
-      rows.map((r) => "<tr><td>" + esc(r[0]) + "</td><td>" + esc(r[1]) + "</td><td>" + esc(r[2]) + "</td></tr>").join("") + "</tbody></table>" +
-      '<p class="dsn-note">Where a figure is based on fewer than all of them, the number behind it is shown beside the figure.</p>';
-    return intro + '<div class="dsn-ladders">' + appLadder + basketLadder + "</div>" + explain + table;
+    return intro + '<div class="dsn-ladders">' + appLadder + basketLadder + "</div>" + explain;
   }
 
   function renderOverview() {
@@ -423,10 +403,10 @@
       return html + '<p class="dsn-note">Planner has no basket requests for ' + sel + ".</p>";
     }
     const row = sel === "all" ? B.overall : byYear(B.by_year, sel) || {};
-    const tiles = tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects") +
-      tile("Median turnaround", days(row.median_days), "from the request coming in to completion") +
-      tile("Turned around on the same day", pct(row.same_day_percent)) +
-      B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))).join("");
+    const tileList = [tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects"),
+      tile("Median turnaround", days(row.median_days), "from the request coming in to completion"),
+      tile("Turned around on the same day", pct(row.same_day_percent))]
+      .concat(B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))));
     const lo = row.left_out || {};
     const projectOut = (lo.project_not_in_the_metrics || 0) + (lo.project_conflict_planner_vs_jay || 0) + (lo.not_linked_to_a_project || 0);
     const leftOut = projectOut
@@ -449,7 +429,7 @@
     const notes = '<p class="dsn-note">Each request counts once, however many baskets it names. ' +
       (row.open ? num(row.open) + " requests are still open and are not in the turnaround. " : "") + leftOut.trim() +
       " All times are medians, because a few very slow requests would skew an average.</p>";
-    return html + '<div class="dsn-tiles">' + tiles + "</div>" + notes + timing;
+    return html + '<div class="dsn-tiles dsn-tiles-one-line" style="--dsn-cols:' + tileList.length + '">' + tileList.join("") + "</div>" + notes + timing;
   }
 
   function renderService() {
@@ -505,7 +485,7 @@
         barRows(st.collection.map((x) => ({ label: esc(x.name), value: x.projects })));
       if (st.notInDictionary) unmatchedNote = '<p class="dsn-note">' + num(st.notInDictionary) + (st.notInDictionary === 1 ? " requested variable is" : " requested variables are") + " not in the data dictionary yet, so are not counted in topics or years of collection.</p>";
     }
-    return "<h3>Types of data requested</h3><p class=\"dsn-sub\">Share of applications asking for each type (number of projects in brackets)</p>" + barRows(typeItems) +
+    return "<h3>Types of special data requested</h3><p class=\"dsn-sub\">Share of applications asking for each type (number of projects in brackets)</p>" + barRows(typeItems) +
       "<h3>Topics</h3><p class=\"dsn-sub\">Projects asking for at least one variable in each topic</p>" + topicsHtml + yearsHtml + unmatchedNote +
       '<p class="dsn-note">Topics and years of collection are counted by the year the data was sent.</p>';
   }
