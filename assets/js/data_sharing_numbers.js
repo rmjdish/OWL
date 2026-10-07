@@ -627,26 +627,36 @@
     "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
   ];
+  // Colours: each card has a tint (--bg), a bar/column colour (--acc) and a heading colour (--hd); each key-figure tile has its own colour too
+  const PDF_THEME = {
+    purple: ["#f4edfb", "#8e44c9", "#4a0a7a"], teal: ["#e9f6f4", "#2a9d8f", "#1a6b61"], amber: ["#fdf1e1", "#e08a2e", "#8a4b08"], blue: ["#eaf0fa", "#3b6fb6", "#1f3f70"],
+    green: ["#edf6ea", "#4c9a45", "#2d5e28"], rose: ["#fbeaf1", "#c2457a", "#7a1f4a"], sky: ["#e8f4f9", "#2a8fb5", "#17566e"], coral: ["#fef0ec", "#e0674a", "#8a2e18"],
+  };
+  const PDF_TILE = {
+    purple: ["#ebdff8", "#8e44c9", "#4a0a7a"], blue: ["#dbe7f7", "#3b6fb6", "#1f3f70"], green: ["#dcefd9", "#4c9a45", "#2d5e28"], rose: ["#f8dfea", "#c2457a", "#7a1f4a"],
+    coral: ["#fde3dc", "#e0674a", "#8a2e18"], teal: ["#d6efeb", "#2a9d8f", "#1a6b61"], sky: ["#d9eef7", "#2a8fb5", "#17566e"], amber: ["#fbe6cb", "#e08a2e", "#8a4b08"],
+  };
   const PDF_CSS = "*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#333}" +
-    ".pg{background:#f1ebf8;position:relative;overflow:hidden;display:flex;flex-direction:column}" +
+    ".pg{background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column}" +
     ".hd{background:linear-gradient(90deg,#4a0a7a,#6a0dad);color:#fff;padding:14px 26px;display:flex;justify-content:space-between;align-items:center;flex:none}" +
     ".hd h1{margin:0;font-size:22px}.hd small{display:block;font-size:10.5px;opacity:.9;margin-top:3px}.hd .r{text-align:right;font-size:10px;opacity:.9}.hd .r b{font-size:16px}" +
     ".body{flex:1;padding:14px 26px 10px;display:grid;gap:10px;min-height:0}" +
     ".w{display:flex;min-width:0;min-height:0}" +
-    ".box{flex:1;min-width:0;background:#fff;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0;box-shadow:0 1px 2px rgba(0,0,0,.12)}" +
-    "h2{font-size:11px;margin:0 0 7px;color:#4a0a7a;text-transform:uppercase;letter-spacing:.04em;flex:none}" +
-    ".tiles{display:grid;gap:8px}.t{background:#fff;border-radius:8px;border-left:5px solid #8e44c9;padding:8px 10px;box-shadow:0 1px 2px rgba(0,0,0,.12);display:flex;flex-direction:column;justify-content:center}" +
-    ".t b{font-size:23px;color:#4a0a7a;line-height:1.1}.t span{font-size:9px;color:#555;margin-top:2px}.t.g{border-color:#2a9d8f}.t.g b{color:#1a6b61}.t.o{border-color:#e08a2e}.t.o b{color:#9a5a10}" +
+    ".box{flex:1;min-width:0;background:var(--bg,#f4edfb);border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0}" +
+    "h2{font-size:11px;margin:0 0 7px;color:var(--hd,#4a0a7a);text-transform:uppercase;letter-spacing:.04em;flex:none}" +
+    ".tiles{display:grid;gap:8px}.t{background:var(--tbg,#ebdff8);border-left:5px solid var(--ted,#8e44c9);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;justify-content:center}" +
+    ".t b{font-size:23px;color:var(--tx,#4a0a7a);line-height:1.1}.t span{font-size:9px;color:#555;margin-top:2px}" +
     ".cols{flex:1;display:flex;align-items:flex-end;gap:5px;border-bottom:1px solid #bbb;min-height:60px}" +
     ".c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-align:center;font-size:8px}.c em{font-style:normal;color:#555;margin-bottom:1px}" +
-    ".c i{display:block;background:#8e44c9;border-radius:2px 2px 0 0}.c.g i{background:#2a9d8f}.c.dim i{opacity:.35}" +
+    ".c i{display:block;background:var(--acc,#8e44c9);border-radius:2px 2px 0 0}.c.dim i{opacity:.35}" +
     ".yr{display:flex;gap:5px;font-size:8px;text-align:center;color:#555;margin-top:2px;flex:none}.yr div{flex:1}" +
-    ".cap{font-size:8px;color:#777;margin-top:4px;line-height:1.3;flex:none}" +
+    ".cap{font-size:8px;color:#777;margin-top:4px;line-height:1.3;flex:none}.cap b{color:var(--hd,#4a0a7a)}" +
     ".bars{flex:1;display:flex;flex-direction:column;justify-content:space-around}" +
-    ".bar{display:flex;align-items:center;font-size:9px}.bar .l{width:34%;flex:none;line-height:1.25;padding-right:4px}.bar .b{flex:1;background:#eee;height:9px;border-radius:2px;margin:0 6px}" +
-    ".bar .b i{display:block;height:9px;background:#8e44c9;border-radius:2px}.bar .v{width:74px;flex:none;text-align:right;color:#555}" +
+    ".bar{display:flex;align-items:center;font-size:9px}.bar .l{width:34%;flex:none;line-height:1.25;padding-right:4px}.bar .l small{display:block;font-size:7.5px;color:#666;line-height:1.15;margin-top:1px}" +
+    ".bar .b{flex:1;background:rgba(255,255,255,.75);height:9px;border-radius:2px;margin:0 6px}.bar .b i{display:block;height:9px;background:var(--acc,#8e44c9);border-radius:2px}.bar .v{width:74px;flex:none;text-align:right;color:#555}" +
+    ".vars .bar .l{width:46%}.vars .bar .b{flex:none;width:20%}.vars .bar .v{flex:1;width:auto;min-width:0}" +
     ".split{display:flex;height:18px;border-radius:3px;overflow:hidden;margin:2px 0 8px;font-size:8.5px;color:#fff;flex:none}.split div{display:flex;align-items:center;justify-content:center;white-space:nowrap}" +
-    ".big{flex:1;display:flex;align-items:center;justify-content:space-around;text-align:center}.big b{display:block;font-size:26px;color:#4a0a7a}.big span{font-size:8.5px;color:#555}" +
+    ".big{flex:1;display:flex;align-items:center;justify-content:space-around;text-align:center}.big b{display:block;font-size:26px;color:var(--hd,#4a0a7a)}.big span{font-size:8.5px;color:#555}" +
     ".none{font-size:9px;color:#777}.ft{flex:none;background:#4a0a7a;color:#e8d8f6;font-size:8px;padding:7px 26px;line-height:1.4}";
 
   function pdfData() {
@@ -672,7 +682,7 @@
     let vars = [], varBase = 0;
     if (popular && popular.length) {
       varBase = requests ? sum(requests, (p) => (isAll() ? Object.keys(p.by_year) : sel.map(String)).filter((y) => (p.by_year[y] || []).length).length) : 0;
-      vars = popular.map((p) => ({ name: (dict.get(String(p.name).toLowerCase()) || {}).name || p.name, value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
+      vars = popular.map((p) => ({ name: (dict.get(String(p.name).toLowerCase()) || {}).name || p.name, label: (dict.get(String(p.name).toLowerCase()) || {}).label || "", value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
         .filter((p) => p.value > 0).sort((a, b) => b.value - a.value).slice(0, 8);
     }
     const pairs = M.bundles && M.bundles.top_pairs ? M.bundles.top_pairs.slice(0, 3).map((p) => ({ name: p.a + " + " + p.b, value: p.projects, text: withPct(p.projects, M.bundles.projects) })) : [];
@@ -694,19 +704,29 @@
 
   const rBars = (items, base, fmt) => items.length
     ? '<div class="bars">' + (function () { const max = Math.max(1, ...items.map((i) => i.value)); return items.map((i) =>
-        '<div class="bar"><span class="l">' + esc(String(i.name).length > 30 ? String(i.name).slice(0, 29) + "…" : i.name) + '</span><span class="b"><i style="width:' + Math.round((i.value / max) * 100) + '%"></i></span><span class="v">' +
+        '<div class="bar"><span class="l">' + (i.label !== undefined
+          ? "<b>" + esc(i.name) + "</b>" + (i.label ? "<small>" + esc(String(i.label).length > 48 ? String(i.label).slice(0, 47) + "…" : i.label) + "</small>" : "")
+          : esc(String(i.name).length > 30 ? String(i.name).slice(0, 29) + "…" : i.name)) + '</span><span class="b"><i style="width:' + Math.round((i.value / max) * 100) + '%"></i></span><span class="v">' +
         (i.text !== undefined ? i.text : (fmt ? fmt(i) : withPct(i.value, base))) + "</span></div>").join(""); })() + "</div>"
     : '<div class="bars"><div class="none">Nothing to show for this selection.</div></div>';
-  const rCols = (cols, cls, sub) => {
+  const rCols = (cols, sub) => {
     if (!cols.length) return '<div class="cols"><div class="none">Nothing to show for this selection.</div></div>';
     const max = Math.max(1, ...cols.map((c) => c.value));
-    return '<div class="cols">' + cols.map((c) => '<div class="c ' + (cls || "") + (c.dim ? " dim" : "") + '"><em>' + c.text + '</em><i style="height:' + Math.max(2, Math.round((c.value / max) * 100)) + '%"></i></div>').join("") + "</div>" +
+    return '<div class="cols">' + cols.map((c) => '<div class="c' + (c.dim ? " dim" : "") + '"><em>' + c.text + '</em><i style="height:' + Math.max(2, Math.round((c.value / max) * 100)) + '%"></i></div>').join("") + "</div>" +
       '<div class="yr">' + cols.map((c) => "<div>" + c.label + "</div>").join("") + "</div>" +
-      (sub ? '<div class="yr" style="color:#2a9d8f">' + cols.map((c) => "<div>n=" + num(c.sub) + "</div>").join("") + "</div>" : "");
+      (sub ? '<div class="yr" style="color:#555">' + cols.map((c) => "<div>n=" + num(c.sub) + "</div>").join("") + "</div>" : "");
   };
-  const rBox = (title, inner, area) => '<div class="w"' + (area ? ' style="' + area + '"' : "") + '><section class="box"><h2>' + title + "</h2>" + inner + "</section></div>";
-  const rTile = (v, l, cls) => '<div class="t ' + (cls || "") + '"><b>' + v + "</b><span>" + l + "</span></div>";
-  const rSplit = (d) => d.ukTotal ? '<div class="split">' + d.uk.map((x, i) => '<div style="width:' + (x.value / d.ukTotal) * 100 + '%;background:' + (i ? "#2a9d8f" : "#6a0dad") + '">' + esc(x.name) + " " + pct((x.value / d.ukTotal) * 100) + "</div>").join("") + "</div>" : "";
+  // a card (theme = a key of PDF_THEME; cls adds a class, area adds grid placement)
+  const rBox = (title, inner, theme, area, cls) => {
+    const t = PDF_THEME[theme] || PDF_THEME.purple;
+    return '<div class="w"' + (area ? ' style="' + area + '"' : "") + '><section class="box' + (cls ? " " + cls : "") + '" style="--bg:' + t[0] + ";--acc:" + t[1] + ";--hd:" + t[2] + '"><h2>' + title + "</h2>" + inner + "</section></div>";
+  };
+  // a key figure (colour = a key of PDF_TILE)
+  const rTile = (v, l, colour) => {
+    const t = PDF_TILE[colour] || PDF_TILE.purple;
+    return '<div class="t" style="--tbg:' + t[0] + ";--ted:" + t[1] + ";--tx:" + t[2] + '"><b>' + v + "</b><span>" + l + "</span></div>";
+  };
+  const rSplit = (d) => d.ukTotal ? '<div class="split">' + d.uk.map((x, i) => '<div style="width:' + (x.value / d.ukTotal) * 100 + '%;background:' + (i ? "#2a8fb5" : "#3b6fb6") + '">' + esc(x.name) + " " + pct((x.value / d.ukTotal) * 100) + "</div>").join("") + "</div>" : "";
   const turnCap = '<div class="cap">Median days from basket request to completion, with the number of baskets behind each bar (n). Smaller than the baskets chart, because only baskets with a matched request have a turnaround time.</div>';
 
   function pdfHtml(orientation) {
@@ -717,37 +737,41 @@
     const hd = "<div><h1>NSHD Data Sharing: Metrics and Trends</h1><small>Applications for NSHD data, basket requests and turnaround · Applications " + M.start_year + " to " + M.end_year +
       " · Years shown: " + esc(selLabel()) + '</small></div><div class="r"><b>OWL</b><br>Generated ' + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + (when ? " · Data updated " + esc(when) : "") + "</div>";
     const ft = "<b>How to read this report.</b> All times are medians, not averages. Basket dates come from Jay (date sent); turnaround runs from the request coming in to its completion, for baskets with a matched request. " +
-      "Percentages use the applications (or projects) shown. Figures are for " + esc(selLabel()) + ". Interactive version with year filters: rmjdish.github.io/OWL/docs/data_sharing/metrics";
+      "Percentages use the projects shown. Figures are for " + esc(selLabel()) + ". Interactive version with year filters: rmjdish.github.io/OWL/docs/data_sharing/metrics";
     const medApprove = days(d.ap.median_days), medTurn = days(d.turnaround);
+    const big = (a, aL, b2, bL, c, cL, e, eL) => '<div class="big"><div><b>' + a + "</b><span>" + aL + "</span></div><div><b>" + b2 + "</b><span>" + bL + "</span></div>" +
+      (c !== undefined ? "<div><b>" + c + "</b><span>" + cL + "</span></div>" : "") + (e !== undefined ? "<div><b>" + e + "</b><span>" + eL + "</span></div>" : "") + "</div>";
+    const medDays = isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–";
+    const medVars = isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–";
     let body;
     if (land) {
-      const rail = [rTile(num(d.nApps), "Approved projects"), rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days"), rTile(medApprove, "Median time to approve"),
-        rTile(num(d.baskets), "Baskets requested", "g"), rTile(medTurn, "Median basket turnaround", "g"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "o")].join("");
+      const rail = [rTile(num(d.nApps), "Approved projects", "purple"), rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days", "rose"), rTile(medApprove, "Median time to approve", "coral"),
+        rTile(num(d.baskets), "Baskets requested", "teal"), rTile(medTurn, "Median basket turnaround", "sky"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber")].join("");
       body = '<div class="body" style="grid-template-columns:170px 1fr 1fr 1fr;grid-template-rows:1fr 1fr 0.8fr">' +
         '<div class="tiles" style="grid-row:1/4;grid-template-rows:repeat(6,1fr)">' + rail + "</div>" +
-        rBox("Applications each year", rCols(d.appCols) + '<div class="cap">Applications received per year (by year of application)</div>', "grid-column:2/4") +
-        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, "g", true) + turnCap) +
-        rBox("How quickly applications are approved", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>projects with<br>data prepared</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
-        rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal) + '<div class="cap" style="font-size:9px;color:#4a0a7a"><b>' + num(d.institutionCount) + "</b> institutions · <b>" + num(d.countryCount) + "</b> countries</div>") +
-        rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase)) +
-        rBox("Topics requested", rBars(d.topics.slice(0, 4), d.topicBase)) +
-        rBox("Special data requested", rBars(d.types.slice(0, 4))) +
-        rBox("Size of requests", '<div class="big"><div><b>' + (isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–") + "</b><span>median variables<br>per project</span></div><div><b>" + num(d.vp.max) + "</b><span>largest request<br>(variables)</span></div></div>") +
+        rBox("Approved projects each year", rCols(d.appCols) + '<div class="cap">Projects approved per year (by year of application)</div>', "purple", "grid-column:2/4") +
+        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, true) + turnCap, "teal") +
+        rBox("How quickly projects are approved", big(medDays, "median days<br>to approve", pct(d.prep.percent), "projects with<br>data prepared") + rBars(d.ths.slice(0, 2), 0), "coral") +
+        rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal) + '<div class="cap" style="font-size:9px"><b>' + num(d.institutionCount) + "</b> institutions · <b>" + num(d.countryCount) + "</b> countries</div>", "blue") +
+        rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase), "amber", "", "vars") +
+        rBox("Topics requested", rBars(d.topics.slice(0, 4), d.topicBase), "green") +
+        rBox("Special data requested", rBars(d.types.slice(0, 4)), "rose") +
+        rBox("Size of requests", big(medVars, "median variables<br>per project", num(d.vp.max), "largest request<br>(variables)"), "sky") +
         "</div>";
     } else {
-      const tiles = [rTile(num(d.nApps), "Approved projects"), rTile(num(d.institutionCount), "Institutions"), rTile(num(d.countryCount), "Countries"), rTile(medApprove, "Median time to approve"),
-        rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days"), rTile(num(d.baskets), "Baskets requested", "g"), rTile(medTurn, "Median basket turnaround", "g"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "o")].join("");
+      const tiles = [rTile(num(d.nApps), "Approved projects", "purple"), rTile(num(d.institutionCount), "Institutions", "blue"), rTile(num(d.countryCount), "Countries", "green"), rTile(medApprove, "Median time to approve", "rose"),
+        rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days", "coral"), rTile(num(d.baskets), "Baskets requested", "teal"), rTile(medTurn, "Median basket turnaround", "sky"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber")].join("");
       body = '<div class="body" style="grid-template-columns:1fr 1fr;grid-template-rows:auto 1.1fr 1fr 1.2fr 1fr 0.8fr">' +
         '<div class="tiles" style="grid-column:1/3;grid-template-columns:repeat(4,1fr)">' + tiles + "</div>" +
-        rBox("Applications each year", rCols(d.appCols)) +
-        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, "g", true) + turnCap) +
-        rBox("Where applicants are based", rSplit(d) + rBars(d.countries, d.countryTotal)) +
-        rBox("Top institutions", rBars(d.institutions.slice(0, 5), d.countryTotal)) +
-        rBox("Most requested variables", rBars(d.vars, d.varBase)) +
-        rBox("Topics requested", rBars(d.topics, d.topicBase)) +
-        rBox("Special data requested", rBars(d.types.slice(0, 4))) +
-        rBox("Approval and requests", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>projects with<br>data prepared</span></div><div><b>" + (isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–") + "</b><span>median variables<br>per project</span></div><div><b>" + num(d.condor) + "</b><span>new Condor<br>accounts</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
-        rBox("Pairs of variables requested together most often", rBars(d.pairs), "grid-column:1/3") + "</div>";
+        rBox("Approved projects each year", rCols(d.appCols), "purple") +
+        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, true) + turnCap, "teal") +
+        rBox("Where applicants are based", rSplit(d) + rBars(d.countries, d.countryTotal), "blue") +
+        rBox("Top institutions", rBars(d.institutions.slice(0, 5), d.countryTotal), "sky") +
+        rBox("Most requested variables", rBars(d.vars.slice(0, 6), d.varBase), "amber", "", "vars") +
+        rBox("Topics requested", rBars(d.topics.slice(0, 6), d.topicBase), "green") +
+        rBox("Special data requested", rBars(d.types.slice(0, 4)), "rose") +
+        rBox("Approval and requests", big(medDays, "median days<br>to approve", pct(d.prep.percent), "projects with<br>data prepared", medVars, "median variables<br>per project", num(d.condor), "new Condor<br>accounts") + rBars(d.ths.slice(0, 2), 0), "coral") +
+        rBox("Pairs of variables requested together most often", rBars(d.pairs), "amber", "grid-column:1/3") + "</div>";
     }
     return { W, H, html: "<!doctype html><meta charset=utf-8><style>" + PDF_CSS + ".pg{width:" + W + "px;height:" + H + "px}</style><div class=pg><div class=hd>" + hd + "</div>" + body + "<div class=ft>" + ft + "</div></div>" };
   }
