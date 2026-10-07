@@ -46,7 +46,7 @@
     "writing documentation for owl":		"ti-file-pencil",
 	"create documentation":		"ti-forms",
 	"using doc builder":		"ti-forms",
-	"data sharing":		"ti-share",
+	"apply for data":		"ti-share",
 	"metrics":		"ti-chart-line",
 	"faqs":						"ti-help-circle",
 
