@@ -647,12 +647,12 @@
     ".box{flex:1;min-width:0;background:var(--bg,#f4edfb);border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0}" +
     "h2{font-size:11px;margin:0 0 7px;color:var(--hd,#4a0a7a);text-transform:uppercase;letter-spacing:.04em;flex:none}" +
     ".tiles{display:grid;gap:8px}.t{background:var(--tbg,#ebdff8);border-left:5px solid var(--ted,#8e44c9);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;justify-content:center}" +
-    ".t b{font-size:23px;color:var(--tx,#4a0a7a);line-height:1.1}.t span{font-size:9px;color:#555;margin-top:2px}.t span.n{font-size:8px;color:#666;margin-top:1px}" +
+    ".t b{font-size:23px;color:var(--tx,#4a0a7a);line-height:1.1}.t span{font-size:9px;color:#555;margin-top:2px}.t span.n{font-size:8.5px;color:#222;font-weight:bold;margin-top:3px;line-height:1.25}" +
     ".cols{flex:1;display:flex;align-items:flex-end;gap:5px;border-bottom:1px solid #bbb;min-height:60px}" +
     ".c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-align:center;font-size:8px}.c em{font-style:normal;color:#555;margin-bottom:1px}" +
     ".c i{display:block;background:var(--acc,#8e44c9);border-radius:2px 2px 0 0}.c.dim i{opacity:.35}" +
     ".yr{display:flex;gap:5px;font-size:8px;text-align:center;color:#555;margin-top:2px;flex:none}.yr div{flex:1}" +
-    ".cap{font-size:8px;color:#777;margin-top:4px;line-height:1.3;flex:none}.cap b{color:var(--hd,#4a0a7a)}" +
+    ".cap{font-size:8px;color:#777;margin-top:4px;line-height:1.3;flex:none}.cap.bs{color:#222;border-top:1px solid rgba(0,0,0,.12);padding-top:4px}.cap b{color:var(--hd,#4a0a7a)}" +
     ".bars{flex:1;display:flex;flex-direction:column;justify-content:space-around}" +
     ".bar{display:flex;align-items:center;font-size:9px}.bar .l{width:34%;flex:none;line-height:1.25;padding-right:4px}.bar .l small{display:block;font-size:7.5px;color:#666;line-height:1.15;margin-top:1px}" +
     ".bar .b{flex:1;background:rgba(255,255,255,.75);height:9px;border-radius:2px;margin:0 6px}.bar .b i{display:block;height:9px;background:var(--acc,#8e44c9);border-radius:2px}.bar .v{width:74px;flex:none;text-align:right;color:#555}" +
@@ -695,7 +695,7 @@
     const bands = M.variables_per_project.size_band_names.map((n) => ({ name: n + " variables", value: (vp.size_bands || {})[n] || 0, text: withPct((vp.size_bands || {})[n] || 0, bandTotal) }));
     return {
       bands, bandTotal, th0, within: th0 ? ap["percent_within_" + th0] : null, institutionCount: distinct(M.where.institutions), countryCount: distinct(M.where.countries),
-      ap, rp, nApps, prep, vp, uk, ukTotal, types, topics, topicBase, vars, varBase, pairs, ths,
+      ap, rp, nApps, jayApps, prep, vp, uk, ukTotal, types, topics, topicBase, vars, varBase, pairs, ths,
       baskets: sRow.baskets, turnaround: tRow.median_days, turnaroundN: tRow.baskets,
       condor: sum(M.condor_accounts.by_year.filter((r) => picked().includes(r.year)), (r) => r.new_accounts),
       countries: top(M.where.countries, 5), institutions: top(M.where.institutions, 7), countryTotal: ukTotal,
@@ -748,18 +748,20 @@
     const medVars = isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–";
     let body;
     {
-      const rail = [rTile(num(d.nApps), "Approved projects", "purple"), rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days", "rose"), rTile(medApprove, "Median time to approve", "coral"),
-        rTile(num(d.baskets), "Baskets requested", "teal"), rTile(medTurn, "Median basket turnaround", "sky", isNum(d.turnaroundN) ? "Based on " + num(d.turnaroundN) + (d.turnaroundN === 1 ? " basket" : " baskets") + (isNum(d.baskets) ? " of " + num(d.baskets) : "") : ""), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber")].join("");
+      const nValid = isNum(d.ap.approved) ? num(d.ap.approved) : "";
+      const bs = (n, what) => (n && n !== "0" ? '<div class="cap bs">' + what.replace("{n}", n) + "</div>" : "");
+      const rail = [rTile(num(d.nApps), "Approved projects", "purple", "All approved projects in the years chosen"), rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days", "rose", nValid ? "of " + nValid + " approved projects with a valid approval time" : ""), rTile(medApprove, "Median time to approve", "coral", nValid ? "across the same " + nValid + " projects" : ""),
+        rTile(num(d.baskets), "Baskets requested", "teal", "Baskets sent in the years chosen"), rTile(medTurn, "Median basket turnaround", "sky", isNum(d.turnaroundN) ? "Based on " + num(d.turnaroundN) + (d.turnaroundN === 1 ? " basket" : " baskets") + (isNum(d.baskets) ? " of " + num(d.baskets) : "") : ""), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber", isNum(d.rp.projects_with_data) ? "of " + num(d.rp.projects_with_data) + " projects that were sent data" : "")].join("");
       body = '<div class="body" style="grid-template-columns:170px 1fr 1fr 1fr;grid-template-rows:1fr 1fr 0.8fr">' +
         '<div class="tiles" style="grid-row:1/4;grid-template-rows:repeat(6,1fr)">' + rail + "</div>" +
         rBox("Approved projects each year", rCols(d.appCols) + '<div class="cap">Projects approved per year (by year of application)</div>', "purple", "grid-column:2/4") +
         rBox("Median basket turnaround by year (days)", rCols(d.turnCols, true) + turnCap, "teal") +
-        rBox("How quickly projects are approved", big(medDays, "median days<br>to approve", pct(d.prep.percent), "projects with<br>data prepared") + rBars(d.ths.slice(0, 2), 0), "coral") +
-        rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal) + '<div class="cap" style="font-size:9px"><b>' + num(d.institutionCount) + "</b> institutions · <b>" + num(d.countryCount) + "</b> countries</div>", "blue") +
-        rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase), "amber", "", "vars") +
-        rBox("Topics requested", rBars(d.topics.slice(0, 4), d.topicBase), "green") +
-        rBox("Special data requested", rBars(d.types.slice(0, 4)), "rose") +
-        rBox("Size of requests", '<div class="big" style="flex:none;padding:0 0 6px">' + '<div><b>' + medVars + '</b><span>median variables<br>per project</span></div><div><b>' + num(d.vp.max) + '</b><span>largest request<br>(variables)</span></div></div>' + '<div class="cap" style="margin:0 0 3px">Projects by number of variables requested</div>' + rBars(d.bands, d.bandTotal), "sky") +
+        rBox("How quickly projects are approved", big(medDays, "median days<br>to approve", pct(d.prep.percent), "projects with<br>data prepared") + rBars(d.ths.slice(0, 2), 0) + (d.prep.applications ? '<div class="cap bs"><b>' + pct(d.prep.percent) + "</b> = " + num(d.prep.with_data) + " of " + num(d.prep.applications) + " approved projects" + (nValid ? ". Bars: percentage of the " + nValid + " with a valid approval time" : "") + "</div>" : ""), "coral") +
+        rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal) + '<div class="cap" style="font-size:9px"><b>' + num(d.institutionCount) + "</b> institutions · <b>" + num(d.countryCount) + "</b> countries</div>" + bs(num(d.ukTotal), "Percentages of {n} projects with a known country"), "blue") +
+        rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase) + bs(num(d.varBase), "Percentages of {n} projects that requested variables"), "amber", "", "vars") +
+        rBox("Topics requested", rBars(d.topics.slice(0, 4), d.topicBase) + bs(num(d.topicBase), "Percentages of {n} projects that requested variables"), "green") +
+        rBox("Special data requested", rBars(d.types.slice(0, 4)) + bs(num(d.jayApps), "Percentages of {n} projects in Jay"), "rose") +
+        rBox("Size of requests", '<div class="big" style="flex:none;padding:0 0 6px">' + '<div><b>' + medVars + '</b><span>median variables<br>per project</span></div><div><b>' + num(d.vp.max) + '</b><span>largest request<br>(variables)</span></div></div>' + '<div class="cap" style="margin:0 0 3px">Projects by number of variables requested</div>' + rBars(d.bands, d.bandTotal) + bs(num(d.bandTotal), "Percentages of {n} projects with a basket"), "sky") +
         "</div>";
     }
     return { W, H, html: "<!doctype html><meta charset=utf-8><style>" + PDF_CSS + ".pg{width:" + W + "px;height:" + H + "px}</style><div class=pg><div class=hd>" + hd + "</div>" + body + "<div class=ft>" + ft + "</div></div>" };
