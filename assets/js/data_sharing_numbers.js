@@ -677,7 +677,10 @@
     }
     const pairs = M.bundles && M.bundles.top_pairs ? M.bundles.top_pairs.slice(0, 3).map((p) => ({ name: p.a + " + " + p.b, value: p.projects, text: withPct(p.projects, M.bundles.projects) })) : [];
     const ths = (M.approval_times.thresholds || []).map((n) => ({ name: "Within " + n + " days", value: ap["percent_within_" + n] || 0, text: pct(ap["percent_within_" + n]) }));
+    const distinct = (rows) => rows.filter((r) => valueOf(r) > 0).length;
+    const th0 = (M.approval_times.thresholds || [])[0];
     return {
+      th0, within: th0 ? ap["percent_within_" + th0] : null, institutionCount: distinct(M.where.institutions), countryCount: distinct(M.where.countries),
       ap, rp, nApps, prep, vp, uk, ukTotal, types, topics, topicBase, vars, varBase, pairs, ths,
       baskets: sRow.baskets, turnaround: tRow.median_days,
       condor: sum(M.condor_accounts.by_year.filter((r) => picked().includes(r.year)), (r) => r.new_accounts),
@@ -718,22 +721,22 @@
     const medApprove = days(d.ap.median_days), medTurn = days(d.turnaround);
     let body;
     if (land) {
-      const rail = [rTile(num(d.nApps), "Applications received"), rTile(num(d.ap.approved), "Applications approved"), rTile(medApprove, "Median time to approve"),
+      const rail = [rTile(num(d.nApps), "Approved projects"), rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days"), rTile(medApprove, "Median time to approve"),
         rTile(num(d.baskets), "Baskets requested", "g"), rTile(medTurn, "Median basket turnaround", "g"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "o")].join("");
       body = '<div class="body" style="grid-template-columns:170px 1fr 1fr 1fr;grid-template-rows:1fr 1fr 0.8fr">' +
         '<div class="tiles" style="grid-row:1/4;grid-template-rows:repeat(6,1fr)">' + rail + "</div>" +
         rBox("Applications each year", rCols(d.appCols) + '<div class="cap">Applications received per year (by year of application)</div>', "grid-column:2/4") +
         rBox("Median basket turnaround by year (days)", rCols(d.turnCols, "g", true) + turnCap) +
-        rBox("How quickly applications are approved", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>applications with<br>data prepared</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
-        rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal)) +
+        rBox("How quickly applications are approved", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>projects with<br>data prepared</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
+        rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal) + '<div class="cap" style="font-size:9px;color:#4a0a7a"><b>' + num(d.institutionCount) + "</b> institutions · <b>" + num(d.countryCount) + "</b> countries</div>") +
         rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase)) +
         rBox("Topics requested", rBars(d.topics.slice(0, 4), d.topicBase)) +
         rBox("Special data requested", rBars(d.types.slice(0, 4))) +
         rBox("Size of requests", '<div class="big"><div><b>' + (isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–") + "</b><span>median variables<br>per project</span></div><div><b>" + num(d.vp.max) + "</b><span>largest request<br>(variables)</span></div></div>") +
         "</div>";
     } else {
-      const tiles = [rTile(num(d.nApps), "Applications received"), rTile(num(d.ap.approved), "Applications approved"), rTile(medApprove, "Median time to approve"), rTile(num(d.baskets), "Baskets requested"),
-        rTile(medTurn, "Median basket turnaround", "g"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "o"), rTile(isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–", "Median variables per project", "o"), rTile(num(d.condor), "New Condor accounts", "g")].join("");
+      const tiles = [rTile(num(d.nApps), "Approved projects"), rTile(num(d.institutionCount), "Institutions"), rTile(num(d.countryCount), "Countries"), rTile(medApprove, "Median time to approve"),
+        rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days"), rTile(num(d.baskets), "Baskets requested", "g"), rTile(medTurn, "Median basket turnaround", "g"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "o")].join("");
       body = '<div class="body" style="grid-template-columns:1fr 1fr;grid-template-rows:auto 1.1fr 1fr 1.2fr 1fr 0.8fr">' +
         '<div class="tiles" style="grid-column:1/3;grid-template-columns:repeat(4,1fr)">' + tiles + "</div>" +
         rBox("Applications each year", rCols(d.appCols)) +
@@ -743,7 +746,7 @@
         rBox("Most requested variables", rBars(d.vars, d.varBase)) +
         rBox("Topics requested", rBars(d.topics, d.topicBase)) +
         rBox("Special data requested", rBars(d.types.slice(0, 4))) +
-        rBox("Approval times", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>applications with<br>data prepared</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
+        rBox("Approval and requests", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>projects with<br>data prepared</span></div><div><b>" + (isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–") + "</b><span>median variables<br>per project</span></div><div><b>" + num(d.condor) + "</b><span>new Condor<br>accounts</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
         rBox("Pairs of variables requested together most often", rBars(d.pairs), "grid-column:1/3") + "</div>";
     }
     return { W, H, html: "<!doctype html><meta charset=utf-8><style>" + PDF_CSS + ".pg{width:" + W + "px;height:" + H + "px}</style><div class=pg><div class=hd>" + hd + "</div>" + body + "<div class=ft>" + ft + "</div></div>" };
