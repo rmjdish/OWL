@@ -28,6 +28,9 @@
   const LINE_COLOURS = ["#6a0dad", "#1a5c50", "#1f3f70", "#8a4a1a", "#7a1f4a", "#705518"];
   const LINE_DASHES = ["", "7 4", "2 3", "10 4 2 4", "4 4", "1 4"];
 
+  // Where this script was loaded from: the PDF libraries (html2canvas.min.js, jspdf.umd.min.js) are expected in the same folder
+  const SCRIPT_DIR = (function () { try { const s = document.currentScript && document.currentScript.src; return s ? s.slice(0, s.lastIndexOf("/") + 1) : ""; } catch (e) { return ""; } })();
+
   let M = null; // metrics.json
   let popular = []; // popular_vars_yr.json
   let dict = new Map(); // lower-case variable name -> { name, label, topic, years }
@@ -221,10 +224,8 @@
       .concat(M.years.map((y) => '<button type="button" class="dsn-chip' + (chosen(y) ? " on" : "") + '" data-year="' + y + '" aria-pressed="' + chosen(y) + '">' + y + "</button>")).join("");
     return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips +
       '<span class="dsn-filter-hint">Choose one or more years</span>' +
-      '<span class="dsn-pdf"><span class="dsn-filter-label">Download PDF</span>' +
-      '<button type="button" class="dsn-chip" data-pdf="landscape" title="One A4 landscape page">Landscape</button>' +
-      '<button type="button" class="dsn-chip" data-pdf="portrait" title="One A4 portrait page">Portrait</button>' +
-      '<span id="dsn-pdf-msg" class="dsn-pdf-msg" role="status"></span></span></div>';
+      '<span class="dsn-pdf"><span id="dsn-pdf-msg" class="dsn-pdf-msg" role="status"></span>' +
+      '<button type="button" class="dsn-pdf-btn" data-pdf="landscape" title="Download a one-page A4 PDF of these figures for the years chosen"><i class="ti ti-download" aria-hidden="true"></i> Download PDF</button></span></div>';
   }
 
   // How many are behind each figure: two ladders (applications, baskets), and why some figures rest on fewer
@@ -623,11 +624,12 @@
   // "Download PDF" builds a one-page report of the figures for the CHOSEN years inside a hidden iframe (so the site's own styles cannot
   // touch it), turns it into an image with html2canvas and saves it as an A4 PDF with jsPDF. Nothing is sent anywhere. The two libraries
   // are loaded from cdnjs the first time a PDF is asked for (window.DSN_PDF_LIBS can point somewhere else).
-  const PDF_LIBS = window.DSN_PDF_LIBS || [
-    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
-    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  // Each library is tried from the site's own folder first (it works behind firewalls and content-security rules), then from cdnjs.
+  // window.DSN_PDF_LIBS (a list of addresses) overrides this for testing.
+  const PDF_LIBS = window.DSN_PDF_LIBS ? window.DSN_PDF_LIBS.map((u) => [u]) : [
+    [SCRIPT_DIR + "html2canvas.min.js", "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"],
+    [SCRIPT_DIR + "jspdf.umd.min.js", "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"],
   ];
-  // Colours: each card has a tint (--bg), a bar/column colour (--acc) and a heading colour (--hd); each key-figure tile has its own colour too
   const PDF_THEME = {
     purple: ["#f4edfb", "#8e44c9", "#4a0a7a"], teal: ["#e9f6f4", "#2a9d8f", "#1a6b61"], amber: ["#fdf1e1", "#e08a2e", "#8a4b08"], blue: ["#eaf0fa", "#3b6fb6", "#1f3f70"],
     green: ["#edf6ea", "#4c9a45", "#2d5e28"], rose: ["#fbeaf1", "#c2457a", "#7a1f4a"], sky: ["#e8f4f9", "#2a8fb5", "#17566e"], coral: ["#fef0ec", "#e0674a", "#8a2e18"],
@@ -689,8 +691,10 @@
     const ths = (M.approval_times.thresholds || []).map((n) => ({ name: "Within " + n + " days", value: ap["percent_within_" + n] || 0, text: pct(ap["percent_within_" + n]) }));
     const distinct = (rows) => rows.filter((r) => valueOf(r) > 0).length;
     const th0 = (M.approval_times.thresholds || [])[0];
+    const bandTotal = sum(M.variables_per_project.size_band_names, (n) => (vp.size_bands || {})[n] || 0);
+    const bands = M.variables_per_project.size_band_names.map((n) => ({ name: n + " variables", value: (vp.size_bands || {})[n] || 0, text: withPct((vp.size_bands || {})[n] || 0, bandTotal) }));
     return {
-      th0, within: th0 ? ap["percent_within_" + th0] : null, institutionCount: distinct(M.where.institutions), countryCount: distinct(M.where.countries),
+      bands, bandTotal, th0, within: th0 ? ap["percent_within_" + th0] : null, institutionCount: distinct(M.where.institutions), countryCount: distinct(M.where.countries),
       ap, rp, nApps, prep, vp, uk, ukTotal, types, topics, topicBase, vars, varBase, pairs, ths,
       baskets: sRow.baskets, turnaround: tRow.median_days,
       condor: sum(M.condor_accounts.by_year.filter((r) => picked().includes(r.year)), (r) => r.new_accounts),
@@ -731,8 +735,7 @@
 
   function pdfHtml(orientation) {
     const d = pdfData();
-    const land = orientation === "landscape";
-    const W = land ? 1123 : 794, H = land ? 794 : 1123;
+    const W = 1123, H = 794;   // A4 landscape, in pixels
     const when = M.generated ? formatDate(M.generated) : "";
     const hd = "<div><h1>NSHD Data Sharing: Metrics and Trends</h1><small>Applications for NSHD data, basket requests and turnaround · Applications " + M.start_year + " to " + M.end_year +
       " · Years shown: " + esc(selLabel()) + '</small></div><div class="r"><b>OWL</b><br>Generated ' + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + (when ? " · Data updated " + esc(when) : "") + "</div>";
@@ -744,7 +747,7 @@
     const medDays = isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–";
     const medVars = isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–";
     let body;
-    if (land) {
+    {
       const rail = [rTile(num(d.nApps), "Approved projects", "purple"), rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days", "rose"), rTile(medApprove, "Median time to approve", "coral"),
         rTile(num(d.baskets), "Baskets requested", "teal"), rTile(medTurn, "Median basket turnaround", "sky"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber")].join("");
       body = '<div class="body" style="grid-template-columns:170px 1fr 1fr 1fr;grid-template-rows:1fr 1fr 0.8fr">' +
@@ -756,22 +759,8 @@
         rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase), "amber", "", "vars") +
         rBox("Topics requested", rBars(d.topics.slice(0, 4), d.topicBase), "green") +
         rBox("Special data requested", rBars(d.types.slice(0, 4)), "rose") +
-        rBox("Size of requests", big(medVars, "median variables<br>per project", num(d.vp.max), "largest request<br>(variables)"), "sky") +
+        rBox("Size of requests", '<div class="big" style="flex:none;padding:0 0 6px">' + '<div><b>' + medVars + '</b><span>median variables<br>per project</span></div><div><b>' + num(d.vp.max) + '</b><span>largest request<br>(variables)</span></div></div>' + '<div class="cap" style="margin:0 0 3px">Projects by number of variables requested</div>' + rBars(d.bands, d.bandTotal), "sky") +
         "</div>";
-    } else {
-      const tiles = [rTile(num(d.nApps), "Approved projects", "purple"), rTile(num(d.institutionCount), "Institutions", "blue"), rTile(num(d.countryCount), "Countries", "green"), rTile(medApprove, "Median time to approve", "rose"),
-        rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days", "coral"), rTile(num(d.baskets), "Baskets requested", "teal"), rTile(medTurn, "Median basket turnaround", "sky"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber")].join("");
-      body = '<div class="body" style="grid-template-columns:1fr 1fr;grid-template-rows:auto 1.1fr 1fr 1.2fr 1fr 0.8fr">' +
-        '<div class="tiles" style="grid-column:1/3;grid-template-columns:repeat(4,1fr)">' + tiles + "</div>" +
-        rBox("Approved projects each year", rCols(d.appCols), "purple") +
-        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, true) + turnCap, "teal") +
-        rBox("Where applicants are based", rSplit(d) + rBars(d.countries, d.countryTotal), "blue") +
-        rBox("Top institutions", rBars(d.institutions.slice(0, 5), d.countryTotal), "sky") +
-        rBox("Most requested variables", rBars(d.vars.slice(0, 6), d.varBase), "amber", "", "vars") +
-        rBox("Topics requested", rBars(d.topics.slice(0, 6), d.topicBase), "green") +
-        rBox("Special data requested", rBars(d.types.slice(0, 4)), "rose") +
-        rBox("Approval and requests", big(medDays, "median days<br>to approve", pct(d.prep.percent), "projects with<br>data prepared", medVars, "median variables<br>per project", num(d.condor), "new Condor<br>accounts") + rBars(d.ths.slice(0, 2), 0), "coral") +
-        rBox("Pairs of variables requested together most often", rBars(d.pairs), "amber", "grid-column:1/3") + "</div>";
     }
     return { W, H, html: "<!doctype html><meta charset=utf-8><style>" + PDF_CSS + ".pg{width:" + W + "px;height:" + H + "px}</style><div class=pg><div class=hd>" + hd + "</div>" + body + "<div class=ft>" + ft + "</div></div>" };
   }
@@ -783,9 +772,11 @@
       document.head.appendChild(s);
     });
   }
+  // try each address in turn until one loads
+  const loadFirst = (list) => list.reduce((p, src) => p.catch(() => loadScript(src)), Promise.reject(new Error("none")));
   function pdfLibs() {
     if (window.html2canvas && window.jspdf) return Promise.resolve();
-    return Promise.all(PDF_LIBS.map(loadScript)).then(() => { if (!(window.html2canvas && window.jspdf)) throw new Error("the PDF tools did not load"); });
+    return Promise.all(PDF_LIBS.map(loadFirst)).then(() => { if (!(window.html2canvas && window.jspdf)) throw new Error("the PDF tools did not load"); });
   }
 
   function exportPdf(orientation, button) {
