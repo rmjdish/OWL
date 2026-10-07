@@ -555,13 +555,14 @@
   function renderVariables() {
     // Most requested variables (popular_vars_yr.json)
     let popHtml = '<p class="dsn-note">The most requested variables are not available right now.</p>';
-    // a project counts once for each year it requested variables in, which is how the popular list is counted too
-    const popBase = requests ? sum(requests, (p) => (isAll() ? Object.keys(p.by_year) : sel.map(String)).filter((y) => (p.by_year[y] || []).length).length) : 0;
+    // a variable counts once per project, in the year it was first requested, so the base is the number of different
+    // projects that asked for at least one variable in the years chosen
+    const popBase = requests ? sum(requests, (p) => ((isAll() ? Object.keys(p.by_year) : sel.map(String)).some((y) => (p.by_year[y] || []).length) ? 1 : 0)) : 0;
     if (popular && popular.length) {
       const items = popular.map((p) => ({ name: p.name, value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
         .filter((p) => p.value > 0).sort((a, b) => b.value - a.value).slice(0, 10)
-        .map((p) => ({ label: varLink(p.name), value: p.value, text: withPct(p.value, popBase), title: outOf(p.value, popBase, "project-years with variables requested") }));
-      popHtml = barRows(items);
+        .map((p) => ({ label: varLink(p.name), value: p.value, text: withPct(p.value, popBase), title: outOf(p.value, popBase, "projects with variables requested") }));
+      popHtml = barRows(items) + '<p class="dsn-note">A variable is counted once for each project, in the year it was first requested. Asking for it again later does not count again.</p>';
     }
 
     // Size of requests
@@ -683,7 +684,7 @@
     if (requests && dict.size) { const st = requestStats(); topics = st.topics.slice(0, 8).map((x) => ({ name: x.name, value: x.projects })); topicBase = st.projectCount; }
     let vars = [], varBase = 0;
     if (popular && popular.length) {
-      varBase = requests ? sum(requests, (p) => (isAll() ? Object.keys(p.by_year) : sel.map(String)).filter((y) => (p.by_year[y] || []).length).length) : 0;
+      varBase = requests ? sum(requests, (p) => ((isAll() ? Object.keys(p.by_year) : sel.map(String)).some((y) => (p.by_year[y] || []).length) ? 1 : 0)) : 0;
       vars = popular.map((p) => ({ name: (dict.get(String(p.name).toLowerCase()) || {}).name || p.name, label: (dict.get(String(p.name).toLowerCase()) || {}).label || "", value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
         .filter((p) => p.value > 0).sort((a, b) => b.value - a.value).slice(0, 8);
     }
