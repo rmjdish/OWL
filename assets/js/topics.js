@@ -17,6 +17,30 @@
 
 document.addEventListener('DOMContentLoaded', function () {
 
+  /* ── Sidebar menu label for the Data Sharing section ──────────
+     The "Data sharing" label above its menu item is drawn by CSS (navigation_sidebar.css). On the Data Sharing page
+     itself the theme draws that menu item a little differently, and the CSS could not recognise it there, so the
+     label vanished. This marks the item with a class (nav-label-data-sharing) on every Data Sharing page, whichever
+     way the menu is drawn, and the CSS shows the label for that class. It runs first, before anything below can
+     return early. */
+  (function markDataSharingNavItem() {
+    try {
+      if (location.pathname.indexOf('/docs/data_sharing') === -1) return;
+      var items = document.querySelectorAll('.nav-list > .nav-list-item');
+      for (var i = 0; i < items.length; i++) {
+        var links = items[i].querySelectorAll('a[href]');
+        for (var j = 0; j < links.length; j++) {
+          var path = (links[j].pathname || '').replace(/\/+$/, '');
+          if (path.slice(-'/docs/data_sharing'.length) === '/docs/data_sharing') {
+            items[i].classList.add('nav-label-data-sharing');
+            return;
+          }
+        }
+      }
+    } catch (e) { /* the label is cosmetic: never let it stop the page's own script */ }
+  })();
+
+
   const DEBUG = true;
 
   /* ── Getting Started / Documentation pages (anything loading
