@@ -220,7 +220,11 @@
     const chips = ['<button type="button" class="dsn-chip' + (isAll() ? " on" : "") + '" data-year="all" aria-pressed="' + isAll() + '">All years</button>']
       .concat(M.years.map((y) => '<button type="button" class="dsn-chip' + (chosen(y) ? " on" : "") + '" data-year="' + y + '" aria-pressed="' + chosen(y) + '">' + y + "</button>")).join("");
     return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips +
-      '<span class="dsn-filter-hint">Choose one or more years</span></div>';
+      '<span class="dsn-filter-hint">Choose one or more years</span>' +
+      '<span class="dsn-pdf"><span class="dsn-filter-label">Download PDF</span>' +
+      '<button type="button" class="dsn-chip" data-pdf="landscape" title="One A4 landscape page">Landscape</button>' +
+      '<button type="button" class="dsn-chip" data-pdf="portrait" title="One A4 portrait page">Portrait</button>' +
+      '<span id="dsn-pdf-msg" class="dsn-pdf-msg" role="status"></span></span></div>';
   }
 
   // How many are behind each figure: two ladders (applications, baskets), and why some figures rest on fewer
@@ -615,6 +619,181 @@
       "</ul>";
   }
 
+  // ---------- PDF export (client side) ----------
+  // "Download PDF" builds a one-page report of the figures for the CHOSEN years inside a hidden iframe (so the site's own styles cannot
+  // touch it), turns it into an image with html2canvas and saves it as an A4 PDF with jsPDF. Nothing is sent anywhere. The two libraries
+  // are loaded from cdnjs the first time a PDF is asked for (window.DSN_PDF_LIBS can point somewhere else).
+  const PDF_LIBS = window.DSN_PDF_LIBS || [
+    "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+  ];
+  const PDF_CSS = "*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#333}" +
+    ".pg{background:#f1ebf8;position:relative;overflow:hidden;display:flex;flex-direction:column}" +
+    ".hd{background:linear-gradient(90deg,#4a0a7a,#6a0dad);color:#fff;padding:14px 26px;display:flex;justify-content:space-between;align-items:center;flex:none}" +
+    ".hd h1{margin:0;font-size:22px}.hd small{display:block;font-size:10.5px;opacity:.9;margin-top:3px}.hd .r{text-align:right;font-size:10px;opacity:.9}.hd .r b{font-size:16px}" +
+    ".body{flex:1;padding:14px 26px 10px;display:grid;gap:10px;min-height:0}" +
+    ".w{display:flex;min-width:0;min-height:0}" +
+    ".box{flex:1;min-width:0;background:#fff;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0;box-shadow:0 1px 2px rgba(0,0,0,.12)}" +
+    "h2{font-size:11px;margin:0 0 7px;color:#4a0a7a;text-transform:uppercase;letter-spacing:.04em;flex:none}" +
+    ".tiles{display:grid;gap:8px}.t{background:#fff;border-radius:8px;border-left:5px solid #8e44c9;padding:8px 10px;box-shadow:0 1px 2px rgba(0,0,0,.12);display:flex;flex-direction:column;justify-content:center}" +
+    ".t b{font-size:23px;color:#4a0a7a;line-height:1.1}.t span{font-size:9px;color:#555;margin-top:2px}.t.g{border-color:#2a9d8f}.t.g b{color:#1a6b61}.t.o{border-color:#e08a2e}.t.o b{color:#9a5a10}" +
+    ".cols{flex:1;display:flex;align-items:flex-end;gap:5px;border-bottom:1px solid #bbb;min-height:60px}" +
+    ".c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;text-align:center;font-size:8px}.c em{font-style:normal;color:#555;margin-bottom:1px}" +
+    ".c i{display:block;background:#8e44c9;border-radius:2px 2px 0 0}.c.g i{background:#2a9d8f}.c.dim i{opacity:.35}" +
+    ".yr{display:flex;gap:5px;font-size:8px;text-align:center;color:#555;margin-top:2px;flex:none}.yr div{flex:1}" +
+    ".cap{font-size:8px;color:#777;margin-top:4px;line-height:1.3;flex:none}" +
+    ".bars{flex:1;display:flex;flex-direction:column;justify-content:space-around}" +
+    ".bar{display:flex;align-items:center;font-size:9px}.bar .l{width:34%;flex:none;line-height:1.25;padding-right:4px}.bar .b{flex:1;background:#eee;height:9px;border-radius:2px;margin:0 6px}" +
+    ".bar .b i{display:block;height:9px;background:#8e44c9;border-radius:2px}.bar .v{width:74px;flex:none;text-align:right;color:#555}" +
+    ".split{display:flex;height:18px;border-radius:3px;overflow:hidden;margin:2px 0 8px;font-size:8.5px;color:#fff;flex:none}.split div{display:flex;align-items:center;justify-content:center;white-space:nowrap}" +
+    ".big{flex:1;display:flex;align-items:center;justify-content:space-around;text-align:center}.big b{display:block;font-size:26px;color:#4a0a7a}.big span{font-size:8.5px;color:#555}" +
+    ".none{font-size:9px;color:#777}.ft{flex:none;background:#4a0a7a;color:#e8d8f6;font-size:8px;padding:7px 26px;line-height:1.4}";
+
+  function pdfData() {
+    const ap = rowFor(M.approval_times) || {};
+    const rp = rowFor(M.repeat_requests) || {};
+    const S = M.basket_stats, B = M.basket_turnaround;
+    const sRow = S && S.available ? rowFor(S) || {} : {};
+    const tRow = B && B.available ? rowFor(B) || {} : {};
+    const vp = rowFor(M.variables_per_project) || {};
+    const apps = M.applications.by_year;
+    const nApps = sum(apps.filter((a) => picked().includes(a.year)), (a) => a.applications);
+    const prep = prepared();
+    const top = (rows, n) => rows.map((r) => ({ name: r.name, value: valueOf(r) })).filter((x) => x.value > 0).sort((a, b) => b.value - a.value).slice(0, n);
+    const uk = M.where.uk.map((r) => ({ name: ukLabel(r.name), value: valueOf(r) })).filter((x) => x.value > 0);
+    const ukTotal = sum(uk, (x) => x.value);
+    const jayApps = sum(apps.filter((a) => picked().includes(a.year)), (a) => a.applications - (a.not_in_jay || 0));
+    const types = ((M.data_types && M.data_types.types) || []).map((t) => {
+      const n = isAll() ? t.projects : sum(sel, (y) => (t.by_year[String(y)] || {}).projects || 0);
+      return { name: t.type, value: n, text: pct(jayApps ? (n / jayApps) * 100 : null) + " (" + num(n) + ")" };
+    }).filter((x) => x.value > 0).sort((a, b) => b.value - a.value).slice(0, 5);
+    let topics = [], topicBase = 0;
+    if (requests && dict.size) { const st = requestStats(); topics = st.topics.slice(0, 8).map((x) => ({ name: x.name, value: x.projects })); topicBase = st.projectCount; }
+    let vars = [], varBase = 0;
+    if (popular && popular.length) {
+      varBase = requests ? sum(requests, (p) => (isAll() ? Object.keys(p.by_year) : sel.map(String)).filter((y) => (p.by_year[y] || []).length).length) : 0;
+      vars = popular.map((p) => ({ name: (dict.get(String(p.name).toLowerCase()) || {}).name || p.name, value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
+        .filter((p) => p.value > 0).sort((a, b) => b.value - a.value).slice(0, 8);
+    }
+    const pairs = M.bundles && M.bundles.top_pairs ? M.bundles.top_pairs.slice(0, 3).map((p) => ({ name: p.a + " + " + p.b, value: p.projects, text: withPct(p.projects, M.bundles.projects) })) : [];
+    const ths = (M.approval_times.thresholds || []).map((n) => ({ name: "Within " + n + " days", value: ap["percent_within_" + n] || 0, text: pct(ap["percent_within_" + n]) }));
+    return {
+      ap, rp, nApps, prep, vp, uk, ukTotal, types, topics, topicBase, vars, varBase, pairs, ths,
+      baskets: sRow.baskets, turnaround: tRow.median_days,
+      condor: sum(M.condor_accounts.by_year.filter((r) => picked().includes(r.year)), (r) => r.new_accounts),
+      countries: top(M.where.countries, 5), institutions: top(M.where.institutions, 7), countryTotal: ukTotal,
+      appCols: apps.map((a) => ({ label: String(a.year).slice(-2), value: a.applications, text: num(a.applications), dim: !isAll() && !chosen(a.year) })),
+      basketCols: S && S.available ? M.years.map((y) => ({ label: String(y).slice(-2), value: (byYear(S.by_year, y) || {}).baskets || 0, text: num((byYear(S.by_year, y) || {}).baskets || 0), dim: !isAll() && !chosen(y) })).filter((c) => c.value > 0) : [],
+      turnCols: B && B.available ? M.years.map((y) => ({ y, r: byYear(B.by_year, y) || {} })).filter((x) => isNum(x.r.median_days)).map((x) => ({
+        label: String(x.y).slice(-2), value: x.r.median_days, text: String(Math.round(x.r.median_days)), sub: x.r.baskets, dim: !isAll() && !chosen(x.y) })) : [],
+    };
+  }
+
+  const rBars = (items, base, fmt) => items.length
+    ? '<div class="bars">' + (function () { const max = Math.max(1, ...items.map((i) => i.value)); return items.map((i) =>
+        '<div class="bar"><span class="l">' + esc(String(i.name).length > 30 ? String(i.name).slice(0, 29) + "…" : i.name) + '</span><span class="b"><i style="width:' + Math.round((i.value / max) * 100) + '%"></i></span><span class="v">' +
+        (i.text !== undefined ? i.text : (fmt ? fmt(i) : withPct(i.value, base))) + "</span></div>").join(""); })() + "</div>"
+    : '<div class="bars"><div class="none">Nothing to show for this selection.</div></div>';
+  const rCols = (cols, cls, sub) => {
+    if (!cols.length) return '<div class="cols"><div class="none">Nothing to show for this selection.</div></div>';
+    const max = Math.max(1, ...cols.map((c) => c.value));
+    return '<div class="cols">' + cols.map((c) => '<div class="c ' + (cls || "") + (c.dim ? " dim" : "") + '"><em>' + c.text + '</em><i style="height:' + Math.max(2, Math.round((c.value / max) * 100)) + '%"></i></div>').join("") + "</div>" +
+      '<div class="yr">' + cols.map((c) => "<div>" + c.label + "</div>").join("") + "</div>" +
+      (sub ? '<div class="yr" style="color:#2a9d8f">' + cols.map((c) => "<div>n=" + num(c.sub) + "</div>").join("") + "</div>" : "");
+  };
+  const rBox = (title, inner, area) => '<div class="w"' + (area ? ' style="' + area + '"' : "") + '><section class="box"><h2>' + title + "</h2>" + inner + "</section></div>";
+  const rTile = (v, l, cls) => '<div class="t ' + (cls || "") + '"><b>' + v + "</b><span>" + l + "</span></div>";
+  const rSplit = (d) => d.ukTotal ? '<div class="split">' + d.uk.map((x, i) => '<div style="width:' + (x.value / d.ukTotal) * 100 + '%;background:' + (i ? "#2a9d8f" : "#6a0dad") + '">' + esc(x.name) + " " + pct((x.value / d.ukTotal) * 100) + "</div>").join("") + "</div>" : "";
+  const turnCap = '<div class="cap">Median days from basket request to completion, with the number of baskets behind each bar (n). Smaller than the baskets chart, because only baskets with a matched request have a turnaround time.</div>';
+
+  function pdfHtml(orientation) {
+    const d = pdfData();
+    const land = orientation === "landscape";
+    const W = land ? 1123 : 794, H = land ? 794 : 1123;
+    const when = M.generated ? formatDate(M.generated) : "";
+    const hd = "<div><h1>NSHD Data Sharing: Metrics and Trends</h1><small>Applications for NSHD data, basket requests and turnaround · Applications " + M.start_year + " to " + M.end_year +
+      " · Years shown: " + esc(selLabel()) + '</small></div><div class="r"><b>OWL</b><br>Generated ' + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + (when ? " · Data updated " + esc(when) : "") + "</div>";
+    const ft = "<b>How to read this report.</b> All times are medians, not averages. Basket dates come from Jay (date sent); turnaround runs from the request coming in to its completion, for baskets with a matched request. " +
+      "Percentages use the applications (or projects) shown. Figures are for " + esc(selLabel()) + ". Interactive version with year filters: rmjdish.github.io/OWL/docs/data_sharing/metrics";
+    const medApprove = days(d.ap.median_days), medTurn = days(d.turnaround);
+    let body;
+    if (land) {
+      const rail = [rTile(num(d.nApps), "Applications received"), rTile(num(d.ap.approved), "Applications approved"), rTile(medApprove, "Median time to approve"),
+        rTile(num(d.baskets), "Baskets requested", "g"), rTile(medTurn, "Median basket turnaround", "g"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "o")].join("");
+      body = '<div class="body" style="grid-template-columns:170px 1fr 1fr 1fr;grid-template-rows:1fr 1fr 0.8fr">' +
+        '<div class="tiles" style="grid-row:1/4;grid-template-rows:repeat(6,1fr)">' + rail + "</div>" +
+        rBox("Applications each year", rCols(d.appCols) + '<div class="cap">Applications received per year (by year of application)</div>', "grid-column:2/4") +
+        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, "g", true) + turnCap) +
+        rBox("How quickly applications are approved", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>applications with<br>data prepared</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
+        rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal)) +
+        rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase)) +
+        rBox("Topics requested", rBars(d.topics.slice(0, 4), d.topicBase)) +
+        rBox("Special data requested", rBars(d.types.slice(0, 4))) +
+        rBox("Size of requests", '<div class="big"><div><b>' + (isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–") + "</b><span>median variables<br>per project</span></div><div><b>" + num(d.vp.max) + "</b><span>largest request<br>(variables)</span></div></div>") +
+        "</div>";
+    } else {
+      const tiles = [rTile(num(d.nApps), "Applications received"), rTile(num(d.ap.approved), "Applications approved"), rTile(medApprove, "Median time to approve"), rTile(num(d.baskets), "Baskets requested"),
+        rTile(medTurn, "Median basket turnaround", "g"), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "o"), rTile(isNum(d.vp.median) ? Number(d.vp.median).toFixed(0) : "–", "Median variables per project", "o"), rTile(num(d.condor), "New Condor accounts", "g")].join("");
+      body = '<div class="body" style="grid-template-columns:1fr 1fr;grid-template-rows:auto 1.1fr 1fr 1.2fr 1fr 0.8fr">' +
+        '<div class="tiles" style="grid-column:1/3;grid-template-columns:repeat(4,1fr)">' + tiles + "</div>" +
+        rBox("Applications each year", rCols(d.appCols)) +
+        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, "g", true) + turnCap) +
+        rBox("Where applicants are based", rSplit(d) + rBars(d.countries, d.countryTotal)) +
+        rBox("Top institutions", rBars(d.institutions.slice(0, 5), d.countryTotal)) +
+        rBox("Most requested variables", rBars(d.vars, d.varBase)) +
+        rBox("Topics requested", rBars(d.topics, d.topicBase)) +
+        rBox("Special data requested", rBars(d.types.slice(0, 4))) +
+        rBox("Approval times", '<div class="big"><div><b>' + (isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–") + "</b><span>median days<br>to approve</span></div><div><b>" + pct(d.prep.percent) + "</b><span>applications with<br>data prepared</span></div></div>" + rBars(d.ths.slice(0, 2), 0)) +
+        rBox("Pairs of variables requested together most often", rBars(d.pairs), "grid-column:1/3") + "</div>";
+    }
+    return { W, H, html: "<!doctype html><meta charset=utf-8><style>" + PDF_CSS + ".pg{width:" + W + "px;height:" + H + "px}</style><div class=pg><div class=hd>" + hd + "</div>" + body + "<div class=ft>" + ft + "</div></div>" };
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src; s.onload = resolve; s.onerror = () => reject(new Error("could not load " + src));
+      document.head.appendChild(s);
+    });
+  }
+  function pdfLibs() {
+    if (window.html2canvas && window.jspdf) return Promise.resolve();
+    return Promise.all(PDF_LIBS.map(loadScript)).then(() => { if (!(window.html2canvas && window.jspdf)) throw new Error("the PDF tools did not load"); });
+  }
+
+  function exportPdf(orientation, button) {
+    const msg = $("dsn-pdf-msg");
+    const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "dsn-pdf-msg" + (bad ? " is-error" : ""); } };
+    const buttons = Array.from(document.querySelectorAll("[data-pdf]"));
+    buttons.forEach((b) => (b.disabled = true));
+    say("Preparing the " + orientation + " PDF...");
+    let frame;
+    return pdfLibs().then(() => {
+      const page = pdfHtml(orientation);
+      frame = document.createElement("iframe");
+      frame.setAttribute("aria-hidden", "true");
+      frame.style.cssText = "position:fixed;left:-20000px;top:0;border:0;width:" + page.W + "px;height:" + page.H + "px;";
+      document.body.appendChild(frame);
+      frame.contentDocument.open(); frame.contentDocument.write(page.html); frame.contentDocument.close();
+      return new Promise((r) => setTimeout(r, 150)).then(() => window.html2canvas(frame.contentDocument.body, {
+        scale: 3, width: page.W, height: page.H, windowWidth: page.W, windowHeight: page.H, backgroundColor: "#f1ebf8", useCORS: true,
+      })).then((canvas) => {
+        const land = orientation === "landscape";
+        const pdf = new window.jspdf.jsPDF({ orientation: land ? "landscape" : "portrait", unit: "mm", format: "a4" });
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, land ? 297 : 210, land ? 210 : 297);
+        pdf.setProperties({ title: "NSHD Data Sharing: Metrics and Trends (" + selLabel() + ")" });
+        pdf.save("NSHD_Data_Sharing_Metrics_" + orientation + "_" + (isAll() ? "all_years" : sel.join("-")) + ".pdf");
+        say("Downloaded.");
+      });
+    }).catch((err) => {
+      console.error("[Metrics and Trends] PDF export failed:", err);
+      say("The PDF could not be made (" + err.message + "). Please try again, or print the page instead.", true);
+    }).then(() => {
+      if (frame && frame.parentNode) frame.parentNode.removeChild(frame);
+      buttons.forEach((b) => (b.disabled = false));
+    });
+  }
+
   // ---------- render and events ----------
 
   function safely(id, fn) {
@@ -654,6 +833,8 @@
         renderAll();
         return;
       }
+      const pdfBtn = e.target.closest("[data-pdf]");
+      if (pdfBtn) { exportPdf(pdfBtn.dataset.pdf, pdfBtn); return; }
       const lineBtn = e.target.closest("[data-line]");
       if (lineBtn) {
         const y = parseInt(lineBtn.dataset.line, 10);
