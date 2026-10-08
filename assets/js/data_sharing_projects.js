@@ -397,9 +397,9 @@
       (p.institution ? '<div class="applicant-inst">' + escapeHtml(p.institution) + "</div>" : "") + "</td>" +
       '<td class="col-title">' + escapeHtml(p.title) + "</td>" +
       '<td class="col-summary"><div class="summary-clamp">' + escapeHtml(p.summary) + "</div></td>" +
-      '<td class="col-vars"><button class="var-count-badge' + (count === 0 ? " is-empty" : "") + '"' +
+      '<td class="col-vars' + (count === 0 ? " col-vars-empty" : "") + '"><button class="var-count-badge' + (count === 0 ? " is-empty" : "") + '"' +
       (count === 0 ? ' title="No variables recorded for this project. Open the row to see why." aria-label="No variables recorded for this project"' : "") + ">" +
-      (count === 0 ? '<svg class="no-vars-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9"/><line x1="5.6" y1="5.6" x2="18.4" y2="18.4"/></svg>' : count + (count === 1 ? " variable" : " variables")) + "</button></td>";
+      (count === 0 ? '<svg class="no-vars-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="12" fill="#d32f2f"/><rect x="4.5" y="9.2" width="15" height="5.6" rx="0.8" fill="#fff"/></svg>' : count + (count === 1 ? " variable" : " variables")) + "</button></td>";
 
     // Whole row toggles; the arrow and badge have no listeners of their own so
     // a click on either does not double-toggle.
