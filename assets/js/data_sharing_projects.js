@@ -397,8 +397,9 @@
       (p.institution ? '<div class="applicant-inst">' + escapeHtml(p.institution) + "</div>" : "") + "</td>" +
       '<td class="col-title">' + escapeHtml(p.title) + "</td>" +
       '<td class="col-summary"><div class="summary-clamp">' + escapeHtml(p.summary) + "</div></td>" +
-      '<td class="col-vars"><button class="var-count-badge' + (count === 0 ? " is-empty" : "") + '">' +
-      count + (count === 1 ? " variable" : " variables") + "</button></td>";
+      '<td class="col-vars"><button class="var-count-badge' + (count === 0 ? " is-empty" : "") + '"' +
+      (count === 0 ? ' title="No variables recorded for this project. Open the row to see why." aria-label="No variables recorded for this project"' : "") + ">" +
+      (count === 0 ? '<i class="ti ti-forbidden-2" aria-hidden="true"></i>' : count + (count === 1 ? " variable" : " variables")) + "</button></td>";
 
     // Whole row toggles; the arrow and badge have no listeners of their own so
     // a click on either does not double-toggle.
@@ -440,8 +441,9 @@
     if (!p.variable_list.length) {
       td.innerHTML =
         '<div class="variable-panel">' + detailHtml +
-        '<div class="empty-note">No variables are recorded for this project yet, or variables did not need to be ' +
-        "requested via Condor.</div></div>";
+        '<div class="empty-note">No variables are recorded for this project. The variables may not have been requested yet, ' +
+        "they may have been requested before Condor (through the earlier request system) or by another route, " +
+        "or the applicants may already have had access to them.</div></div>";
       tr.appendChild(td);
       return tr;
     }
