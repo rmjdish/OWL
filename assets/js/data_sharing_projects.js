@@ -241,6 +241,12 @@
         const dictByKey = buildDictionaryIndex(dictionaryLoaded ? dictionary : []);
         allProjects = prepareProjects(data, dictByKey);
         filtered = allProjects;
+        // Banner: which year the list starts from (the projects file also holds every project before the metrics' reporting years)
+        const yrs = allProjects.map((p) => Number(p.year_of_application)).filter((y) => y > 0);
+        const firstYear = yrs.length ? Math.min.apply(null, yrs) : (data.start_year || null);
+        if (firstYear && el("projectsFrom")) {
+          el("projectsFrom").textContent = "This list starts from " + firstYear + ": it includes " + allProjects.length.toLocaleString("en-GB") + " projects with an application year of " + firstYear + " or later.";
+        }
         el("loadingScreen").style.display = "none";
         el("dataUI").style.display = "block";
         bindControls();
