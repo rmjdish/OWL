@@ -450,9 +450,9 @@
     }
     const row = rowFor(B) || {};
     const tileList = [tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects"),
-      tile("Median turnaround", days(row.median_days), "from the request coming in to completion"),
+      tile("Median turnaround", days(row.median_days), "from the request coming in to completion, for " + num(row.baskets) + " baskets"),
       tile("Turned around on the same day", pct(row.same_day_percent))]
-      .concat(B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.in_turnaround))));
+      .concat(B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.baskets) + " baskets")));
     const lo = row.left_out || {};
     const projectOut = (lo.project_not_in_the_metrics || 0) + (lo.project_conflict_planner_vs_jay || 0) + (lo.not_linked_to_a_project || 0);
     const leftOut = projectOut
@@ -610,7 +610,7 @@
       "<li><strong>Medians:</strong> every time is a median (the middle value), not an average, because a few very slow cases would pull an average up.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
       "<li><strong>Baskets per year</strong> counts every basket once, in the year its data was sent, from 2021. Every basket is sent through Jay, which holds the record of it, so a basket that is only named on an application and was never sent is not counted. Only baskets of projects counted in these figures are included.</li>" +
-      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022." + (manualDates(M.basket_turnaround) ? " For some baskets sent before then, or made outside the process, the request date was found in emails and entered by hand; turnaround for those runs from that date to the date the data was sent." : "") + " Only baskets that are matched to a basket in Jay are included, and each must be linked to a project that is counted in these figures: the project comes from the Planner request and from Jay, and the two must agree. Requests still open are not included.</li>" +
+      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the request being completed. It is worked out for each basket and project: a basket reused for another project counts again for that project, but the same basket requested again for the same project counts once. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022." + (manualDates(M.basket_turnaround) ? " For some baskets sent before then, or made outside the process, the request date was found in emails and entered by hand; turnaround for those runs from that date to the date the data was sent." : "") + " Only baskets that are matched to a basket in Jay are included, and each must be linked to a project that is counted in these figures: the project comes from the Planner request and from Jay, and the two must agree. Requests still open are not included.</li>" +
       "<li><strong>Asked for data</strong> means an application had at least one basket sent. An approved application that has not asked for data either has not yet finalised its variables request, or already held the data it needed and did not need to request it.</li>" +
       "<li><strong>When the first basket request comes in</strong> uses the Planner requests that can be linked to an application (by its Form ID or share name), and measures from the application.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
