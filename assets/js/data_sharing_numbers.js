@@ -534,8 +534,8 @@
     const typeItems = types.map((t) => {
       const n = isAll() ? t.projects : sum(sel, (y) => (t.by_year[String(y)] || {}).projects || 0);
       const cell = isAll() ? { projects: t.projects, percent: t.percent } : { projects: n, percent: jayApps ? Math.round((n / jayApps) * 1000) / 10 : null };
-      return { label: esc(t.type), value: cell.percent || 0, text: pct(cell.percent) + " (" + num(cell.projects) + ")", title: outOf(cell.projects, jayApps, "applications in Jay") };
-    });
+      return { label: esc(t.type), value: cell.percent || 0, text: pct(cell.percent) + " (" + num(cell.projects) + ")", title: outOf(cell.projects, jayApps, "applications in Jay"), n: cell.projects || 0 };
+    }).sort((a, b) => b.n - a.n); // largest first
 
     let topicsHtml = '<p class="dsn-note">Topic figures need the data dictionary and the variable request file, which are not available right now.</p>';
     let yearsHtml = "";
