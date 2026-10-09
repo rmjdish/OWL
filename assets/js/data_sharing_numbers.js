@@ -200,6 +200,21 @@
         '<span class="dsn-col-lab">' + esc(i.label) + "</span></div>").join("") + "</div>";
   }
 
+  // Two columns for each year (for example baskets sent, and how many of them have a turnaround time), with a key
+  function pairedColumns(rows, caption, nameA, nameB) {
+    const max = Math.max(1, ...rows.map((r) => Math.max(r.a || 0, r.b || 0)));
+    const h = (v) => Math.max(2, Math.round(((v || 0) / max) * 150));
+    const anySelected = rows.some((r) => r.selected);
+    return '<div class="dsn-key"><span><u class="a"></u>' + esc(nameA) + '</span><span><u class="b"></u>' + esc(nameB) + "</span></div>" +
+      '<div class="dsn-cols is-paired' + (anySelected ? " has-selection" : "") + '" role="img" aria-label="' + esc(caption) + '">' +
+      rows.map((r) =>
+        '<div class="dsn-col' + (r.selected ? " is-selected" : "") + '"' + (r.title ? ' title="' + esc(r.title) + '"' : "") + ">" +
+        '<div class="dsn-pair">' +
+        '<div><span class="dsn-col-val">' + num(r.a || 0) + '</span><i class="a" style="height:' + h(r.a) + 'px"></i></div>' +
+        '<div><span class="dsn-col-val">' + num(r.b || 0) + '</span><i class="b" style="height:' + h(r.b) + 'px"></i></div>' +
+        '</div><span class="dsn-col-lab">' + esc(r.label) + "</span></div>").join("") + "</div>";
+  }
+
   // The approval process changed just before this year (set in the YAML, passed in metrics.json)
   const changeYear = () => (M && M.process_change_year) || 2023;
 
@@ -407,7 +422,7 @@
       const v = values(y);
       if (!isNum(v)) empties.push(y);
       return { label: String(y) + (marked && y >= changeYear() ? "†" : ""), value: isNum(v) ? v : 0,
-        text: isNum(v) ? format(v) : "none", empty: !isNum(v), selected: chosen(y), title: hover ? hover(y, v) : "" };
+        text: isNum(v) ? format(v, y) : "none", empty: !isNum(v), selected: chosen(y), title: hover ? hover(y, v) : "" };
     }), caption);
     return html + (empties.length && emptyNote ? '<p class="dsn-note dsn-empty-note">' + emptyNote(empties) + "</p>" : "");
   }
@@ -500,13 +515,20 @@
       trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).median_days, "Median days to approve by year", (v) => String(Math.round(v)), true) + processNote() +
       (S && S.available
         ? '<p class="dsn-sub dsn-chart-title">Baskets per year (date sent in Jay, from ' + S.period.baskets_from + ")</p>" +
-          trendColumns((y) => (byYear(S.by_year, y) || {}).baskets, "Baskets per year", (v) => num(v))
+          pairedColumns(M.years.map((y) => {
+            const r = byYear(S.by_year, y) || {};
+            const sent = r.baskets || 0, wt = r.with_turnaround || 0;
+            return { label: String(y), a: sent, b: wt, selected: chosen(y),
+              title: y + ": " + num(sent) + (sent === 1 ? " basket" : " baskets") + " sent; " + num(wt) + " of them " + (wt === 1 ? "has" : "have") +
+                " a turnaround time" + (sent ? " (" + pct((wt / sent) * 100) + ")" : "") };
+          }), "Baskets sent per year, and how many have a turnaround time", "Baskets sent", "With a turnaround time") +
+          '<p class="dsn-note">The lighter column is the number of baskets sent that have a turnaround time. Only these baskets are in the median days chart below.</p>'
         : "") +
       (B && B.available
-        ? '<p class="dsn-sub dsn-chart-title">Median days from basket request to completion (' + (manualDates(B)
+        ? '<p class="dsn-sub dsn-chart-title">Median days from basket request to completion, the day the data was sent (n = baskets with a turnaround time; ' + (manualDates(B)
             ? "every basket requested through Planner, from " + plannerYear(B) + ", and baskets whose request date was found in emails"
             : "every basket requested through Planner, from " + plannerYear(B)) + ")</p>" +
-          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v) => String(Math.round(v)), false, (ys) => {
+          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v, y) => String(Math.round(v)) + '<small class="dsn-col-n">n=' + num((byYear(B.by_year, y) || {}).baskets || 0) + "</small>", false, (ys) => {
             const early = ys.filter((y) => y < plannerYear(B)), later = ys.filter((y) => y >= plannerYear(B));
             return (early.length ? "<strong>" + early.join(", ") + ":</strong> no baskets have a turnaround time, because the request process started in " + plannerYear(B) +
               (manualDates(B) ? " and no request dates from emails are recorded for " + (early.length === 1 ? "it" : "them") : "") + ". " : "") +
@@ -517,7 +539,7 @@
             return num(r.baskets) + (r.baskets === 1 ? " basket" : " baskets") + " in this median (requests made in " + y + ")" +
               (r.manual_baskets ? ", " + num(r.manual_baskets) + " with a request date found in emails" : "");
           }) +
-          '<p class="dsn-note">Hover over a bar to see how many baskets its median is based on. These numbers are smaller than the Baskets per year chart above. That chart counts every basket sent through Jay, by the year its data was sent. A turnaround time can only be worked out for a basket whose request came in through the request process (from ' + plannerYear(B) + ')' + (manualDates(B) ? " or whose request date was found in emails" : "") + " and has been completed, and this chart groups those baskets by the year the request came in, not the year the data was sent.</p>"
+          '<p class="dsn-note">Each bar is the median number of days from the basket request coming in to the data being sent. The <strong>n</strong> under each bar is the number of baskets with a turnaround time that the median is based on: the same baskets as the lighter columns in the Baskets per year chart above. This chart groups them by the year the request came in, not the year the data was sent, so the yearly n can differ from the lighter columns. A turnaround time can only be worked out for a basket whose request came in through the request process (from ' + plannerYear(B) + ')' + (manualDates(B) ? " or whose request date was found in emails" : "") + " and that has a date sent in Jay.</p>"
         : "") +
       '<p class="dsn-sub dsn-chart-title">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
