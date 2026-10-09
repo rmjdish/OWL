@@ -944,8 +944,8 @@
           });
         }
       });
-      // Start with the most recent three years on the "through the year" chart
-      M.years.filter((y) => M.applications.by_year.some((r) => r.year === y && r.applications > 0)).slice(-3).forEach((y) => visibleLines.add(y));
+      // Start with every year that has applications shown on the "through the year" chart
+      M.years.filter((y) => M.applications.by_year.some((r) => r.year === y && r.applications > 0)).forEach((y) => visibleLines.add(y));
       $("dsn-status").style.display = "none";
       if (root()) root().classList.remove("dsn-loading");
       bindEvents();
