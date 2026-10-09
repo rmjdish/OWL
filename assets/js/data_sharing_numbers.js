@@ -908,6 +908,7 @@
     const status = $("dsn-status");
     if (status) {
       status.className = "dsn-status is-error";
+      status.innerHTML = "";
       status.textContent = "The figures could not be loaded (" + err.message + "). Please try again later.";
     }
     console.error(err);
@@ -946,6 +947,7 @@
       // Start with the most recent three years on the "through the year" chart
       M.years.filter((y) => M.applications.by_year.some((r) => r.year === y && r.applications > 0)).slice(-3).forEach((y) => visibleLines.add(y));
       $("dsn-status").style.display = "none";
+      if (root()) root().classList.remove("dsn-loading");
       bindEvents();
       renderAll();
     }).catch(showError);
