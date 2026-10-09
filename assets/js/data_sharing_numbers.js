@@ -528,18 +528,18 @@
         ? '<p class="dsn-sub dsn-chart-title">Median days from basket request to completion, the day the data was sent (n = baskets with a turnaround time; ' + (manualDates(B)
             ? "every basket requested through Planner, from " + plannerYear(B) + ", and baskets whose request date was found in emails"
             : "every basket requested through Planner, from " + plannerYear(B)) + ")</p>" +
-          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year of the request", (v, y) => String(Math.round(v)) + '<small class="dsn-col-n">n=' + num((byYear(B.by_year, y) || {}).baskets || 0) + "</small>", false, (ys) => {
+          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year", (v, y) => String(Math.round(v)) + '<small class="dsn-col-n">n=' + num((byYear(B.by_year, y) || {}).baskets || 0) + "</small>", false, (ys) => {
             const early = ys.filter((y) => y < plannerYear(B)), later = ys.filter((y) => y >= plannerYear(B));
             return (early.length ? "<strong>" + early.join(", ") + ":</strong> no baskets have a turnaround time, because the request process started in " + plannerYear(B) +
               (manualDates(B) ? " and no request dates from emails are recorded for " + (early.length === 1 ? "it" : "them") : "") + ". " : "") +
               (later.length ? "<strong>" + later.join(", ") + ":</strong> no completed requests yet. " : "");
           }, (y, v) => {
             const r = byYear(B.by_year, y) || {};
-            if (!isNum(v)) return "No baskets with a turnaround time for requests made in " + y;
-            return num(r.baskets) + (r.baskets === 1 ? " basket" : " baskets") + " in this median (requests made in " + y + ")" +
+            if (!isNum(v)) return "No baskets with a turnaround time for " + (B.source && B.source.grouped_by === "year_requested" ? "requests made in " : "data sent in ") + y;
+            return num(r.baskets) + (r.baskets === 1 ? " basket" : " baskets") + " in this median (" + (B.source && B.source.grouped_by === "year_requested" ? "requests made in " : "data sent in ") + y + ")" +
               (r.manual_baskets ? ", " + num(r.manual_baskets) + " with a request date found in emails" : "");
           }) +
-          '<p class="dsn-note">Each bar is the median number of days from the basket request coming in to the data being sent. The <strong>n</strong> under each bar is the number of baskets with a turnaround time that the median is based on: the same baskets as the lighter columns in the Baskets per year chart above. This chart groups them by the year the request came in, not the year the data was sent, so the yearly n can differ from the lighter columns. A turnaround time can only be worked out for a basket whose request came in through the request process (from ' + plannerYear(B) + ')' + (manualDates(B) ? " or whose request date was found in emails" : "") + " and that has a date sent in Jay.</p>"
+          '<p class="dsn-note">Each bar is the median number of days from the basket request coming in to the data being sent. The <strong>n</strong> under each bar is the number of baskets with a turnaround time that the median is based on: the same baskets as the lighter columns in the Baskets per year chart above. ' + (B.source && B.source.grouped_by === "year_requested" ? "This chart groups them by the year the request came in, not the year the data was sent, so the yearly n can differ from the lighter columns" : "Both charts group baskets by the year the data was sent, so the n of each year is the same as the lighter column") + '. A turnaround time can only be worked out for a basket whose request came in through the request process (from ' + plannerYear(B) + ')' + (manualDates(B) ? " or whose request date was found in emails" : "") + " and that has a date sent in Jay.</p>"
         : "") +
       '<p class="dsn-sub dsn-chart-title">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
