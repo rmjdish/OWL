@@ -31,7 +31,7 @@
 
   // Elements (and their descendants) that should never be scanned/linked
   const SKIP_SELECTORS = [
-    "script", "style", "noscript", "code", "pre",
+    "script", "style", "noscript", "code", "pre", "svg",
     "a", "button", "input", "textarea", "select",
     "header", "footer", "nav",
     ".site-nav", ".site-header", ".sidebar-summary",
@@ -173,6 +173,15 @@
 
     function run() {
       const contentRoot = document.querySelector("main") || document.body;
+      // Work out which terms are STILL linked in the page right now. Pages that
+      // redraw parts of themselves (filters, charts) throw their old links
+      // away, and those terms must be allowed to link again on the next run.
+      linkedTerms.clear();
+      contentRoot.querySelectorAll("a.jargon-term").forEach(a => {
+        const h = a.getAttribute("href") || "";
+        const i = h.indexOf("#jargon-");
+        if (i !== -1) linkedTerms.add(h.slice(i + 8));
+      });
       // Snapshot text nodes BEFORE mutating the DOM — TreeWalker results
       // would otherwise go stale mid-loop as nodes get replaced.
       const nodes = collectTextNodes(contentRoot);

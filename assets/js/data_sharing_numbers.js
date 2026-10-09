@@ -839,6 +839,15 @@
 
   // ---------- render and events ----------
 
+  // Ask the site-wide jargon linker to look at the page again. Every section is drawn by this
+  // script after the figures arrive, which is later than the linker's own one-off scan, and
+  // clicking a year or a chart line redraws sections and throws their links away.
+  let relinkTimer = null;
+  function relink() {
+    clearTimeout(relinkTimer);
+    relinkTimer = setTimeout(() => { if (typeof window.runJargonLinker === "function") window.runJargonLinker(); }, 0);
+  }
+
   function safely(id, fn) {
     const target = $(id);
     if (!target) return;
@@ -848,6 +857,7 @@
       console.error("[Metrics and Trends] Section " + id + " failed:", err);
       target.innerHTML = unavailable();
     }
+    relink();
   }
 
   function renderAll() {
