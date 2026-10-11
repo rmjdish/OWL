@@ -73,6 +73,20 @@
     return sel.slice(0, -1).join(", ") + " and " + sel[sel.length - 1];
   }
 
+  // The years the figures and the PDF cover, in words, for the button, the messages and the PDF itself
+  function inARow(list) { return list.length >= 3 && list.every((y, i) => i === 0 || y === list[i - 1] + 1); }
+  function yearsText() {
+    if (isAll()) return "all years (" + M.start_year + " to " + M.end_year + ")";
+    if (sel.length === 1) return String(sel[0]);
+    if (inARow(sel)) return sel[0] + " to " + sel[sel.length - 1];
+    if (sel.length <= 4) return sel.slice(0, -1).join(", ") + " and " + sel[sel.length - 1];
+    return sel.length + " years (" + sel[0] + " to " + sel[sel.length - 1] + ")";
+  }
+  function yearsFile() {
+    if (isAll()) return "all_years";
+    return inARow(sel) ? sel[0] + "-" + sel[sel.length - 1] : sel.join("-");
+  }
+
   function formatDate(text) {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(text || ""));
     if (!m) return "";
@@ -238,9 +252,9 @@
     const chips = ['<button type="button" class="dsn-chip' + (isAll() ? " on" : "") + '" data-year="all" aria-pressed="' + isAll() + '">All years</button>']
       .concat(M.years.map((y) => '<button type="button" class="dsn-chip' + (chosen(y) ? " on" : "") + '" data-year="' + y + '" aria-pressed="' + chosen(y) + '">' + y + "</button>")).join("");
     return '<div class="dsn-filter"><span class="dsn-filter-label">Show figures for</span>' + chips +
-      '<span class="dsn-filter-hint">Choose one or more years</span>' +
+      '<span class="dsn-filter-hint">Choose one or more years. The figures below and the PDF are for <b>' + esc(yearsText()) + "</b>.</span>" +
       '<span class="dsn-pdf"><span id="dsn-pdf-msg" class="dsn-pdf-msg" role="status"></span>' +
-      '<button type="button" class="dsn-pdf-btn" data-pdf="landscape" title="Download a one-page A4 PDF of these figures for the years chosen"><i class="ti ti-download" aria-hidden="true"></i> Download PDF</button></span></div>';
+      '<button type="button" class="dsn-pdf-btn" data-pdf="landscape" title="Download a one-page A4 PDF of the figures for ' + esc(yearsText()) + '"><i class="ti ti-download" aria-hidden="true"></i> Download PDF for ' + esc(yearsText()) + "</button></span></div>";
   }
 
   // How many are behind each figure: two ladders (applications, baskets), and why some figures rest on fewer
@@ -574,6 +588,53 @@
       '<p class="dsn-note">Topics and years of collection are counted by the year the data was sent.</p>';
   }
 
+  // Variables requested together, for the years chosen. Worked out here from variable_requests.json (the same file
+  // the "most requested variables" figures use), so the pairs follow the year filter. The script's own all-years
+  // pairs in metrics.json are only used if that file did not load. The same rules as the script: a variable counts
+  // once per project, only the BUNDLE_TOP_VARIABLES most requested variables are considered, and a pair needs at
+  // least min_projects projects.
+  const BUNDLE_TOP_VARIABLES = 150;
+  let bundleCache = { key: null, value: null };
+  function bundleStats() {
+    if (!requests) return null;
+    const key = isAll() ? "all" : sel.join(",");
+    if (bundleCache.key === key) return bundleCache.value;
+    const minP = (M.bundles && M.bundles.min_projects) || 5;
+    const years = isAll() ? null : sel.map(String);
+    const sets = [];
+    requests.forEach((p) => {
+      const names = new Set();
+      Object.keys(p.by_year || {}).forEach((y) => { if (!years || years.includes(y)) (p.by_year[y] || []).forEach((n) => names.add(String(n).toLowerCase())); });
+      if (names.size) sets.push(Array.from(names));
+    });
+    const counts = new Map();
+    sets.forEach((list) => list.forEach((n) => counts.set(n, (counts.get(n) || 0) + 1)));
+    const kept = Array.from(counts.entries()).filter((e) => e[1] >= minP).sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1)).slice(0, BUNDLE_TOP_VARIABLES);
+    const K = kept.length, index = new Map(kept.map((e, i) => [e[0], i])), asked = kept.map((e) => e[1]);
+    const together = new Int32Array(K * K);
+    sets.forEach((list) => {
+      const ids = list.map((n) => index.get(n)).filter((i) => i !== undefined);
+      for (let a = 0; a < ids.length; a++) for (let c = a + 1; c < ids.length; c++) { together[ids[a] * K + ids[c]]++; together[ids[c] * K + ids[a]]++; }
+    });
+    const shown = (n) => { const info = dict.get(n); return info ? info.name : n; };
+    const total = sets.length;
+    const lift = (i, j) => (total && asked[i] && asked[j]) ? (together[i * K + j] * total) / (asked[i] * asked[j]) : 0;
+    const pairs = [];
+    for (let i = 0; i < K; i++) for (let j = i + 1; j < K; j++) if (together[i * K + j] >= minP) pairs.push({ i, j, projects: together[i * K + j], lift: lift(i, j) });
+    pairs.sort((a, b) => b.projects - a.projects || b.lift - a.lift);
+    const also = {};
+    kept.forEach((e, i) => {
+      const partners = [];
+      for (let j = 0; j < K; j++) if (j !== i && together[i * K + j] >= minP) partners.push({ j, t: together[i * K + j], lf: lift(i, j) });
+      partners.sort((a, b) => b.lf - a.lf).slice(0, 5);
+      if (partners.length) also[shown(e[0])] = partners.slice(0, 5).map((q) => ({ name: shown(kept[q.j][0]), projects_together: q.t, projects_with_variable: asked[i], percent_of_projects_with_variable: Math.round((q.t / asked[i]) * 1000) / 10 }));
+    });
+    const value = { projects: total, min_projects: minP, also_requested: also,
+      top_pairs: pairs.slice(0, 30).map((q) => ({ a: shown(kept[q.i][0]), b: shown(kept[q.j][0]), projects: q.projects })) };
+    bundleCache = { key, value };
+    return value;
+  }
+
   function renderVariables() {
     // Most requested variables (popular_vars_yr.json)
     let popHtml = '<p class="dsn-note">The most requested variables are not available right now.</p>';
@@ -594,12 +655,13 @@
     const sizeHtml = '<div class="dsn-tiles">' + tile("Median per project", isNum(vp.median) ? Number(vp.median).toFixed(0) : "–") + tile("Largest request", num(vp.max)) + "</div>" + barRows(bands);
 
     // Requested together
-    const b = M.bundles;
+    const b = bundleStats() || M.bundles;
+    const bYears = requests ? selLabel() : "all years";
     let togetherHtml = '<p class="dsn-note">Variable pairs are not available right now.</p>';
     if (b) {
       const pairs = b.top_pairs.slice(0, 10).map((p) => ({
         label: varLink(p.a) + '<span class="dsn-plus"> + </span>' + varLink(p.b), value: p.projects,
-        text: withPct(p.projects, b.projects) + " projects", title: outOf(p.projects, b.projects, "projects (all years)"),
+        text: withPct(p.projects, b.projects) + " projects", title: outOf(p.projects, b.projects, "projects (" + bYears + ")"),
       }));
       const names = Object.keys(b.also_requested || {}).sort((x, y) => x.localeCompare(y));
       const options = '<option value="">Choose a variable...</option>' + names.map((n) => {
@@ -613,7 +675,9 @@
           '<span class="dsn-bar-val">' + (isNum(p.projects_together) ? num(p.projects_together) + " (" + pct(p.percent_of_projects_with_variable) + ")" : pct(p.percent_of_projects_with_variable)) + "</span></div>").join("") + "</div>" +
           '<p class="dsn-note">Share of projects asking for ' + esc(pickedVariable) + " that also asked for each variable.</p>";
       }
-      togetherHtml = '<p class="dsn-sub">Pairs of variables requested together most often, across all years</p>' + barRows(pairs) +
+      if (pickedVariable && !(b.also_requested || {})[pickedVariable]) pickedVariable = "";   // the chosen variable may have too few projects in the years now chosen
+      togetherHtml = '<p class="dsn-sub">Pairs of variables requested together most often, ' + (bYears === "all years" ? "across all years" : "in " + esc(bYears)) + "</p>" +
+        (pairs.length ? barRows(pairs) : '<p class="dsn-note">No pair of variables was requested together by at least ' + num(b.min_projects) + " projects in " + esc(bYears) + ".</p>") +
         '<p class="dsn-sub" style="margin-top:18px;">What else do projects ask for with a variable?</p>' +
         '<select id="dsn-pick" class="dsn-select" aria-label="Choose a variable">' + options + "</select>" + partners +
         '<p class="dsn-note">Each pair is counted once for every project that asked for both variables, however many baskets it sent. Very popular variables will often appear together simply because each is popular. Pairs requested by fewer than ' + num(b.min_projects) + " projects are not shown.</p>";
@@ -664,7 +728,7 @@
   const PDF_CSS = "*{box-sizing:border-box}html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;color:#333}" +
     ".pg{background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column}" +
     ".hd{background:linear-gradient(90deg,#4a0a7a,#6a0dad);color:#fff;padding:14px 26px;display:flex;justify-content:space-between;align-items:center;flex:none}" +
-    ".hd h1{margin:0;font-size:22px}.hd small{display:block;font-size:10.5px;opacity:.9;margin-top:3px}.hd .r{text-align:right;font-size:10px;opacity:.9}.hd .r b{font-size:16px}" +
+    ".hd h1{margin:0;font-size:22px}.hd small{display:block;font-size:10.5px;opacity:.9;margin-top:3px}.hd .r{text-align:right;font-size:10px;opacity:.9}.hd .r b{font-size:16px}.hd .yr{display:inline-block;background:#fff;color:#4a0a7a;border-radius:12px;padding:2px 12px;margin:0 0 0 8px;vertical-align:2px;font-size:13px;font-weight:700;opacity:1}" +
     ".body{flex:1;padding:14px 26px 10px;display:grid;gap:10px;min-height:0}" +
     ".w{display:flex;min-width:0;min-height:0}" +
     ".box{flex:1;min-width:0;background:var(--bg,#f4edfb);border:1px solid rgba(0,0,0,.07);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;min-height:0}" +
@@ -710,7 +774,8 @@
       vars = popular.map((p) => ({ name: (dict.get(String(p.name).toLowerCase()) || {}).name || p.name, label: (dict.get(String(p.name).toLowerCase()) || {}).label || "", value: isAll() ? p.total : sum(sel, (y) => (p.counts || {})[String(y)] || 0) }))
         .filter((p) => p.value > 0).sort((a, b) => b.value - a.value).slice(0, 8);
     }
-    const pairs = M.bundles && M.bundles.top_pairs ? M.bundles.top_pairs.slice(0, 3).map((p) => ({ name: p.a + " + " + p.b, value: p.projects, text: withPct(p.projects, M.bundles.projects) })) : [];
+    const bnd = bundleStats() || M.bundles;
+    const pairs = bnd && bnd.top_pairs ? bnd.top_pairs.slice(0, 3).map((p) => ({ name: p.a + " + " + p.b, value: p.projects, text: withPct(p.projects, bnd.projects) })) : [];
     const ths = (M.approval_times.thresholds || []).map((n) => ({ name: "Within " + n + " days", value: ap["percent_within_" + n] || 0, text: pct(ap["percent_within_" + n]) }));
     const distinct = (rows) => rows.filter((r) => valueOf(r) > 0).length;
     const th0 = (M.approval_times.thresholds || [])[0];
@@ -761,7 +826,7 @@
     const W = 1123, H = 794;   // A4 landscape, in pixels
     const when = M.generated ? formatDate(M.generated) : "";
     const hd = "<div><h1>NSHD Data Sharing: Metrics and Trends</h1><small>Applications for NSHD data, basket requests and turnaround · Applications " + M.start_year + " to " + M.end_year +
-      " · Years shown: " + esc(selLabel()) + '</small></div><div class="r"><b>OWL</b><br>Generated ' + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + (when ? " · Data updated " + esc(when) : "") + "</div>";
+      '</small></div><div class="r"><b>OWL</b> <span class="yr">Years covered: ' + esc(yearsText()) + '</span><br>Generated ' + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + (when ? " · Data updated " + esc(when) : "") + "</div>";
     const ft = "<b>How to read this report.</b> All times are medians, not averages. Basket dates come from Jay (date sent); turnaround runs from the request coming in to its completion, for baskets with a matched request. " +
       "Percentages use the projects shown. Figures are for " + esc(selLabel()) + ". Interactive version with year filters: rmjdish.github.io/OWL/docs/data_sharing/metrics";
     const medApprove = days(d.ap.median_days), medTurn = days(d.turnaround);
@@ -809,7 +874,9 @@
     const say = (t, bad) => { if (msg) { msg.textContent = t; msg.className = "dsn-pdf-msg" + (bad ? " is-error" : ""); } };
     const buttons = Array.from(document.querySelectorAll("[data-pdf]"));
     buttons.forEach((b) => (b.disabled = true));
-    say("Preparing the " + orientation + " PDF...");
+    const forYears = yearsText();   // taken now, so the message and the file agree even if a year is clicked while it builds
+    const fileYears = yearsFile();
+    say("Building the PDF for " + forYears + "...");
     let frame;
     return pdfLibs().then(() => {
       const page = pdfHtml(orientation);
@@ -824,9 +891,10 @@
         const land = orientation === "landscape";
         const pdf = new window.jspdf.jsPDF({ orientation: land ? "landscape" : "portrait", unit: "mm", format: "a4" });
         pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, land ? 297 : 210, land ? 210 : 297);
-        pdf.setProperties({ title: "NSHD Data Sharing: Metrics and Trends (" + selLabel() + ")" });
-        pdf.save("NSHD_Data_Sharing_Metrics_" + orientation + "_" + (isAll() ? "all_years" : sel.join("-")) + ".pdf");
-        say("Downloaded.");
+        const fileName = "NSHD_Data_Sharing_Metrics_" + fileYears + ".pdf";
+        pdf.setProperties({ title: "NSHD Data Sharing: Metrics and Trends (" + forYears + ")" });
+        pdf.save(fileName);
+        say("Downloaded " + fileName + " (" + forYears + ").");
       });
     }).catch((err) => {
       console.error("[Metrics and Trends] PDF export failed:", err);
