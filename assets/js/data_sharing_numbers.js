@@ -278,8 +278,7 @@
 
     const appLadder = ladder("Applications", "counted by the year they applied",
       step(nApps, "Approved applications") + arrow +
-      step(prep.with_data, "Asked for data", nApps ? pct(prep.percent) + " of approved applications. Each had at least one basket sent." : "There are no approved applications for this period.") +
-      (tm && tm.applications ? step(tm.applications, "With a first basket request date", "Median " + days(tm.median_days_after_application) + " from the application to the first basket request.") : ""),
+      step(prep.with_data, "Asked for data", nApps ? pct(prep.percent) + " of approved applications. Each had at least one basket sent." : "There are no approved applications for this period."),
       notAsked ? "<strong>" + num(notAsked) + " approved " + (notAsked === 1 ? "application has" : "applications have") + " not asked for data.</strong> " + (notAsked === 1
         ? "It either has not yet finalised its variables request, or it already held the data it needed and did not need to request it."
         : "They either have not yet finalised their variables request, or they already held the data they needed and did not need to request it.") : "");
@@ -287,7 +286,10 @@
     let basketLadder;
     if (sRow) {
       basketLadder = ladder("Baskets", "counted by the year they were sent",
-        step(sRow.baskets || 0, "Baskets sent", isNum(sRow.projects) ? "For " + num(sRow.projects) + (sRow.projects === 1 ? " project." : " projects.") : ""));
+        step(sRow.baskets || 0, "Baskets sent", isNum(sRow.projects) ? "For " + num(sRow.projects) + (sRow.projects === 1 ? " project." : " projects.") : "") +
+        (tm && tm.applications ? step(tm.applications, "Applications with a first basket request date", "Median " + days(tm.median_days_after_application) + " from the application to the first basket request.") : ""),
+        "<strong>The first basket request date comes from the request process.</strong> It started in " + (plannerYear(B) || "2022") + ", so baskets sent before then, or outside it, are counted as sent but have no request date. " +
+        "This box therefore rests on fewer applications than the approved total.");
     } else {
       basketLadder = ladder("Baskets", "counted by the year they were sent", '<div class="dsn-step"><div class="dsn-step-l">Basket figures are not available right now.</div></div>');
     }
