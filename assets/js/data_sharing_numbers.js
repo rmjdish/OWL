@@ -284,20 +284,8 @@
 
     let basketLadder;
     if (sRow) {
-      const sent = sRow.baskets || 0;
-      const withTurn = sRow.with_turnaround || 0;
-      const noTurn = Math.max(sent - withTurn, 0);
       basketLadder = ladder("Baskets", "counted by the year they were sent",
-        step(sent, "Baskets sent") + arrow +
-        (B ? step(withTurn, "With a turnaround time", pct(sent ? (withTurn / sent) * 100 : null) + " of baskets sent" +
-              (bRow && bRow.in_turnaround ? ". Measured from " + num(bRow.in_turnaround) + " requests, for " + num(bRow.projects) + " projects." : "."))
-           : step(null, "With a turnaround time", "Not available right now.")),
-        B && noTurn ? "<strong>" + num(noTurn) + " " + (noTurn === 1 ? "basket sent has" : "baskets sent have") + " no turnaround time.</strong> " +
-          (manualDates(B)
-            ? "A basket has a turnaround time if it was requested through the current request process, which records when a request comes in and when it is completed (it started in " + plannerYear(B) +
-              "), or if the request date was found in emails. The other baskets have no request time to measure from."
-            : "A basket has a turnaround time only if it was requested through the current request process, which records when a request comes in and when it is completed. " +
-              "That process started in " + plannerYear(B) + ", so baskets sent before then, or outside it, have no request time to measure from.") : "");
+        step(sRow.baskets || 0, "Baskets sent", isNum(sRow.projects) ? "For " + num(sRow.projects) + (sRow.projects === 1 ? " project." : " projects.") : ""));
     } else {
       basketLadder = ladder("Baskets", "counted by the year they were sent", '<div class="dsn-step"><div class="dsn-step-l">Basket figures are not available right now.</div></div>');
     }
@@ -441,7 +429,7 @@
     return html + (empties.length && emptyNote ? '<p class="dsn-note dsn-empty-note">' + emptyNote(empties) + "</p>" : "");
   }
 
-  // Baskets per year (Jay + SharePoint), then the turnaround of every basket requested through Planner
+  // Baskets per year (Jay), the share completed within 30 days, and the time from application to first basket request
   function basketBlock() {
     const S = M.basket_stats;
     const B = M.basket_turnaround;
@@ -462,50 +450,29 @@
       html += '<p class="dsn-note">Baskets per year are not available right now.</p>';
     }
 
-    // ---- turnaround, for every basket requested through Planner ----
-    html += "<h3>Basket turnaround</h3>";
-    if (!B || !B.available) return html + '<p class="dsn-note">Turnaround figures are not available right now.</p>';
-    const src = B.source;
-    const manualOn = manualDates(B);
-    html += '<p class="dsn-note"><strong>' + (manualOn ? "Where turnaround comes from." : "Why turnaround is only for baskets requested through Planner.") + "</strong> " +
-      "Basket requests flow through Power Automate, which allows the request and completion times to be logged in SharePoint and Planner. That is what lets turnaround be measured, so it covers baskets requested this way, from " +
-      plannerYear(B) + " (the first request is " + esc(formatDate(src.first_request)) + ")" +
-      (manualOn ? ". For some baskets sent before then, or made outside the process, the request date was found in emails and entered by hand, and turnaround for those runs from that date to the date the data was sent. "
-                : ", and not earlier baskets or baskets made outside the process. ") +
-      "Turnaround is the time from a basket request coming in to the request being completed. " +
-      "Only baskets that are matched to a basket in Jay, and linked to a project that is counted in these figures, are included.</p>";
-    if (!isAll() && sel.every((y) => y < src.first_year)) {
-      return html + '<p class="dsn-note">' + (manualOn ? "No basket request dates are recorded for " : "Planner has no basket requests for ") + selLabel() + ".</p>";
-    }
+    // ---- within 30 days, and the time from application to first basket request ----
+    if (!B || !B.available) return html;
     const row = rowFor(B) || {};
-    const tileList = [tile("Basket requests", num(row.in_turnaround), "naming " + num(row.baskets) + " baskets, for " + num(row.projects) + " projects"),
-      tile("Median turnaround", days(row.median_days), "from the request coming in to completion, for " + num(row.baskets) + " baskets"),
-      tile("Turned around on the same day", pct(row.same_day_percent))]
-      .concat(B.thresholds.map((n) => tile("Within " + n + " days", pct(row["percent_within_" + n]), num(row["within_" + n]) + " of " + num(row.baskets) + " baskets")));
-    const lo = row.left_out || {};
-    const projectOut = (lo.project_not_in_the_metrics || 0) + (lo.project_conflict_planner_vs_jay || 0) + (lo.not_linked_to_a_project || 0);
-    const leftOut = projectOut
-      ? " " + num(projectOut) + " completed " + (projectOut === 1 ? "request" : "requests") + " for baskets in Jay " + (projectOut === 1 ? "was" : "were") + " left out because the project is not counted in these figures or could not be confirmed (" +
-        [lo.project_not_in_the_metrics ? num(lo.project_not_in_the_metrics) + " linked to a project outside these figures" : "",
-         lo.project_conflict_planner_vs_jay ? num(lo.project_conflict_planner_vs_jay) + " where Planner and Jay disagree on the project" : "",
-         lo.not_linked_to_a_project ? num(lo.not_linked_to_a_project) + " not linked to any project" : ""].filter(Boolean).join(", ") + ")."
-      : "";
+    const T = (B.thresholds || []).includes(30) ? 30 : null;
+    if (T && !(!isAll() && sel.every((y) => y < B.source.first_year))) {
+      html += '<div class="dsn-tiles">' + tile("Baskets completed within " + T + " days", pct(row["percent_within_" + T]),
+        num(row["within_" + T]) + " of the " + num(row.baskets) + " baskets with a request time") + "</div>" +
+        '<p class="dsn-note">This is the share of baskets completed within ' + T + " days of the request coming in. It is worked out only for baskets requested through the current request process (from " + plannerYear(B) +
+        (manualDates(B) ? ", plus baskets whose request date was found in emails" : "") + "), so it rests on fewer baskets than the total above.</p>";
+    }
 
     // when the first basket request came in, compared with the application (Planner requests linked to applications)
     const tm = rowFor(B.request_timing) || {};
     const total = (tm.with_application || 0) + (tm.days_2_7 || 0) + (tm.days_8_30 || 0) + (tm.over_30 || 0);
     const bands = [["with_application", "With the application (same or next day)"], ["days_2_7", "2 to 7 days later"],
       ["days_8_30", "8 to 30 days later"], ["over_30", "More than 30 days later"]];
-    const timing = total
-      ? '<p class="dsn-sub">When the first basket request came in, after the application</p>' +
+    if (total) {
+      html += "<h3>From application to first basket</h3>" +
         '<div class="dsn-tiles">' + tile("Median time from application to first basket request", days(tm.median_days_after_application), "across " + num(tm.applications) + " applications") + "</div>" +
-        barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: withPct(tm[x[0]] || 0, total), title: outOf(tm[x[0]] || 0, total, "applications with a linked first basket request") })))
-      : "";
-    const notes = '<p class="dsn-note">Each request counts once, however many baskets it names. ' +
-      (row.manual_requests ? num(row.manual_requests) + (row.manual_requests === 1 ? " request uses" : " requests use") + " a request date found in emails (" + num(row.manual_baskets) + (row.manual_baskets === 1 ? " basket" : " baskets") + "). " : "") +
-      (row.open ? num(row.open) + " requests are still open and are not in the turnaround. " : "") + leftOut.trim() +
-      " All times are medians, because a few very slow requests would skew an average.</p>";
-    return html + '<div class="dsn-tiles dsn-tiles-one-line" style="--dsn-cols:' + tileList.length + '">' + tileList.join("") + "</div>" + notes + timing;
+        barRows(bands.map((x) => ({ label: x[1], value: tm[x[0]] || 0, text: withPct(tm[x[0]] || 0, total), title: outOf(tm[x[0]] || 0, total, "applications with a linked first basket request") }))) +
+        '<p class="dsn-note">Measured from the application to the first basket request that can be linked to it (by its Form ID or share name). All times are medians.</p>';
+    }
+    return html;
   }
 
   function renderService() {
@@ -529,31 +496,8 @@
       trendColumns((y) => (byYear(M.approval_times.by_year, y) || {}).median_days, "Median days to approve by year", (v) => String(Math.round(v)), true) + processNote() +
       (S && S.available
         ? '<p class="dsn-sub dsn-chart-title">Baskets per year (date sent in Jay, from ' + S.period.baskets_from + ")</p>" +
-          pairedColumns(M.years.map((y) => {
-            const r = byYear(S.by_year, y) || {};
-            const sent = r.baskets || 0, wt = r.with_turnaround || 0;
-            return { label: String(y), a: sent, b: wt, selected: chosen(y),
-              title: y + ": " + num(sent) + (sent === 1 ? " basket" : " baskets") + " sent; " + num(wt) + " of them " + (wt === 1 ? "has" : "have") +
-                " a turnaround time" + (sent ? " (" + pct((wt / sent) * 100) + ")" : "") };
-          }), "Baskets sent per year, and how many have a turnaround time", "Baskets sent", "With a turnaround time") +
-          '<p class="dsn-note">The lighter column is the number of baskets sent that have a turnaround time. Only these baskets are in the median days chart below.</p>'
-        : "") +
-      (B && B.available
-        ? '<p class="dsn-sub dsn-chart-title">Median days from basket request to completion, the day the data was sent (n = baskets with a turnaround time; ' + (manualDates(B)
-            ? "every basket requested through Planner, from " + plannerYear(B) + ", and baskets whose request date was found in emails"
-            : "every basket requested through Planner, from " + plannerYear(B)) + ")</p>" +
-          trendColumns((y) => (byYear(B.by_year, y) || {}).median_days, "Median turnaround by year", (v, y) => String(Math.round(v)) + '<small class="dsn-col-n">n=' + num((byYear(B.by_year, y) || {}).baskets || 0) + "</small>", false, (ys) => {
-            const early = ys.filter((y) => y < plannerYear(B)), later = ys.filter((y) => y >= plannerYear(B));
-            return (early.length ? "<strong>" + early.join(", ") + ":</strong> no baskets have a turnaround time, because the request process started in " + plannerYear(B) +
-              (manualDates(B) ? " and no request dates from emails are recorded for " + (early.length === 1 ? "it" : "them") : "") + ". " : "") +
-              (later.length ? "<strong>" + later.join(", ") + ":</strong> no completed requests yet. " : "");
-          }, (y, v) => {
-            const r = byYear(B.by_year, y) || {};
-            if (!isNum(v)) return "No baskets with a turnaround time for " + (B.source && B.source.grouped_by === "year_requested" ? "requests made in " : "data sent in ") + y;
-            return num(r.baskets) + (r.baskets === 1 ? " basket" : " baskets") + " in this median (" + (B.source && B.source.grouped_by === "year_requested" ? "requests made in " : "data sent in ") + y + ")" +
-              (r.manual_baskets ? ", " + num(r.manual_baskets) + " with a request date found in emails" : "");
-          }) +
-          '<p class="dsn-note">Each bar is the median number of days from the basket request coming in to the data being sent. The <strong>n</strong> under each bar is the number of baskets with a turnaround time that the median is based on: the same baskets as the lighter columns in the Baskets per year chart above. ' + (B.source && B.source.grouped_by === "year_requested" ? "This chart groups them by the year the request came in, not the year the data was sent, so the yearly n can differ from the lighter columns" : "Both charts group baskets by the year the data was sent, so the n of each year is the same as the lighter column") + '. A turnaround time can only be worked out for a basket whose request came in through the request process (from ' + plannerYear(B) + ')' + (manualDates(B) ? " or whose request date was found in emails" : "") + " and that has a date sent in Jay.</p>"
+          trendColumns((y) => (byYear(S.by_year, y) || {}).baskets, "Baskets sent per year", (v) => num(v)) +
+          '<p class="dsn-note">Each basket counts once, in the year its data was sent.</p>'
         : "") +
       '<p class="dsn-sub dsn-chart-title">Applications with data prepared (%)</p>' +
       trendColumns((y) => (byYear(M.data_prepared.by_year, y) || {}).percent_with_data, "Percentage of applications with data prepared by year", (v) => Math.round(v) + "%") +
@@ -696,7 +640,7 @@
       "<li><strong>Medians:</strong> every time is a median (the middle value), not an average, because a few very slow cases would pull an average up.</li>" +
       "<li><strong>Time to approve</strong> is the number of days from submission to approval. Applications not yet approved are left out.</li>" +
       "<li><strong>Baskets per year</strong> counts every basket once, in the year its data was sent, from 2021. Every basket is sent through Jay, which holds the record of it, so a basket that is only named on an application and was never sent is not counted. Only baskets of projects counted in these figures are included.</li>" +
-      "<li><strong>Basket turnaround</strong> is the number of days from a basket request coming in to the day the data was sent, as recorded in Jay. It is worked out for each basket and project: a basket reused for another project counts again for that project, but the same basket requested again for the same project counts once. Requests flow through Power Automate, which allows the times to be logged in SharePoint and Planner, so it covers baskets requested this way, from 2022." + (manualDates(M.basket_turnaround) ? " For some baskets sent before then, or made outside the process, the request date was found in emails and entered by hand; turnaround for those runs from that date to the date the data was sent." : "") + " Only baskets that are matched to a basket in Jay are included, and each must be linked to a project that is counted in these figures: the project comes from the Planner request and from Jay, and the two must agree. A basket with no date sent in Jay yet is not included.</li>" +
+      "<li><strong>Baskets completed within 30 days</strong> is the share of baskets completed within 30 days of the request coming in, as recorded in Jay. It is worked out only for baskets requested through the current request process (Power Automate, logged in SharePoint and Planner, from " + plannerYear(M.basket_turnaround) + ")" + (manualDates(M.basket_turnaround) ? ", plus some baskets whose request date was found in emails" : "") + ", so it rests on fewer baskets than the total sent. Each must be matched to a basket in Jay and linked to a project counted in these figures. Median basket turnaround is not reported.</li>" +
       "<li><strong>Asked for data</strong> means an application had at least one basket sent. An approved application that has not asked for data either has not yet finalised its variables request, or already held the data it needed and did not need to request it.</li>" +
       "<li><strong>When the first basket request comes in</strong> uses the Planner requests that can be linked to an application (by its Form ID or share name), and measures from the application.</li>" +
       "<li><strong>Applications with data prepared</strong> are those that have had at least one basket of variables prepared. Recent applications may not have asked for data yet.</li>" +
@@ -784,13 +728,11 @@
     return {
       bands, bandTotal, th0, within: th0 ? ap["percent_within_" + th0] : null, institutionCount: distinct(M.where.institutions), countryCount: distinct(M.where.countries),
       ap, rp, nApps, jayApps, prep, vp, uk, ukTotal, types, topics, topicBase, vars, varBase, pairs, ths,
-      baskets: sRow.baskets, turnaround: tRow.median_days, turnaroundN: tRow.baskets,
+      baskets: sRow.baskets, turnaroundN: tRow.baskets, within30: tRow["percent_within_30"], within30N: tRow["within_30"],
       condor: sum(M.condor_accounts.by_year.filter((r) => picked().includes(r.year)), (r) => r.new_accounts),
       countries: top(M.where.countries, 5), institutions: top(M.where.institutions, 7), countryTotal: ukTotal,
       appCols: apps.map((a) => ({ label: String(a.year), value: a.applications, text: num(a.applications), dim: !isAll() && !chosen(a.year) })),
       basketCols: S && S.available ? M.years.map((y) => ({ label: String(y), value: (byYear(S.by_year, y) || {}).baskets || 0, text: num((byYear(S.by_year, y) || {}).baskets || 0), dim: !isAll() && !chosen(y) })).filter((c) => c.value > 0) : [],
-      turnCols: B && B.available ? M.years.map((y) => ({ y, r: byYear(B.by_year, y) || {} })).filter((x) => isNum(x.r.median_days)).map((x) => ({
-        label: String(x.y), value: x.r.median_days, text: String(Math.round(x.r.median_days)), sub: x.r.baskets, dim: !isAll() && !chosen(x.y) })) : [],
     };
   }
 
@@ -819,17 +761,17 @@
     return '<div class="t" style="--tbg:' + t[0] + ";--ted:" + t[1] + ";--tx:" + t[2] + '"><b>' + v + "</b><span>" + l + "</span>" + (note ? '<span class="n">' + note + "</span>" : "") + "</div>";
   };
   const rSplit = (d) => d.ukTotal ? '<div class="split">' + d.uk.map((x, i) => '<div style="width:' + (x.value / d.ukTotal) * 100 + '%;background:' + (i ? "#2a8fb5" : "#3b6fb6") + '">' + esc(x.name) + " " + pct((x.value / d.ukTotal) * 100) + "</div>").join("") + "</div>" : "";
-  const turnCap = '<div class="cap">Median days from basket request to completion, where n is the number of baskets each median is based on. It is smaller than the baskets sent each year, because only baskets with a matched request have a turnaround time.</div>';
+  const basketCap = '<div class="cap">Baskets sent per year, each counted once in the year its data was sent</div>';
 
   function pdfHtml(orientation) {
     const d = pdfData();
     const W = 1123, H = 794;   // A4 landscape, in pixels
     const when = M.generated ? formatDate(M.generated) : "";
-    const hd = "<div><h1>NSHD Data Sharing: Metrics and Trends</h1><small>Applications for NSHD data, basket requests and turnaround · Applications " + M.start_year + " to " + M.end_year +
+    const hd = "<div><h1>NSHD Data Sharing: Metrics and Trends</h1><small>Applications for NSHD data and basket requests · Applications " + M.start_year + " to " + M.end_year +
       '</small></div><div class="r"><b>OWL</b> <span class="yr">Years covered: ' + esc(yearsText()) + '</span><br>Generated ' + new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + (when ? " · Data updated " + esc(when) : "") + "</div>";
-    const ft = "<b>How to read this report.</b> All times are medians, not averages. Basket dates come from Jay (date sent); turnaround runs from the request coming in to its completion, for baskets with a matched request. " +
+    const ft = "<b>How to read this report.</b> All times are medians, not averages. Basket dates come from Jay (date sent); the 30-day figure is for baskets with a matched request. " +
       "Percentages use the projects shown. Figures are for " + esc(selLabel()) + ". Interactive version with year filters: rmjdish.github.io/OWL/docs/data_sharing/metrics";
-    const medApprove = days(d.ap.median_days), medTurn = days(d.turnaround);
+    const medApprove = days(d.ap.median_days);
     const big = (a, aL, b2, bL, c, cL, e, eL) => '<div class="big"><div><b>' + a + "</b><span>" + aL + "</span></div><div><b>" + b2 + "</b><span>" + bL + "</span></div>" +
       (c !== undefined ? "<div><b>" + c + "</b><span>" + cL + "</span></div>" : "") + (e !== undefined ? "<div><b>" + e + "</b><span>" + eL + "</span></div>" : "") + "</div>";
     const medDays = isNum(d.ap.median_days) ? Math.round(d.ap.median_days) : "–";
@@ -839,11 +781,11 @@
       const nValid = isNum(d.ap.approved) ? num(d.ap.approved) : "";
       const bs = (n, what) => (n && n !== "0" ? '<div class="cap bs">' + what.replace("{n}", n) + "</div>" : "");
       const rail = [rTile(num(d.nApps), "Approved projects", "purple", "All approved projects in the years chosen"), rTile(pct(d.within), "Approved within " + (d.th0 || "–") + " days", "rose", nValid ? "of " + nValid + " approved projects with a valid approval time" : ""), rTile(medApprove, "Median time to approve", "coral", nValid ? "across the same " + nValid + " projects" : ""),
-        rTile(num(d.baskets), "Baskets requested", "teal", "Baskets sent in the years chosen"), rTile(medTurn, "Median basket turnaround", "sky", isNum(d.turnaroundN) ? "Based on " + num(d.turnaroundN) + (d.turnaroundN === 1 ? " basket" : " baskets") + (isNum(d.baskets) ? " of " + num(d.baskets) : "") : ""), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber", isNum(d.rp.projects_with_data) ? "of " + num(d.rp.projects_with_data) + " projects that were sent data" : "")].join("");
+        rTile(num(d.baskets), "Baskets requested", "teal", "Baskets sent in the years chosen"), rTile(pct(d.within30), "Baskets within 30 days", "sky", isNum(d.within30N) ? num(d.within30N) + " of the " + num(d.turnaroundN) + " baskets with a request time" : ""), rTile(pct(d.rp.percent_returned), "Projects that came back for more", "amber", isNum(d.rp.projects_with_data) ? "of " + num(d.rp.projects_with_data) + " projects that were sent data" : "")].join("");
       body = '<div class="body" style="grid-template-columns:170px 1fr 1fr 1fr;grid-template-rows:1fr 1fr 0.8fr">' +
         '<div class="tiles" style="grid-row:1/4;grid-template-rows:repeat(6,1fr)">' + rail + "</div>" +
         rBox("Approved projects each year", rCols(d.appCols) + '<div class="cap">Projects approved per year (by year of application)</div>', "purple", "grid-column:2/4") +
-        rBox("Median basket turnaround by year (days)", rCols(d.turnCols, true) + turnCap, "teal") +
+        rBox("Baskets sent each year", rCols(d.basketCols) + basketCap, "teal") +
         rBox("How quickly projects are approved", big(medDays, "median days<br>to approve", pct(d.prep.percent), "projects with<br>data prepared") + rBars(d.ths.slice(0, 2), 0) + (d.prep.applications ? '<div class="cap bs"><b>' + pct(d.prep.percent) + "</b> = " + num(d.prep.with_data) + " of " + num(d.prep.applications) + " approved projects" + (nValid ? ". Bars: percentage of the " + nValid + " with a valid approval time" : "") + "</div>" : ""), "coral") +
         rBox("Where applicants are based", rSplit(d) + rBars(d.countries.slice(0, 4), d.countryTotal) + '<div class="cap" style="font-size:9px"><b>' + num(d.institutionCount) + "</b> institutions · <b>" + num(d.countryCount) + "</b> countries</div>" + bs(num(d.ukTotal), "Percentages of {n} projects with a known country"), "blue") +
         rBox("Most requested variables", rBars(d.vars.slice(0, 5), d.varBase) + bs(num(d.varBase), "Percentages of {n} projects that requested variables"), "amber", "", "vars") +
