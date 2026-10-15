@@ -884,6 +884,20 @@
     safely("dsn-requests", renderRequests);
     safely("dsn-variables", renderVariables);
     safely("dsn-about", renderAbout);
+    labelSections();
+  }
+
+  // The years each section is for, in brackets after its title, because the year filter is at the top of the page and is out of
+  // sight further down. The same wording as the PDF button. "About these figures" is the same whatever is chosen, so it has none.
+  function labelSections() {
+    const text = isAll() ? "all years, " + M.start_year + " to " + M.end_year : yearsText();
+    ["numbers", "overview", "applications", "who", "service", "requests", "variables"].forEach((id) => {
+      const h = document.getElementById(id);
+      if (!h) return;
+      let span = h.querySelector(".dsn-h-years");
+      if (!span) { span = document.createElement("span"); span.className = "dsn-h-years"; h.appendChild(span); }
+      span.textContent = " (" + text + ")";
+    });
   }
 
   function bindEvents() {
