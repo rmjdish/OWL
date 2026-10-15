@@ -266,6 +266,7 @@
     const B = M.basket_turnaround && M.basket_turnaround.available ? M.basket_turnaround : null;
     const sRow = S ? rowFor(S) || {} : null;
     const bRow = B ? rowFor(B) || {} : null;
+    const tm = B ? rowFor(B.request_timing) : null;
     const which = selLabel();
 
     const step = (n, label, sub) => '<div class="dsn-step"><div class="dsn-step-n">' + num(n) + '</div><div class="dsn-step-l">' + esc(label) + "</div>" +
@@ -277,7 +278,8 @@
 
     const appLadder = ladder("Applications", "counted by the year they applied",
       step(nApps, "Approved applications") + arrow +
-      step(prep.with_data, "Asked for data", nApps ? pct(prep.percent) + " of approved applications. Each had at least one basket sent." : "There are no approved applications for this period."),
+      step(prep.with_data, "Asked for data", nApps ? pct(prep.percent) + " of approved applications. Each had at least one basket sent." : "There are no approved applications for this period.") +
+      (tm && tm.applications ? step(tm.applications, "With a first basket request date", "Median " + days(tm.median_days_after_application) + " from the application to the first basket request.") : ""),
       notAsked ? "<strong>" + num(notAsked) + " approved " + (notAsked === 1 ? "application has" : "applications have") + " not asked for data.</strong> " + (notAsked === 1
         ? "It either has not yet finalised its variables request, or it already held the data it needed and did not need to request it."
         : "They either have not yet finalised their variables request, or they already held the data they needed and did not need to request it.") : "");
