@@ -68,6 +68,8 @@ window.addEventListener("load", function () {
     "Is variable derived?": 12.57,
     "Is variable sensitive?": 12.57,
     "Reason variable is sensitive": 15.14,
+    "Is variable restricted?": 15.14,
+    "Security message": 40,
     "Notes": 34.7,
     "Request variable": 16,
     "Variable Role": 26,
@@ -97,10 +99,16 @@ window.addEventListener("load", function () {
     "Is variable sensitive?": "FFADD8E6",
     "Reason variable is sensitive": "FFADD8E6",
     "Notes": "FFADD8E6",
-    "Request variable": "FFFFD966",
+    "Is variable restricted?": "FFF4A9A0",
+    "Security message": "FFF4A9A0",
+    "Request variable": "FFFFFF00",
     "Variable Role": "FFD9CEF5",
     "Researcher's Notes": "FFD9CEF5"
   };
+
+  // Columns present in the website's dictionary JSON but left out of the
+  // pre-filled Excel export, so it matches the downloadable blank dictionary.
+  const EXPORT_EXCLUDED_COLUMNS = ["Order", "Showcase Field ID"];
 
   // Fixed set of options offered in the Role dropdown on export.
   const ROLE_OPTIONS = ["Exposure", "Outcome", "Covariate", "Other"];
@@ -480,10 +488,22 @@ window.addEventListener("load", function () {
 
       const requestedByName = new Map(basket.map(item => [item.varName, item]));
 
-      const baseColumns = dictionary.length
+      // Dictionary columns as they appear in the JSON, minus the ones that
+      // aren't in the downloadable blank dictionary (Order is only used
+      // for sorting on the website; Showcase Field ID has been retired).
+      const baseColumns = (dictionary.length
         ? Object.keys(dictionary[0])
-        : ["NSHD Variable Name", "Variable Label"];
-      const columns = baseColumns.concat(["Request variable", "Variable Role", "Researcher's Notes"]);
+        : ["NSHD Variable Name", "Variable Label"]
+      ).filter(col => !EXPORT_EXCLUDED_COLUMNS.includes(col));
+
+      // Layout matches the blank dictionary: "Request variable" sits
+      // straight after "NSHD Variable Name". The pre-filled extras
+      // (Variable Role, Researcher's Notes) go at the far right, after
+      // the dictionary's own Notes column.
+      const columns = baseColumns.slice();
+      const nameColPos = columns.indexOf("NSHD Variable Name");
+      columns.splice(nameColPos === -1 ? columns.length : nameColPos + 1, 0, "Request variable");
+      columns.push("Variable Role", "Researcher's Notes");
 
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet("Data_dictionary", {
@@ -975,7 +995,12 @@ window.addEventListener("load", function () {
     const headerRow = rows[0];
     const nameIdx = findColIndex(headerRow, NAME_COL);
     const labelIdx = findFirstColIndex(headerRow, LABEL_COL_CANDIDATES);
-    const reqIdx = findColIndex(headerRow, REQUEST_COL);
+    // The pre-filled export calls it "Request variable"; the blank
+    // dictionary calls it "Request Variable (Y)". Accept either, otherwise
+    // a marked-up blank would look like it has no request column and every
+    // row in it would be added to the basket.
+    let reqIdx = findColIndex(headerRow, REQUEST_COL);
+    if (reqIdx === -1) reqIdx = findColIndex(headerRow, "request variable (y)");
 
     if (nameIdx === -1) {
       fail('Could not find a "NSHD Variable Name" column. Check the column headers in the file.');
