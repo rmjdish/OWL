@@ -13,13 +13,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("loadingScreen").style.display = "none";
     document.getElementById("popularUI").style.display = "block";
 
-    // Build label + Field ID lookups
-    const labelMap   = {};
-    const fieldIdMap = {};
+    // Build label + year-of-collection lookups
+    const labelMap = {};
+    const yearMap  = {};
     labels.forEach(row => {
       const vn = row["NSHD Variable Name"];
-      labelMap[vn]   = row["Variable Label"];
-      fieldIdMap[vn] = row["Showcase Field ID"];   // numeric or undefined
+      labelMap[vn] = row["Variable Label"];
+      yearMap[vn]  = row["Year of collection"];
     });
 
     // ⭐ Build a fast lookup set of valid NSHD variable names
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : ` between ${availableYears[0]} and ${availableYears[availableYears.length - 1]}`;
     }
 
-    initUI(popular, labelMap, fieldIdMap, dictionaryNames, availableYears, selectedYears);
+    initUI(popular, labelMap, yearMap, dictionaryNames, availableYears, selectedYears);
   })
   .catch(err => {
     console.error("Error loading JSON:", err);
@@ -72,13 +72,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // ⭐ Build the flat, dictionary-filtered row list ONCE. Year selection
   // and search only ever slice/recompute from this — the source data
   // itself doesn't change.
-  function buildAllRows(popular, labelMap, fieldIdMap, dictionaryNames) {
+  function buildAllRows(popular, labelMap, yearMap, dictionaryNames) {
     return popular
       .filter(row => dictionaryNames.has(row.name))
       .map(row => ({
         name:    row.name,
         label:   labelMap[row.name]   || "(no label found)",
-        fieldId: fieldIdMap[row.name] || null,
+        collectionYear: yearMap[row.name] || "",
         counts:  row.counts || {}
       }));
   }
@@ -97,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return {
           name:    row.name,
           label:   row.label,
-          fieldId: row.fieldId,
+          collectionYear: row.collectionYear,
           count:   count,
           qualifies: qualifies
         };
@@ -113,13 +113,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if ((row.counts[year] || 0) <= MIN_PER_YEAR) return false;
       if (!query) return true;
       return row.name.toLowerCase().includes(query)  ||
-             row.label.toLowerCase().includes(query)  ||
-             String(row.fieldId || "").includes(query);
+             row.label.toLowerCase().includes(query);
     });
   }
 
   // ⭐ MAIN UI SETUP
-  function initUI(popular, labelMap, fieldIdMap, dictionaryNames, availableYears, selectedYears) {
+  function initUI(popular, labelMap, yearMap, dictionaryNames, availableYears, selectedYears) {
     let sortColumn = "count";
     let sortAsc    = false;
     let pageSize   = 15;
@@ -133,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const yearPillBarEl   = document.getElementById("year-pill-bar");
     const countHeaderEl   = document.querySelector('#vars-table th[data-sort="count"] .header-label');
 
-    const allRows = buildAllRows(popular, labelMap, fieldIdMap, dictionaryNames);
+    const allRows = buildAllRows(popular, labelMap, yearMap, dictionaryNames);
 
     let data         = buildRows(allRows, selectedYears);
     let filteredData = [...data];
@@ -218,8 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const q = searchBox.value.toLowerCase();
       filteredData = data.filter(row =>
         row.name.toLowerCase().includes(q)  ||
-        row.label.toLowerCase().includes(q) ||
-        String(row.fieldId || "").includes(q)
+        row.label.toLowerCase().includes(q)
       );
     }
 
@@ -327,13 +325,6 @@ document.addEventListener("DOMContentLoaded", () => {
       tbody.innerHTML = pageRows.map(row => {
         const checked = isInBasket(row.name);
 
-        // Field ID cell — link to Showcase if available, otherwise "Not available"
-        const fieldIdCell = row.fieldId
-          ? `<a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row.fieldId}"
-                target="_blank"
-                class="field-link">${row.fieldId}</a>`
-          : `<span class="not-available">Not available</span>`;
-
         return `
           <tr>
             <td class="check-col">
@@ -352,9 +343,8 @@ document.addEventListener("DOMContentLoaded", () => {
               </a>
             </td>
 
-            <td class="fieldid-col">${fieldIdCell}</td>
-
             <td class="label-col">${row.label}</td>
+            <td class="year-col">${row.collectionYear}</td>
             <td class="count-col">${row.count}</td>
           </tr>
         `;
@@ -449,8 +439,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const headers = ["name", "fieldId", "label", "count"];
-      const displayHeaders = ["NSHD Variable Name", "Showcase Field ID", "Variable Label", "Count"];
+      const headers = ["name", "label", "collectionYear", "count"];
+      const displayHeaders = ["NSHD Variable Name", "Variable Label", "Year of collection", "Count"];
 
       let csvContent = displayHeaders.join(",") + "\n";
 
