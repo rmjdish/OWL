@@ -43,16 +43,23 @@ function categorizeRow(row) {
 }
 
 // Columns shown in the table, in this exact order.
-// type: "varlink" | "fieldlink" | "text" | "yearbadge"
+// type: "varlink" | "text" | "yearbadge"
 const COLUMNS_CONFIG = [
   { key: "NSHD Variable Name", label: "Variable name",   type: "varlink" },
-  { key: "Showcase Field ID",  label: "Field ID",        type: "fieldlink" },
   { key: "Variable Label",     label: "Variable Label",  type: "text" },
   { key: "Units",              label: "Units",           type: "text" },
   { key: "Form",               label: "Form",            type: "text" },
   { key: "Question Number",    label: "Question number", type: "text" },
   { key: YEAR_FIELD,           label: "Year",            type: "yearbadge" }
 ];
+
+// Keys that live on each row object but must never be searched or exported:
+// Showcase Field ID has been retired from the table, and "__"-prefixed keys
+// are the cached helper values added by precomputeRowMetadata().
+const HIDDEN_KEYS = ["Showcase Field ID"];
+function isVisibleKey(k) {
+  return !k.startsWith("__") && !HIDDEN_KEYS.includes(k);
+}
 
 // Same 5-level topic hierarchy as the Search Data Dictionary page.
 const filterColumns = [
@@ -415,7 +422,7 @@ function applyFilters() {
   const q = currentSearch.toLowerCase().trim();
   if (q !== "") {
     topicSearchFiltered = topicSearchFiltered.filter(row =>
-      Object.values(row).some(v => String(v).toLowerCase().includes(q))
+      Object.entries(row).some(([k, v]) => isVisibleKey(k) && String(v).toLowerCase().includes(q))
     );
   }
 
@@ -696,9 +703,6 @@ function renderTable() {
     const dataCells = COLUMNS_CONFIG.map(cfg => {
       const value = row[cfg.key] ?? "";
 
-      if (cfg.type === "fieldlink" && value !== "" && value !== null) {
-        return `<td><a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}" target="_blank" class="field-link">${value}</a></td>`;
-      }
       if (cfg.type === "varlink" && value !== "") {
         return `<td><a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${value}" target="_blank" class="field-link">${value}</a></td>`;
       }
@@ -782,7 +786,7 @@ function downloadFilteredCSV() {
     return;
   }
 
-  const headers = Object.keys(filteredData[0]);
+  const headers = Object.keys(filteredData[0]).filter(isVisibleKey);
   let csvContent = headers.join(",") + "\n";
 
   filteredData.forEach(row => {
