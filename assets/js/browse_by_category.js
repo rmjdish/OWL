@@ -82,10 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${name}.html"
                target="_blank">${name}</a>
           </td>
-          <td class="dt-center" style="width:55px;">
-            <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${row["Showcase Field ID"]}"
-               target="_blank">${row["Showcase Field ID"]}</a>
-          </td>
           <td style="width:400px; overflow:hidden; text-overflow:ellipsis;">
             ${label}
           </td>
@@ -314,8 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedLabel === "" || row["Variable Label"] === selectedLabel;
       const matchesSearch =
         row["NSHD Variable Name"].toLowerCase().includes(q) ||
-        (row["Variable Label"] || "").toLowerCase().includes(q) ||
-        String(row["Showcase Field ID"]).toLowerCase().includes(q);
+        (row["Variable Label"] || "").toLowerCase().includes(q);
       return matchesLabel && matchesSearch;
     });
 
