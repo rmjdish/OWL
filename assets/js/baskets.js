@@ -449,15 +449,15 @@ window.addEventListener("load", function () {
       return;
     }
 
-    // ── Reminder at the point of download: Condor only accepts 500 ──
-    // ── variables per upload, so anything over that must be split  ──
-    // ── into batches manually after this file downloads. Shown as  ──
-    // ── a confirm() so the user can back out and trim the basket   ──
-    // ── first instead, if they'd rather do that before downloading.──
+    // ── Heads-up at the point of download: Condor now accepts larger ──
+    // ── baskets and splits them into smaller baskets of 500, which  ──
+    // ── are assessed collectively, so turnaround may be longer.      ──
+    // ── Shown as a confirm() so the user can back out and trim the  ──
+    // ── basket first if they'd rather keep it under 500.            ──
     if (basket.length > 500) {
       const proceed = confirm(
-        `Your basket has ${basket.length} variables. Condor only accepts uploads of 500 variables or fewer at a time.\n\n` +
-        `After this downloads, split it into groups of 500 (or fewer) before uploading each group to Condor separately. ` +
+        `Your basket has ${basket.length} variables. Condor will split baskets of more than 500 variables into smaller baskets of 500.\n\n` +
+        `These smaller baskets are assessed collectively, so your request may take longer to turn around. ` +
         `Continue with the download?`
       );
       if (!proceed) return;
@@ -636,8 +636,8 @@ window.addEventListener("load", function () {
   // column is present. Nothing is written to the basket until the user
   // reviews the preview list and clicks "Confirm & Add to Basket".
   // OWL itself has no hard basket-size limit — unlike downloadBasketCSV(),
-  // this only *warns* if the resulting basket would exceed Condor's
-  // 500-variable upload limit; it never blocks adding here.
+  // this only *notes* if the resulting basket would exceed 500 variables
+  // (which Condor splits into smaller baskets); it never blocks adding here.
   // ================================================================
 
   const CONDOR_BASKET_LIMIT = 500;
@@ -1109,15 +1109,15 @@ window.addEventListener("load", function () {
     const projectedTotal = existingBasket.length + newCount;
 
     // Non-blocking: OWL itself has no hard basket-size limit. This is
-    // purely a heads-up that Condor will reject anything over 500 when
-    // this basket is eventually uploaded there.
+    // purely a heads-up that Condor will split anything over 500 into
+    // smaller baskets, assessed collectively, when this basket is uploaded.
     if (projectedTotal > CONDOR_BASKET_LIMIT) {
       document.getElementById("uploadLimitSummary").textContent =
         "Heads up: adding these would bring your basket to " + projectedTotal + " variables.";
       document.getElementById("uploadLimitDetail").textContent =
-        "That's fine here on OWL, but Condor only accepts baskets of " + CONDOR_BASKET_LIMIT +
-        " variables or fewer per upload. You can still add these now, and split the basket into batches of " +
-        CONDOR_BASKET_LIMIT + " when you come to upload it to Condor.";
+        "That's fine here on OWL. Condor will split baskets of more than " + CONDOR_BASKET_LIMIT +
+        " variables into smaller baskets of " + CONDOR_BASKET_LIMIT +
+        ", which are assessed collectively and may take longer to turn around.";
       document.getElementById("uploadLimitWarningBox").style.display = "block";
     }
 
