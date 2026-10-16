@@ -124,6 +124,15 @@
   }
 
   function run() {
+    // Every variable on the Longitudinal Variables page is already
+    // longitudinal, so an icon (and legend) there would just be noise.
+    // Matches the page with or without a trailing slash / .html, but not
+    // the sibling longitudinal_search_guide page.
+    if (window.location.pathname.indexOf(
+          '/search_methods/longitudinal_variables/longitudinal-variables') !== -1) {
+      return;
+    }
+
     fetch(INDEX_URL)
       .then(function (res) { return res.ok ? res.json() : {}; })
       .then(function (groups) {
