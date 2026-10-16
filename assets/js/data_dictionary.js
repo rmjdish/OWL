@@ -380,16 +380,6 @@ function renderTable() {
     const dataCells = tableColumns.map(col => {
       const value = row[col] ?? "";
 
-      if (col === "Showcase Field ID" && value !== "") {
-        return `<td>
-          <a href="https://datashare.ndph.ox.ac.uk/nshd46/field.cgi?id=${value}"
-             target="_blank"
-             class="field-link">
-             ${value}
-          </a>
-        </td>`;
-      }
-
       if (col === "NSHD Variable Name" && value !== "") {
         return `<td>
           <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${value}"
