@@ -50,26 +50,6 @@
     return icon;
   }
 
-  function ensureLegend() {
-    // Same reasoning as variable-doc-icon.js's ensureLegend(): results
-    // tables here are generated per-category, per-search-type, or built
-    // entirely by each page's own JS, so a hand-added snippet would need
-    // repeating everywhere and re-adding to every future page. The
-    // .hero-banner element is the one consistent, static anchor present
-    // across every page type this needs to run on. Only shown once per
-    // page, and only once at least one icon has actually been added.
-    if (document.querySelector('.var-restricted-legend')) return;
-    var heroBanner = document.querySelector('.hero-banner');
-    if (!heroBanner) return;
-    var legend = document.createElement('div');
-    legend.className = 'var-restricted-legend';
-    legend.innerHTML =
-      '<i class="ti ti-lock" aria-hidden="true"></i>' +
-      '<span>A lock next to a variable name means it has an access restriction ' +
-      '\u2014 hover to see why and how to request it.</span>';
-    heroBanner.insertAdjacentElement('afterend', legend);
-  }
-
   function decorate(index) {
     document.querySelectorAll('a[href*="/assets/variable_metadata/"]').forEach(function (link) {
       // A data attribute on the link itself, rather than checking
@@ -103,12 +83,8 @@
     // stays false on the next pass — but nothing was ever telling the
     // legend itself to go. Checking for a live .var-restricted-icon-wrap
     // instead removes it as soon as none remain.
-    var anyIconsPresent = !!document.querySelector('.var-restricted-icon-wrap');
-    var legend = document.querySelector('.var-restricted-legend');
-    if (anyIconsPresent) {
-      ensureLegend();
-    } else if (legend) {
-      legend.remove();
+    if (window.OWLIconKey) {
+      window.OWLIconKey.update('restricted', !!document.querySelector('.var-restricted-icon-wrap'));
     }
   }
 

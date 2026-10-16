@@ -68,25 +68,6 @@
     return icon;
   }
 
-  function ensureLegend() {
-    // Same anchor as variable-restricted-icon.js (.hero-banner), so it works
-    // on every page type without hand-editing each one. If the restricted
-    // legend is already there, sit directly beneath it so the two always
-    // stack in the same order (restricted first, longitudinal second).
-    if (document.querySelector('.var-longitudinal-legend')) return;
-    var anchor = document.querySelector('.var-restricted-legend') ||
-                 document.querySelector('.hero-banner');
-    if (!anchor) return;
-    var legend = document.createElement('div');
-    legend.className = 'var-longitudinal-legend';
-    legend.innerHTML =
-      '<i class="ti ti-link" aria-hidden="true"></i>' +
-      '<span>A link icon next to a variable name means it is a longitudinal ' +
-      'variable, measured at more than one sweep — hover to see how many ' +
-      'variables are linked, click to view them.</span>';
-    anchor.insertAdjacentElement('afterend', legend);
-  }
-
   function decorate(index) {
     document.querySelectorAll('a[href*="/assets/variable_metadata/"]').forEach(function (link) {
       // Flag on the link itself (not nextElementSibling), because the
@@ -112,14 +93,9 @@
       link.dataset.longitudinalIconAdded = 'true';
     });
 
-    // Legend follows whether an icon is CURRENTLY on the page, so it also
-    // disappears when the last longitudinal row is removed (e.g. basket).
-    var anyIconsPresent = !!document.querySelector('.var-longitudinal-icon-wrap');
-    var legend = document.querySelector('.var-longitudinal-legend');
-    if (anyIconsPresent) {
-      ensureLegend();
-    } else if (legend) {
-      legend.remove();
+    // The shared icon key (variable-icon-key.js) shows/hides itself from this
+    if (window.OWLIconKey) {
+      window.OWLIconKey.update('longitudinal', !!document.querySelector('.var-longitudinal-icon-wrap'));
     }
   }
 
