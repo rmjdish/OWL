@@ -348,8 +348,13 @@ window.addEventListener("load", function () {
   let uploadDoneBasketCount = null;
   function clearUploadDone() {
     const el = document.getElementById("uploadDone");
+    const hadMessage = !!(el && el.innerHTML.trim());
     if (el) el.innerHTML = "";
     uploadDoneBasketCount = null;
+    // The panel is only still open to show that message, so close it too
+    // and let the table move up. Skipped when no message was showing, so
+    // editing the basket never closes an upload that's mid-preview.
+    if (hadMessage) closeUploadPanel();
   }
 
   function clearBasket() {
