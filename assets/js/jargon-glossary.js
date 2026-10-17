@@ -24,7 +24,6 @@ document.addEventListener("DOMContentLoaded", function () {
     "Study design":         "badge-study",
     "Variables & data":     "badge-var",
     "OWL Metadata":         "badge-meta",
-    "Showcase Metadata":    "badge-show",
     "Access & governance":  "badge-access",
     "Navigation":           "badge-nav",
     "Platforms":            "badge-plat",
