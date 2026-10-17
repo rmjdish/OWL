@@ -295,6 +295,7 @@ window.addEventListener("load", function () {
       btn.addEventListener("click", function () {
 
         // ⭐ Use global remove function (this triggers shake animation)
+        clearUploadDone();
         removeFromBasket(item.varName);
 
         // Recalculate pagination if needed
@@ -339,11 +340,24 @@ window.addEventListener("load", function () {
     updateBasketResultsCount();
   }
 
+  // The "N new variable(s) added" message describes the basket at the moment
+  // of confirming. Once the user edits the basket (removes, clears, undoes)
+  // it's no longer true, so it's cleared. uploadDoneBasketCount remembers the
+  // basket size right after confirming, so unrelated "basket changed" events
+  // fired for the upload itself don't wipe the message straight away.
+  let uploadDoneBasketCount = null;
+  function clearUploadDone() {
+    const el = document.getElementById("uploadDone");
+    if (el) el.innerHTML = "";
+    uploadDoneBasketCount = null;
+  }
+
   function clearBasket() {
     const confirmed = confirm("Are you sure you want to clear your basket?");
     if (!confirmed) return;
 
     saveBasket([]);
+    clearUploadDone();
     basketPage = 1;
     renderBasket();
     renderBasketPagination();
@@ -1203,6 +1217,7 @@ window.addEventListener("load", function () {
       document.getElementById("uploadDone").innerHTML =
         "<b>" + addedNames.length + " new variable(s) added to your basket.</b> Your basket now has " +
         loadBasket().length + " variable(s).";
+      uploadDoneBasketCount = loadBasket().length;
 
       uploadParsedItems = [];
       uploadLinkedSiblings = [];
@@ -1265,6 +1280,8 @@ window.addEventListener("load", function () {
   // page's own handlers have already finished running.
   window.addEventListener("nshd-basket-changed", () => {
     const b = loadBasket();
+    // Edited since the upload message was shown (remove, undo, sibling removal)
+    if (uploadDoneBasketCount !== null && b.length !== uploadDoneBasketCount) clearUploadDone();
     const maxPage = Math.ceil(b.length / basketPageSize) || 1;
     if (basketPage > maxPage) basketPage = maxPage;
     renderBasket();
