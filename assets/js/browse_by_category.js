@@ -522,7 +522,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const catPage = n => CAT_BASE + encodeURI(n.name.replace(/ /g, "_") + "_" + n.id + ".html");
     function catLinks(id) {
       const n = nodes[id];
-      return n.anc.concat(n.id).map(i =>
+      // Same tags icon as the category page banners, once at the start of the path
+      return '<i class="ti ti-tags cat-path-icon" aria-hidden="true"></i> ' + n.anc.concat(n.id).map(i =>
         `<a href="${esc(catPage(nodes[i]))}" target="_blank" title="Open the ${esc(nodes[i].name)} category page">${esc(nodes[i].name)}</a>`
       ).join(' <span class="cat-sep">›</span> ');
     }
