@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   console.log("Browse-by-category script starting…");
 
+  // Browse by Category home page: tree selector instead of the single-category table
+  if (document.getElementById("catBrowser")) { initCategoryTree(); return; }
+
   const loading = document.getElementById("loadingScreen");
   const ui = document.getElementById("browseUI");
 
@@ -376,5 +379,228 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshBasketCache();
     updateAddAllButtonLabel2();
   });
+
+
+  /* ============================================================
+     BROWSE BY CATEGORY HOME PAGE — checkbox tree selector
+     Runs only when the page contains #catBrowser (Browse_by_Category.html).
+     Loads categories_index.json + category_variables.json once; selection,
+     merging, search, paging and CSV all happen in the browser.
+     Uses the site basket functions from basket_header.js.
+     ============================================================ */
+  function initCategoryTree() {
+    const root = document.getElementById("catBrowser");
+    const $ = id => document.getElementById(id);
+    const VAR_LINK = root.dataset.varLink;
+
+    const nodes = {}, roots = [], order = [];
+    let vars = {};
+    const sel = new Set(), expanded = new Set();
+    let resultsShown = false, filterText = "";
+    let rows = [], view = [], page = 1, sortKey = "cat", sortDir = 1, size = 15;
+
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const byOrder = (a, b) => (a.orda ?? 1e9) - (b.orda ?? 1e9) || a.id - b.id;
+
+    // ── Basket (same helpers the category pages use) ──
+    let basketSet = new Set();
+    function refreshBasketSet() {
+      basketSet = new Set(typeof loadBasket === "function" ? loadBasket().map(i => i.varName) : []);
+    }
+    window.addEventListener("nshd-basket-changed", () => {
+      refreshBasketSet();
+      if (resultsShown) { renderResults(); }
+    });
+
+    Promise.all([
+      fetch(root.dataset.index).then(r => r.json()),
+      fetch(root.dataset.vars).then(r => r.json())
+    ]).then(([index, v]) => { vars = v; init(index); })
+      .catch(e => { $("catLoading").textContent = "Could not load category data: " + e.message; });
+
+    function init(index) {
+      index.forEach(c => { nodes[c.id] = { id: c.id, name: c.name, parent: c.parent, orda: c.orda, own: c.own, kids: [] }; });
+      Object.values(nodes).forEach(n => {
+        if (n.parent != null && nodes[n.parent]) nodes[n.parent].kids.push(n); else roots.push(n);
+      });
+      (function walk(list, depth, anc) {
+        list.sort(byOrder).forEach(n => { n.depth = depth; n.anc = anc; order.push(n); walk(n.kids, depth + 1, anc.concat(n.id)); });
+      })(roots, 0, []);
+      const totals = n => { n.sub = n.kids.reduce((s, k) => s + totals(k), 0); return n.own + n.sub; };
+      roots.forEach(totals);
+      roots.forEach(r => expanded.add(r.id));
+      $("catLoading").style.display = "none";
+      $("catUI").style.display = "";
+      refreshBasketSet();
+      wire();
+      renderSelected();
+    }
+
+    // ── Tree ──
+    const descendants = (n, out = []) => { n.kids.forEach(k => { out.push(k); descendants(k, out); }); return out; };
+    function visibleSet() {
+      const f = filterText.trim().toLowerCase();
+      if (!f) return null;
+      const keep = new Set();
+      order.forEach(n => {
+        if (n.name.toLowerCase().includes(f) || String(n.id) === f) { keep.add(n.id); n.anc.forEach(a => keep.add(a)); }
+      });
+      return keep;
+    }
+    // 1 = ticked, 2 = some descendants ticked, 0 = none
+    const state = n => sel.has(n.id) ? 1 : (descendants(n).some(d => sel.has(d.id)) ? 2 : 0);
+
+    function renderTree() {
+      const keep = visibleSet();
+      let html = "";
+      order.forEach(n => {
+        const vis = keep ? keep.has(n.id) : n.anc.every(a => expanded.has(a));
+        if (!vis) return;
+        const open = keep ? n.kids.some(k => keep.has(k.id)) : expanded.has(n.id);
+        const st = state(n);
+        const badge = n.kids.length
+          ? `<b>[${n.id}]</b> ${n.own} here <span class="dim">· ${n.sub} in sub-categories</span>`
+          : `<b>[${n.id}]</b> has ${n.own} items`;
+        html += `<div class="cat-row lvl${n.depth % 5}" data-id="${n.id}" style="padding-left:${14 + n.depth * 24}px">` +
+          (n.kids.length ? `<button type="button" class="cat-tog" aria-label="Expand or collapse ${esc(n.name)}">${open ? "−" : "+"}</button>` : `<span class="cat-tog-gap"></span>`) +
+          `<input type="checkbox" class="cat-chk"${st === 1 ? " checked" : ""}${st === 2 ? ' data-indet="1"' : ""} aria-label="Select ${esc(n.name)}">` +
+          `<span class="cat-name${n.depth === 0 ? " top" : ""}">${esc(n.name)}</span><span class="cat-badge">${badge}</span></div>`;
+      });
+      $("catTree").innerHTML = html || '<div class="cat-empty">No categories match.</div>';
+      $("catTree").querySelectorAll("input[data-indet]").forEach(c => { c.indeterminate = true; });
+    }
+
+    // Ticking a node ticks its own variables and every descendant.
+    // A parent with no variables of its own is auto-ticked once all its children are.
+    function toggle(n, on) {
+      [n, ...descendants(n)].forEach(d => on ? sel.add(d.id) : sel.delete(d.id));
+      n.anc.slice().reverse().forEach(aid => {
+        const a = nodes[aid];
+        if (!on) { sel.delete(aid); return; }
+        if (a.own === 0 && a.kids.every(k => sel.has(k.id))) sel.add(aid);
+      });
+    }
+
+    // ── Selected panel ──
+    const pathOf = n => n.anc.map(a => nodes[a].name).concat(n.name).join(" › ");
+    const topSelected = () => order.filter(n => sel.has(n.id) && !(n.parent != null && sel.has(n.parent)));
+    function countVars() { let c = 0; sel.forEach(id => { c += nodes[id].own; }); return c; }
+    function renderSelected() {
+      const top = topSelected();
+      $("catSelTitle").textContent = `Selected (${top.length})`;
+      $("catSelList").innerHTML = top.length ? top.map(n =>
+        `<div class="cat-sel-item"><div><b>${esc(n.name)}</b> <span class="dim">[${n.id}]</span><div class="cat-sel-path">${esc(pathOf(n))}</div></div>` +
+        `<button type="button" data-rm="${n.id}" aria-label="Remove ${esc(n.name)}">×</button></div>`).join("")
+        : '<p class="cat-hint">Nothing selected yet. Tick one or more categories in the tree.</p>';
+      const b = $("catSearchBtn");
+      b.disabled = !top.length;
+      b.textContent = top.length ? `Show variables (${countVars()})` : "Select a category to search";
+      renderTree();
+    }
+
+    // ── Results ──
+    function buildRows() {
+      rows = [];
+      order.forEach(n => {
+        if (!sel.has(n.id)) return;
+        (vars[n.id] || []).forEach(v => rows.push({ ord: v[0], name: v[1], label: v[2], restricted: v[3], cat: pathOf(n) }));
+      });
+    }
+    function applyView() {
+      const q = $("catResSearch").value.trim().toLowerCase();
+      view = rows.filter(r => !q || (r.name + " " + r.label + " " + r.cat).toLowerCase().includes(q));
+      if (sortKey !== "cat") view.sort((a, b) => String(a[sortKey]).localeCompare(String(b[sortKey]), undefined, { numeric: true }) * sortDir);
+      page = 1;
+      renderResults();
+    }
+    const pageRows = () => view.slice((page - 1) * size, page * size);
+
+    function renderResults() {
+      const pages = Math.max(1, Math.ceil(view.length / size));
+      if (page > pages) page = pages;
+      $("catResultsCount").textContent = `Showing ${view.length} of ${rows.length} results`;
+      $("catTbody").innerHTML = pageRows().map(r =>
+        `<tr><td class="check-col"><input type="checkbox" class="add-to-basket" data-name="${esc(r.name)}" data-label="${esc(r.label)}"${basketSet.has(r.name) ? " checked" : ""}></td>` +
+        `<td><a href="${esc(VAR_LINK.replace("{name}", encodeURIComponent(r.name)))}" target="_blank">${esc(r.name)}</a></td>` +
+        `<td>${esc(r.label)}</td><td class="cat-path">${esc(r.cat)}</td></tr>`).join("") || '<tr><td colspan="4">No variables.</td></tr>';
+      const pager = `<button type="button" data-p="${page - 1}"${page <= 1 ? " disabled" : ""}>Prev</button><span>Page ${page} of ${pages}</span>` +
+                    `<button type="button" data-p="${page + 1}"${page >= pages ? " disabled" : ""}>Next</button>`;
+      $("catPagerTop").innerHTML = pager; $("catPagerBottom").innerHTML = pager;
+      document.querySelectorAll("#catResults th[data-sort] .sort-icon").forEach(i => {
+        const k = i.parentElement.dataset.sort;
+        i.textContent = k === sortKey && k !== "cat" ? (sortDir > 0 ? "▲" : "▼") : "⇅";
+      });
+      updateAddAll();
+    }
+
+    // Same behaviour as the category pages: add/remove all variables on the current page
+    function updateAddAll() {
+      const btn = $("catAddAll"), vis = pageRows();
+      btn.classList.remove("remove-mode");
+      if (!vis.length) { btn.textContent = "No visible variables to add"; btn.disabled = true; return; }
+      btn.disabled = false;
+      if (vis.every(r => basketSet.has(r.name))) { btn.textContent = "Remove all visible variables"; btn.classList.add("remove-mode"); }
+      else btn.textContent = "Add all visible variables";
+    }
+    function downloadCsv() {
+      if (!view.length) { alert("No data to download"); return; }
+      const lines = [["NSHD Variable Name", "Variable Label", "Category", "Is variable restricted?"]]
+        .concat(view.map(r => [r.name, r.label, r.cat, r.restricted ? "Yes" : "No"]));
+      const csv = lines.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+      a.download = "Browse_By_Category_selected_results.csv"; a.click(); URL.revokeObjectURL(a.href);
+    }
+    function refresh() { buildRows(); applyView(); }
+
+    // ── Events ──
+    function wire() {
+      $("catTree").addEventListener("click", e => {
+        if (!e.target.classList.contains("cat-tog")) return;
+        const n = nodes[e.target.closest(".cat-row").dataset.id];
+        expanded.has(n.id) ? expanded.delete(n.id) : expanded.add(n.id);
+        renderTree();
+      });
+      $("catTree").addEventListener("change", e => {
+        if (!e.target.classList.contains("cat-chk")) return;
+        toggle(nodes[e.target.closest(".cat-row").dataset.id], e.target.checked);
+        renderSelected(); if (resultsShown) refresh();
+      });
+      $("catSelList").addEventListener("click", e => {
+        const id = e.target.dataset && e.target.dataset.rm; if (!id) return;
+        toggle(nodes[id], false); renderSelected(); if (resultsShown) refresh();
+      });
+      $("catClear").addEventListener("click", e => { e.preventDefault(); sel.clear(); renderSelected(); if (resultsShown) refresh(); });
+      $("catFind").addEventListener("input", function () { filterText = this.value; renderTree(); });
+      $("catExpandAll").addEventListener("click", () => { order.forEach(n => { if (n.kids.length) expanded.add(n.id); }); renderTree(); });
+      $("catCollapseAll").addEventListener("click", () => { expanded.clear(); renderTree(); });
+      $("catSearchBtn").addEventListener("click", () => {
+        resultsShown = true; $("catResults").style.display = ""; refresh();
+        $("catResults").scrollIntoView({ behavior: "smooth" });
+      });
+      $("catResSearch").addEventListener("input", applyView);
+      $("catPageSize").addEventListener("change", function () { size = parseInt(this.value); page = 1; renderResults(); });
+      $("catCsv").addEventListener("click", downloadCsv);
+      $("catAddAll").addEventListener("click", () => {
+        const vis = pageRows();
+        if (vis.every(r => basketSet.has(r.name))) batchRemoveFromBasket(vis.map(r => r.name));
+        else batchAddToBasket(vis.map(r => ({ varName: r.name, label: r.label })));
+        refreshBasketSet(); renderResults();
+        if (typeof updateBasketCountUI === "function") updateBasketCountUI();
+      });
+      $("catTbody").addEventListener("click", e => {
+        const cb = e.target.closest(".add-to-basket"); if (!cb) return;
+        if (cb.checked) addToBasket(cb.dataset.name, cb.dataset.label); else removeFromBasket(cb.dataset.name);
+        refreshBasketSet(); updateAddAll();
+        if (typeof updateBasketCountUI === "function") updateBasketCountUI();
+      });
+      $("catResults").addEventListener("click", e => {
+        const p = e.target.dataset && e.target.dataset.p;
+        if (p) { page = +p; renderResults(); return; }
+        const th = e.target.closest("th[data-sort]");
+        if (th) { const k = th.dataset.sort; sortDir = sortKey === k ? -sortDir : 1; sortKey = k; applyView(); }
+      });
+    }
+  }
 
 });
