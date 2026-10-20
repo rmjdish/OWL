@@ -401,7 +401,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let rows = [], view = [], page = 1, sortKey = "cat", sortDir = 1, size = 15;
 
     const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-    const byOrder = (a, b) => (a.orda ?? 1e9) - (b.orda ?? 1e9) || a.id - b.id;
+    // Same order as the sidebar: nav_order, then title for ties
+    const byOrder = (a, b) => (a.orda ?? 1e9) - (b.orda ?? 1e9) || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0) || a.id - b.id;
 
     // ── Basket (same helpers the category pages use) ──
     let basketSet = new Set();
@@ -420,7 +421,7 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(e => { $("catLoading").textContent = "Could not load category data: " + e.message; });
 
     function init(index) {
-      index.forEach(c => { nodes[c.id] = { id: c.id, name: c.name, parent: c.parent, orda: c.orda, own: c.own, kids: [] }; });
+      index.forEach(c => { nodes[c.id] = { id: c.id, name: c.name, parent: c.parent, orda: c.orda, own: c.own, desc: c.desc || "", kids: [] }; });
       Object.values(nodes).forEach(n => {
         if (n.parent != null && nodes[n.parent]) nodes[n.parent].kids.push(n); else roots.push(n);
       });
@@ -429,12 +430,28 @@ document.addEventListener("DOMContentLoaded", () => {
       })(roots, 0, []);
       const totals = n => { n.sub = n.kids.reduce((s, k) => s + totals(k), 0); return n.own + n.sub; };
       roots.forEach(totals);
-      roots.forEach(r => expanded.add(r.id));
+      // tree starts fully collapsed: only the top-level categories are shown
       $("catLoading").style.display = "none";
       $("catUI").style.display = "";
       refreshBasketSet();
       wire();
       renderSelected();
+    }
+
+    // ── Description hover (plain text; no icon when a category has no description) ──
+    const infoBtn = n => n.desc
+      ? ` <button type="button" class="cat-info" data-id="${n.id}" aria-label="Description of ${esc(n.name)}">i</button>` : "";
+    const tip = document.createElement("div");
+    tip.className = "cat-tip"; tip.setAttribute("role", "tooltip"); tip.style.display = "none";
+    root.appendChild(tip);
+    function hideTip() { tip.style.display = "none"; }
+    function showTip(btn) {
+      const n = nodes[btn.dataset.id]; if (!n || !n.desc) return;
+      tip.textContent = n.desc; tip.style.display = "block";
+      const r = btn.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+      const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 12));
+      const top = (r.bottom + 8 + h > window.innerHeight) ? Math.max(8, r.top - h - 8) : r.bottom + 8;
+      tip.style.left = left + "px"; tip.style.top = top + "px";
     }
 
     // ── Tree ──
@@ -452,6 +469,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const state = n => sel.has(n.id) ? 1 : (descendants(n).some(d => sel.has(d.id)) ? 2 : 0);
 
     function renderTree() {
+      hideTip();
       const keep = visibleSet();
       let html = "";
       order.forEach(n => {
@@ -465,7 +483,7 @@ document.addEventListener("DOMContentLoaded", () => {
         html += `<div class="cat-row lvl${n.depth % 5}" data-id="${n.id}" style="padding-left:${14 + n.depth * 24}px">` +
           (n.kids.length ? `<button type="button" class="cat-tog" aria-label="Expand or collapse ${esc(n.name)}">${open ? "−" : "+"}</button>` : `<span class="cat-tog-gap"></span>`) +
           `<input type="checkbox" class="cat-chk"${st === 1 ? " checked" : ""}${st === 2 ? ' data-indet="1"' : ""} aria-label="Select ${esc(n.name)}">` +
-          `<span class="cat-name${n.depth === 0 ? " top" : ""}">${esc(n.name)}</span><span class="cat-badge">${badge}</span></div>`;
+          `<span class="cat-name${n.depth === 0 ? " top" : ""}">${esc(n.name)}${infoBtn(n)}</span><span class="cat-badge">${badge}</span></div>`;
       });
       $("catTree").innerHTML = html || '<div class="cat-empty">No categories match.</div>';
       $("catTree").querySelectorAll("input[data-indet]").forEach(c => { c.indeterminate = true; });
@@ -490,7 +508,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const top = topSelected();
       $("catSelTitle").textContent = `Selected (${top.length})`;
       $("catSelList").innerHTML = top.length ? top.map(n =>
-        `<div class="cat-sel-item"><div><b>${esc(n.name)}</b> <span class="dim">[${n.id}]</span><div class="cat-sel-path">${esc(pathOf(n))}</div></div>` +
+        `<div class="cat-sel-item"><div><b>${esc(n.name)}</b>${infoBtn(n)} <span class="dim">[${n.id}]</span><div class="cat-sel-path">${esc(pathOf(n))}</div></div>` +
         `<button type="button" data-rm="${n.id}" aria-label="Remove ${esc(n.name)}">×</button></div>`).join("")
         : '<p class="cat-hint">Nothing selected yet. Tick one or more categories in the tree.</p>';
       const b = $("catSearchBtn");
@@ -579,6 +597,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ── Events ──
     function wire() {
+      root.addEventListener("mouseover", e => { const b = e.target.closest(".cat-info"); if (b) showTip(b); });
+      root.addEventListener("mouseout", e => { if (e.target.closest(".cat-info")) hideTip(); });
+      root.addEventListener("focusin", e => { const b = e.target.closest(".cat-info"); if (b) showTip(b); });
+      root.addEventListener("focusout", e => { if (e.target.closest(".cat-info")) hideTip(); });
+      root.addEventListener("click", e => { const b = e.target.closest(".cat-info"); if (b) showTip(b); });   // touch screens
+      document.addEventListener("click", e => { if (!e.target.closest(".cat-info")) hideTip(); });
+      document.addEventListener("keydown", e => { if (e.key === "Escape") hideTip(); });
+      window.addEventListener("scroll", hideTip, true);
       $("catTree").addEventListener("click", e => {
         if (!e.target.classList.contains("cat-tog")) return;
         const n = nodes[e.target.closest(".cat-row").dataset.id];
