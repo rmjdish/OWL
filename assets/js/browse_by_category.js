@@ -392,6 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const root = document.getElementById("catBrowser");
     const $ = id => document.getElementById(id);
     const VAR_LINK = root.dataset.varLink;
+    const CAT_BASE = root.dataset.catBase;   // folder holding the individual category pages
 
     const nodes = {}, roots = [], order = [];
     let vars = {};
@@ -498,17 +499,40 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTree();
     }
 
+    // ── Category links + header filter ──
+    // Page name rule matches the generator: spaces -> "_", then "_<id>.html"
+    const catPage = n => CAT_BASE + encodeURI(n.name.replace(/ /g, "_") + "_" + n.id + ".html");
+    function catLinks(id) {
+      const n = nodes[id];
+      return n.anc.concat(n.id).map(i =>
+        `<a href="${esc(catPage(nodes[i]))}" target="_blank" title="Open the ${esc(nodes[i].name)} category page">${esc(nodes[i].name)}</a>`
+      ).join(' <span class="cat-sep">›</span> ');
+    }
+    // Dropdown lists only the categories present in the current results, with counts
+    function fillCatFilter() {
+      const sel2 = $("catFilter"), prev = sel2.value, counts = {};
+      rows.forEach(r => { counts[r.catId] = (counts[r.catId] || 0) + 1; });
+      let html = `<option value="">All categories (${rows.length})</option>`;
+      order.forEach(n => {
+        if (counts[n.id]) html += `<option value="${n.id}" title="${esc(pathOf(n))}">${esc(n.name)} [${n.id}] (${counts[n.id]})</option>`;
+      });
+      sel2.innerHTML = html;
+      sel2.value = counts[prev] ? prev : "";
+    }
+
     // ── Results ──
     function buildRows() {
       rows = [];
       order.forEach(n => {
         if (!sel.has(n.id)) return;
-        (vars[n.id] || []).forEach(v => rows.push({ ord: v[0], name: v[1], label: v[2], restricted: v[3], cat: pathOf(n) }));
+        (vars[n.id] || []).forEach(v => rows.push({ ord: v[0], name: v[1], label: v[2], restricted: v[3], cat: pathOf(n), catId: n.id }));
       });
     }
     function applyView() {
       const q = $("catResSearch").value.trim().toLowerCase();
-      view = rows.filter(r => !q || (r.name + " " + r.label + " " + r.cat).toLowerCase().includes(q));
+      const cf = $("catFilter").value;
+      view = rows.filter(r => (!cf || String(r.catId) === cf) &&
+        (!q || (r.name + " " + r.label + " " + r.cat).toLowerCase().includes(q)));
       if (sortKey !== "cat") view.sort((a, b) => String(a[sortKey]).localeCompare(String(b[sortKey]), undefined, { numeric: true }) * sortDir);
       page = 1;
       renderResults();
@@ -522,7 +546,7 @@ document.addEventListener("DOMContentLoaded", () => {
       $("catTbody").innerHTML = pageRows().map(r =>
         `<tr><td class="check-col"><input type="checkbox" class="add-to-basket" data-name="${esc(r.name)}" data-label="${esc(r.label)}"${basketSet.has(r.name) ? " checked" : ""}></td>` +
         `<td><a href="${esc(VAR_LINK.replace("{name}", encodeURIComponent(r.name)))}" target="_blank">${esc(r.name)}</a></td>` +
-        `<td>${esc(r.label)}</td><td class="cat-path">${esc(r.cat)}</td></tr>`).join("") || '<tr><td colspan="4">No variables.</td></tr>';
+        `<td>${esc(r.label)}</td><td class="cat-path">${catLinks(r.catId)}</td></tr>`).join("") || '<tr><td colspan="4">No variables.</td></tr>';
       const pager = `<button type="button" data-p="${page - 1}"${page <= 1 ? " disabled" : ""}>Prev</button><span>Page ${page} of ${pages}</span>` +
                     `<button type="button" data-p="${page + 1}"${page >= pages ? " disabled" : ""}>Next</button>`;
       $("catPagerTop").innerHTML = pager; $("catPagerBottom").innerHTML = pager;
@@ -551,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
       a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
       a.download = "Browse_By_Category_selected_results.csv"; a.click(); URL.revokeObjectURL(a.href);
     }
-    function refresh() { buildRows(); applyView(); }
+    function refresh() { buildRows(); fillCatFilter(); applyView(); }
 
     // ── Events ──
     function wire() {
@@ -579,6 +603,8 @@ document.addEventListener("DOMContentLoaded", () => {
         $("catResults").scrollIntoView({ behavior: "smooth" });
       });
       $("catResSearch").addEventListener("input", applyView);
+      $("catFilter").addEventListener("change", applyView);
+      $("catFilter").addEventListener("click", e => e.stopPropagation());
       $("catPageSize").addEventListener("change", function () { size = parseInt(this.value); page = 1; renderResults(); });
       $("catCsv").addEventListener("click", downloadCsv);
       $("catAddAll").addEventListener("click", () => {
@@ -597,6 +623,7 @@ document.addEventListener("DOMContentLoaded", () => {
       $("catResults").addEventListener("click", e => {
         const p = e.target.dataset && e.target.dataset.p;
         if (p) { page = +p; renderResults(); return; }
+        if (e.target.closest("select")) return;
         const th = e.target.closest("th[data-sort]");
         if (th) { const k = th.dataset.sort; sortDir = sortKey === k ? -sortDir : 1; sortKey = k; applyView(); }
       });
