@@ -525,7 +525,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div style="background:#ffffff;padding:6px 12px;font-size:12px;font-weight:600;color:#4b067a;border-bottom:1px solid #e0d0f0;">Last 5 variables added:</div>
       ${lastFive.map(i => `
         <div style="background:#ffffff;padding:5px 12px;font-size:12px;">
-          <a href="https://rmjdish.github.io/OWL/assets/variable_metadata/${i.varName}"
+          <a href="{ site.url }}{{ site.baseurl }}/assets/variable_metadata/${i.varName}"
              target="_blank"
              style="color:#4b067a;text-decoration:underline;">
             ${i.varName}
