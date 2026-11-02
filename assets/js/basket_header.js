@@ -1,9 +1,3 @@
----
----
-// Jekyll processes this file (front matter above) so Liquid values resolve at build time.
-const SITE_URL = "{{ site.url }}";
-const SITE_BASEURL = "{{ site.baseurl }}";
-
 // ============================================================
 // GLOBAL basket logic — loads on ALL pages
 // ============================================================
